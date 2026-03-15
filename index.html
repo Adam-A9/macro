@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MACRO — Economic Dashboard</title>
+<title>MACRO — Economic Overview Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -366,7 +366,7 @@
 <body>
 
 <header class="header">
-  <div class="logo">MACRO<span> // Economic Intelligence</span></div>
+  <div class="logo">MACRO<span> // Economic Overview</span></div>
   <div class="header-right">
     <div class="live-badge"><div class="live-dot"></div>Auto-Refresh ON</div>
     <span id="last-updated">–</span>
@@ -736,7 +736,7 @@ function makeSparkline(canvasId, data, color) {
   // Show only first, middle, last date labels
   const n = data.length;
   const tickLabels = data.map((d, i) => {
-    if (i === 0 || i === Math.floor(n / 2) || i === n - 1) return d.date.slice(0, 7); // YYYY-MM
+    if (i === 0 || i === n - 1) return d.date.slice(0, 7); // YYYY-MM
     return '';
   });
   sparklines[canvasId] = new Chart(ctx, {
@@ -806,18 +806,37 @@ function updateCard(name, rawObs) {
   valEl.innerHTML = `${latest.value.toLocaleString(undefined, { maximumFractionDigits: cfg.decimals })}<span class="kpi-unit">${cfg.unit}</span>`;
   chgEl.className = `kpi-change ${pos ? 'pos' : 'neg'}`;
   chgEl.textContent = `${pos ? '▲' : '▼'} ${Math.abs(change).toLocaleString(undefined, { maximumFractionDigits: cfg.decimals })} (${pct.toFixed(2)}%)`;
-  dateEl.textContent = cfg.freq + " · " + latest.date;
+  dateEl.textContent = cfg.freq;
 
   const sparkSlice = obs;
   const sparkColor = name === 'Unemployment' ? '#ff6b35' : name === 'M2' || name === '10Y_Yield' ? '#ffd700' : '#00d4ff';
   makeSparkline(`spark-${name}`, sparkSlice, sparkColor);
 
-  // Mini table: last 8 readings, oldest→newest left→right
+  // Mini table: last 8 readings with heatmap coloring
   const tableObs = obs.slice(-8);
   const wrap = document.getElementById('mini-table-' + name);
   if (wrap) {
+    const vals = tableObs.map(d => d.value);
+    const minVal = Math.min(...vals);
+    const maxVal = Math.max(...vals);
+    const range = maxVal - minVal || 1;
+    // For unemployment/jobless claims lower = better, invert color
+    // Lower is better for these — red=high, green=low
+    const invertColor = !['GDP', 'Retail_Sales', 'Housing_Starts', 'M2'].includes(name);
+    function heatColor(val) {
+      let t = (val - minVal) / range; // 0=min, 1=max
+      if (invertColor) t = 1 - t; // invert so low=good=green
+      // t=0 → red (bad), t=1 → green (good)
+      if (t < 0.5) {
+        const r = Math.round(180 + (0.5 - t) * 2 * 75); // more red when t near 0
+        return `rgba(${r},40,60,0.4)`;
+      } else {
+        const g = Math.round(80 + (t - 0.5) * 2 * 150); // more green when t near 1
+        return `rgba(0,${g},60,0.4)`;
+      }
+    }
     const headerCells = tableObs.map(d => `<th>${d.date.slice(0,7)}</th>`).join('');
-    const valueCells = tableObs.map(d => `<td>${d.value.toLocaleString(undefined,{maximumFractionDigits:cfg.decimals})}${cfg.unit}</td>`).join('');
+    const valueCells = tableObs.map(d => `<td style="background:${heatColor(d.value)}">${d.value.toLocaleString(undefined,{maximumFractionDigits:cfg.decimals})}${cfg.unit}</td>`).join('');
     wrap.innerHTML = `<table class="mini-table"><thead><tr>${headerCells}</tr></thead><tbody><tr>${valueCells}</tr></tbody></table>`;
   }
 }
