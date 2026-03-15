@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MACRO — Economic Intelligence Dashboard</title>
+<title>MACRO — Economic Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -126,7 +126,7 @@
     z-index: 1;
     padding: 20px 24px;
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     grid-template-rows: auto auto auto auto;
     gap: 12px;
   }
@@ -138,7 +138,7 @@
     border: 1px solid var(--border);
     padding: 16px;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
     transition: border-color 0.2s;
     animation: fadeIn 0.5s ease forwards;
     opacity: 0;
@@ -160,6 +160,42 @@
     from { opacity: 0; transform: translateY(8px); }
   }
 
+  .kpi-tooltip {
+    position: absolute;
+    inset: 0;
+    background: rgba(13,17,23,0.97);
+    border: 1px solid var(--accent);
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    line-height: 1.7;
+    padding: 14px;
+    z-index: 200;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+    white-space: normal;
+    display: flex;
+    align-items: center;
+  }
+  .kpi-card.show-tip .kpi-tooltip {
+    opacity: 1;
+  }
+  .kpi-info {
+    cursor: help;
+    color: var(--accent);
+    font-size: 9px;
+    border: 1px solid var(--accent);
+    border-radius: 50%;
+    width: 13px;
+    height: 13px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 4px;
+    flex-shrink: 0;
+    opacity: 0.7;
+  }
   .kpi-label {
     color: var(--muted);
     font-size: 9px;
@@ -206,19 +242,44 @@
     margin-top: 10px;
     height: 52px;
   }
+  .mini-table-wrap {
+    margin-top: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .mini-table-wrap::-webkit-scrollbar { display: none; }
+  .mini-table {
+    border-collapse: collapse;
+    white-space: nowrap;
+    width: 100%;
+    font-size: 10px;
+    font-family: 'Space Mono', monospace;
+  }
+  .mini-table th {
+    color: #e8edf2;
+    font-weight: 400;
+    padding: 4px 6px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    letter-spacing: 0.05em;
+    text-align: center;
+  }
+  .mini-table td {
+    color: #ffffff;
+    padding: 4px 6px;
+    border: 1px solid var(--border);
+    text-align: center;
+    letter-spacing: 0.03em;
+  }
 
   /* CHART PANELS */
   .chart-panel {
     background: var(--surface);
     border: 1px solid var(--border);
     padding: 16px;
-    grid-column: span 2;
     animation: fadeIn 0.6s ease forwards;
     opacity: 0;
   }
-  .chart-panel.wide { grid-column: span 4; }
-  .chart-panel.tall { grid-row: span 2; }
-
   .panel-header {
     display: flex;
     justify-content: space-between;
@@ -319,160 +380,190 @@
 
   <!-- KPI CARDS -->
   <div class="kpi-card" id="card-GDP">
-    <div class="kpi-label">Real GDP <span class="kpi-series-id">GDP</span></div>
+    <div class="kpi-label">Real GDP <span class="kpi-series-id">GDP</span><span class="kpi-info">?</span></div>
+    <div class="kpi-tooltip" id="tip-GDP"></div>
     <div class="kpi-value loading-text" id="val-GDP">Loading…</div>
     <div class="kpi-change neutral" id="chg-GDP">–</div>
     <div class="kpi-date" id="date-GDP">–</div>
     <div class="sparkline-wrap"><canvas id="spark-GDP"></canvas></div>
+    <div class="mini-table-wrap" id="mini-table-GDP"></div>
   </div>
 
   <div class="kpi-card warn" id="card-Unemployment">
-    <div class="kpi-label">Unemployment Rate <span class="kpi-series-id">UNRATE</span></div>
+    <div class="kpi-label">Unemployment Rate <span class="kpi-series-id">UNRATE</span><span class="kpi-info">?</span></div>
+    <div class="kpi-tooltip" id="tip-Unemployment"></div>
     <div class="kpi-value loading-text" id="val-Unemployment">Loading…</div>
     <div class="kpi-change neutral" id="chg-Unemployment">–</div>
     <div class="kpi-date" id="date-Unemployment">–</div>
     <div class="sparkline-wrap"><canvas id="spark-Unemployment"></canvas></div>
+    <div class="mini-table-wrap" id="mini-table-Unemployment"></div>
   </div>
 
   <div class="kpi-card" id="card-CPI">
-    <div class="kpi-label">CPI (All Urban) <span class="kpi-series-id">CPIAUCSL</span></div>
+    <div class="kpi-label">CPI (All Urban) <span class="kpi-series-id">CPIAUCSL</span><span class="kpi-info">?</span></div>
+    <div class="kpi-tooltip" id="tip-CPI"></div>
     <div class="kpi-value loading-text" id="val-CPI">Loading…</div>
     <div class="kpi-change neutral" id="chg-CPI">–</div>
     <div class="kpi-date" id="date-CPI">–</div>
     <div class="sparkline-wrap"><canvas id="spark-CPI"></canvas></div>
+    <div class="mini-table-wrap" id="mini-table-CPI"></div>
   </div>
 
   <div class="kpi-card" id="card-PPI">
-    <div class="kpi-label">Producer Price Index <span class="kpi-series-id">PPIACO</span></div>
+    <div class="kpi-label">Producer Price Index <span class="kpi-series-id">PPIACO</span><span class="kpi-info">?</span></div>
+    <div class="kpi-tooltip" id="tip-PPI"></div>
     <div class="kpi-value loading-text" id="val-PPI">Loading…</div>
     <div class="kpi-change neutral" id="chg-PPI">–</div>
     <div class="kpi-date" id="date-PPI">–</div>
     <div class="sparkline-wrap"><canvas id="spark-PPI"></canvas></div>
+    <div class="mini-table-wrap" id="mini-table-PPI"></div>
   </div>
 
   <div class="kpi-card good" id="card-M2">
-    <div class="kpi-label">M2 Money Supply <span class="kpi-series-id">M2SL</span></div>
+    <div class="kpi-label">M2 Money Supply <span class="kpi-series-id">M2SL</span><span class="kpi-info">?</span></div>
+    <div class="kpi-tooltip" id="tip-M2"></div>
     <div class="kpi-value loading-text" id="val-M2">Loading…</div>
     <div class="kpi-change neutral" id="chg-M2">–</div>
     <div class="kpi-date" id="date-M2">–</div>
     <div class="sparkline-wrap"><canvas id="spark-M2"></canvas></div>
+    <div class="mini-table-wrap" id="mini-table-M2"></div>
   </div>
 
   <div class="kpi-card gold" id="card-10Y_Yield">
-    <div class="kpi-label">10-Year Treasury Yield <span class="kpi-series-id">DGS10</span></div>
+    <div class="kpi-label">10-Year Treasury Yield <span class="kpi-series-id">DGS10</span><span class="kpi-info">?</span></div>
+    <div class="kpi-tooltip" id="tip-10Y_Yield"></div>
     <div class="kpi-value loading-text" id="val-10Y_Yield">Loading…</div>
     <div class="kpi-change neutral" id="chg-10Y_Yield">–</div>
     <div class="kpi-date" id="date-10Y_Yield">–</div>
     <div class="sparkline-wrap"><canvas id="spark-10Y_Yield"></canvas></div>
+    <div class="mini-table-wrap" id="mini-table-10Y_Yield"></div>
   </div>
 
   <div class="kpi-card" id="card-Housing_Starts">
-    <div class="kpi-label">Housing Starts <span class="kpi-series-id">HOUST</span></div>
+    <div class="kpi-label">Housing Starts <span class="kpi-series-id">HOUST</span><span class="kpi-info">?</span></div>
+    <div class="kpi-tooltip" id="tip-Housing_Starts"></div>
     <div class="kpi-value loading-text" id="val-Housing_Starts">Loading…</div>
     <div class="kpi-change neutral" id="chg-Housing_Starts">–</div>
     <div class="kpi-date" id="date-Housing_Starts">–</div>
     <div class="sparkline-wrap"><canvas id="spark-Housing_Starts"></canvas></div>
+    <div class="mini-table-wrap" id="mini-table-Housing_Starts"></div>
   </div>
 
   <div class="kpi-card" id="card-Retail_Sales">
-    <div class="kpi-label">Retail Sales <span class="kpi-series-id">RSAFS</span></div>
+    <div class="kpi-label">Retail Sales <span class="kpi-series-id">RSAFS</span><span class="kpi-info">?</span></div>
+    <div class="kpi-tooltip" id="tip-Retail_Sales"></div>
     <div class="kpi-value loading-text" id="val-Retail_Sales">Loading…</div>
     <div class="kpi-change neutral" id="chg-Retail_Sales">–</div>
     <div class="kpi-date" id="date-Retail_Sales">–</div>
     <div class="sparkline-wrap"><canvas id="spark-Retail_Sales"></canvas></div>
+    <div class="mini-table-wrap" id="mini-table-Retail_Sales"></div>
   </div>
 
-  <!-- SECTION LABEL -->
-  <div class="section-label">// Market Data — Yahoo Finance</div>
+  <div class="kpi-card warn" id="card-Jobless_Claims">
+    <div class="kpi-label">Jobless Claims <span class="kpi-series-id">ICSA</span><span class="kpi-info">?</span></div>
+    <div class="kpi-tooltip" id="tip-Jobless_Claims"></div>
+    <div class="kpi-value loading-text" id="val-Jobless_Claims">Loading…</div>
+    <div class="kpi-change neutral" id="chg-Jobless_Claims">–</div>
+    <div class="kpi-date" id="date-Jobless_Claims">–</div>
+    <div class="sparkline-wrap"><canvas id="spark-Jobless_Claims"></canvas></div>
+    <div class="mini-table-wrap" id="mini-table-Jobless_Claims"></div>
+  </div>
 
-  <!-- CHARTS -->
-  <div class="chart-panel" style="animation-delay:0.45s">
-    <div class="panel-header">
-      <div>
-        <div class="panel-title">S&amp;P 500</div>
-        <div class="panel-sub">S&P 500 · Daily</div>
+  <div class="section-label" style="grid-column:1/-1;">// Market &amp; Rate Charts</div>
+
+  <div style="grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+
+    <!-- S&P 500 -->
+    <div class="chart-panel" style="animation-delay:0.45s;">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">S&amp;P 500</div>
+          <div class="panel-sub">SPY · Daily</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span id="spx-val" style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;">–</span>
+          <span id="spx-chg" style="font-size:11px;">–</span>
+        </div>
       </div>
-      <div style="display:flex;gap:12px;align-items:center;">
-        <span id="spx-val" style="font-family:'Syne',sans-serif;font-size:20px;font-weight:700;">–</span>
-        <span class="panel-badge" id="spx-chg">–</span>
-      </div>
+      <div class="chart-container" style="height:150px"><canvas id="chartSPX"></canvas></div>
     </div>
-    <div class="chart-container" style="height:150px"><canvas id="chartSPX"></canvas></div>
-  </div>
 
-  <div class="chart-panel" style="animation-delay:0.5s">
-    <div class="panel-header">
-      <div>
-        <div class="panel-title">Crude Oil</div>
-        <div class="panel-sub">WTI Crude · Daily</div>
+    <!-- WTI Crude -->
+    <div class="chart-panel" style="animation-delay:0.5s;">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Crude Oil</div>
+          <div class="panel-sub">WTI · Daily</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span id="oil-val" style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;">–</span>
+          <span id="oil-chg" style="font-size:11px;">–</span>
+        </div>
       </div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <span id="oil-val" style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;">–</span>
-        <span id="oil-chg" style="font-size:11px;">–</span>
-      </div>
+      <div class="chart-container" style="height:150px"><canvas id="chartOil"></canvas></div>
     </div>
-    <div class="chart-container" style="height:150px"><canvas id="chartOil"></canvas></div>
-  </div>
 
-  <div class="chart-panel" style="animation-delay:0.55s">
-    <div class="panel-header">
-      <div>
-        <div class="panel-title">US Dollar Index</div>
-        <div class="panel-sub">DXY · Daily</div>
+    <!-- DXY -->
+    <div class="chart-panel" style="animation-delay:0.55s;">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">US Dollar Index</div>
+          <div class="panel-sub">DXY · Daily</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span id="dxy-val" style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;">–</span>
+          <span id="dxy-chg" style="font-size:11px;">–</span>
+        </div>
       </div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <span id="dxy-val" style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;">–</span>
-        <span id="dxy-chg" style="font-size:11px;">–</span>
-      </div>
+      <div class="chart-container" style="height:150px"><canvas id="chartDXY"></canvas></div>
     </div>
-    <div class="chart-container" style="height:150px"><canvas id="chartDXY"></canvas></div>
-  </div>
 
-
-
-  <div class="chart-panel" style="animation-delay:0.6s">
-    <div class="panel-header">
-      <div>
-        <div class="panel-title">VIX Volatility</div>
-        <div class="panel-sub">Fear Index · Daily</div>
+    <!-- VIX -->
+    <div class="chart-panel" style="animation-delay:0.6s;">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">VIX Volatility Index</div>
+          <div class="panel-sub">Fear Index · Daily</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span id="vix-val" style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;">–</span>
+          <span id="vix-chg" style="font-size:11px;">–</span>
+        </div>
       </div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <span id="vix-val" style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;">–</span>
-        <span id="vix-chg" style="font-size:11px;">–</span>
-      </div>
+      <div class="chart-container" style="height:150px"><canvas id="chartVIX"></canvas></div>
     </div>
-    <div class="chart-container" style="height:150px"><canvas id="chartVIX"></canvas></div>
-  </div>
 
-  <div class="section-label" style="grid-column:1/-1;margin-top:8px;">// Key Rate Charts — FRED</div>
-
-  <div class="chart-panel" style="animation-delay:0.65s;grid-column:span 2;">
-    <div class="panel-header">
-      <div>
-        <div class="panel-title">Federal Funds Rate</div>
-        <div class="panel-sub">FEDFUNDS · Monthly · Most influential macro variable</div>
+    <!-- Fed Funds Rate -->
+    <div class="chart-panel" style="animation-delay:0.65s;">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Federal Funds Rate</div>
+          <div class="panel-sub">FEDFUNDS · Monthly</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span id="fedfunds-val" style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;">–</span>
+          <span id="fedfunds-chg" style="font-size:11px;color:var(--muted);">–</span>
+        </div>
       </div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <span id="fedfunds-val" style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;">–</span>
-        <span id="fedfunds-chg" style="font-size:11px;color:var(--muted);">–</span>
-      </div>
+      <div class="chart-container" style="height:150px"><canvas id="chartFedFunds"></canvas></div>
     </div>
-    <div class="chart-container" style="height:150px"><canvas id="chartFedFunds"></canvas></div>
-  </div>
 
-  <div class="chart-panel" style="animation-delay:0.7s;grid-column:span 2;">
-    <div class="panel-header">
-      <div>
-        <div class="panel-title">Yield Curve — 10Y minus 2Y</div>
-        <div class="panel-sub">T10Y2Y · Daily · Negative = recession warning</div>
+    <!-- Yield Curve -->
+    <div class="chart-panel" style="animation-delay:0.7s;">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Yield Curve — 10Y minus 2Y</div>
+          <div class="panel-sub">T10Y2Y · Daily · Negative = recession warning</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span id="spread-val" style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;">–</span>
+          <span id="spread-chg" style="font-size:11px;color:var(--muted);">–</span>
+        </div>
       </div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <span id="spread-val" style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;">–</span>
-        <span id="spread-chg" style="font-size:11px;color:var(--muted);">–</span>
-      </div>
+      <div class="chart-container" style="height:150px"><canvas id="chartSpread"></canvas></div>
     </div>
-    <div class="chart-container" style="height:150px"><canvas id="chartSpread"></canvas></div>
-  </div>
+
+  </div><!-- end charts wrapper -->
 
 </main>
 
@@ -485,14 +576,15 @@
 <script>
 // ─── CONFIG ───────────────────────────────────────────────
 const FRED_SERIES = {
-  GDP:           { id: "GDP",      label: "Real GDP",         unit: "B$",  decimals: 0 },
-  Unemployment:  { id: "UNRATE",   label: "Unemployment",     unit: "%",   decimals: 1 },
-  CPI:           { id: "CPIAUCSL", label: "CPI",              unit: "",    decimals: 2 },
-  PPI:           { id: "PPIACO",   label: "PPI",              unit: "",    decimals: 2 },
-  M2:            { id: "M2SL",     label: "M2 Money Supply",  unit: "B$",  decimals: 0 },
-  "10Y_Yield":   { id: "DGS10",    label: "10-Year Yield",    unit: "%",   decimals: 2 },
-  Housing_Starts:{ id: "HOUST",    label: "Housing Starts",   unit: "K",   decimals: 0 },
-  Retail_Sales:  { id: "RSAFS",    label: "Retail Sales",     unit: "M$",  decimals: 0 }
+  GDP:           { id: "GDP",      label: "Real GDP",         unit: "B$",  decimals: 0, freq: "QoQ", desc: "Total value of goods and services produced in the US. The broadest measure of economic health — two consecutive negative quarters signals a recession." },
+  Unemployment:  { id: "UNRATE",   label: "Unemployment",     unit: "%",   decimals: 1, freq: "MoM", desc: "Percentage of the labor force actively looking for work but unemployed. Released the first Friday of every month. Below 4% is considered healthy; above 5% signals labor market stress." },
+  CPI:           { id: "CPIAUCSL", label: "CPI",              unit: "",    decimals: 2, freq: "MoM", desc: "Consumer Price Index — measures the average change in prices paid by consumers for goods and services. The Fed's primary inflation gauge; target is 2% annual growth." },
+  PPI:           { id: "PPIACO",   label: "PPI",              unit: "",    decimals: 2, freq: "MoM", desc: "Producer Price Index — measures price changes from the seller's perspective. A leading indicator of consumer inflation since producer costs eventually pass through to retail prices." },
+  M2:            { id: "M2SL",     label: "M2 Money Supply",  unit: "B$",  decimals: 0, freq: "MoM", desc: "Total amount of money in circulation including cash, checking deposits, and easily convertible near-money. Rapid M2 growth can signal future inflation." },
+  "10Y_Yield":   { id: "DGS10",    label: "10-Year Yield",    unit: "%",   decimals: 2, freq: "DoD", desc: "Interest rate on 10-year US Treasury bonds. The benchmark for mortgage rates, corporate borrowing, and stock valuations. Rising yields tighten financial conditions." },
+  Housing_Starts:{ id: "HOUST",    label: "Housing Starts",   unit: "K",   decimals: 0, freq: "MoM", desc: "Number of new residential construction projects begun each month. A leading economic indicator — housing drives significant economic activity in materials, labor, and consumer spending." },
+  Retail_Sales:  { id: "RSAFS",    label: "Retail Sales",     unit: "M$",  decimals: 0, freq: "MoM", desc: "Total receipts at stores selling merchandise. Since consumer spending drives ~70% of US GDP, retail sales is one of the most direct reads on economic momentum." },
+  Jobless_Claims:{ id: "ICSA",     label: "Jobless Claims",   unit: "K",   decimals: 0, freq: "WoW", desc: "Weekly count of people filing for unemployment benefits for the first time. The most timely labor market indicator — spikes here show up weeks before the monthly unemployment rate moves." }
 };
 
 // Extra FRED series for full charts only (not KPI cards)
@@ -708,15 +800,26 @@ function updateCard(name, rawObs) {
   const chgEl = document.getElementById(`chg-${name}`);
   const dateEl = document.getElementById(`date-${name}`);
 
+  const tipEl = document.getElementById('tip-' + name);
+  if (tipEl) tipEl.textContent = cfg.desc || '';
   valEl.classList.remove('loading-text');
   valEl.innerHTML = `${latest.value.toLocaleString(undefined, { maximumFractionDigits: cfg.decimals })}<span class="kpi-unit">${cfg.unit}</span>`;
   chgEl.className = `kpi-change ${pos ? 'pos' : 'neg'}`;
   chgEl.textContent = `${pos ? '▲' : '▼'} ${Math.abs(change).toLocaleString(undefined, { maximumFractionDigits: cfg.decimals })} (${pct.toFixed(2)}%)`;
-  dateEl.textContent = `As of ${latest.date} vs ${prior.date}`;
+  dateEl.textContent = cfg.freq + " · " + latest.date;
 
   const sparkSlice = obs;
   const sparkColor = name === 'Unemployment' ? '#ff6b35' : name === 'M2' || name === '10Y_Yield' ? '#ffd700' : '#00d4ff';
   makeSparkline(`spark-${name}`, sparkSlice, sparkColor);
+
+  // Mini table: last 8 readings, oldest→newest left→right
+  const tableObs = obs.slice(-8);
+  const wrap = document.getElementById('mini-table-' + name);
+  if (wrap) {
+    const headerCells = tableObs.map(d => `<th>${d.date.slice(0,7)}</th>`).join('');
+    const valueCells = tableObs.map(d => `<td>${d.value.toLocaleString(undefined,{maximumFractionDigits:cfg.decimals})}${cfg.unit}</td>`).join('');
+    wrap.innerHTML = `<table class="mini-table"><thead><tr>${headerCells}</tr></thead><tbody><tr>${valueCells}</tr></tbody></table>`;
+  }
 }
 
 // ─── UPDATE TABLE ─────────────────────────────────────────
@@ -871,6 +974,11 @@ async function fetchAll() {
 
 // ─── INIT ─────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.kpi-info').forEach(icon => {
+    const card = icon.closest('.kpi-card');
+    icon.addEventListener('mouseenter', () => card.classList.add('show-tip'));
+    icon.addEventListener('mouseleave', () => card.classList.remove('show-tip'));
+  });
   fetchAll();
 });
 </script>
