@@ -238,6 +238,18 @@
   .kpi-change.neg { color: var(--red); }
   .kpi-change.neutral { color: var(--muted); }
   .kpi-date { color: var(--muted2); font-size: 9px; margin-top: 6px; }
+  .revision-tag {
+    display: inline-block;
+    margin-top: 5px;
+    font-size: 9px;
+    letter-spacing: 0.05em;
+    padding: 2px 6px;
+    border: 1px solid var(--border2);
+    font-family: 'Space Mono', monospace;
+  }
+  .revision-tag.up { color: #00ff9d; border-color: #00ff9d33; }
+  .revision-tag.down { color: #ff3b5c; border-color: #ff3b5c33; }
+  .revision-tag.flat { color: var(--muted); }
 
   .sparkline-wrap {
     margin-top: 10px;
@@ -362,6 +374,75 @@
   .kpi-card:nth-child(6) { animation-delay: 0.30s; }
   .kpi-card:nth-child(7) { animation-delay: 0.35s; }
   .kpi-card:nth-child(8) { animation-delay: 0.40s; }
+
+  /* ── MOBILE RESPONSIVE ────────────────────────────────── */
+  @media (max-width: 768px) {
+
+    /* Header */
+    .header {
+      padding: 0 12px;
+      height: auto;
+      min-height: 52px;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding-top: 8px;
+      padding-bottom: 8px;
+    }
+    .logo { font-size: 14px; }
+    .header-right { gap: 12px; flex-wrap: wrap; }
+    #last-updated { display: none; }
+
+    /* Main grid → single column */
+    .main {
+      grid-template-columns: 1fr;
+      padding: 12px;
+      gap: 10px;
+    }
+
+    /* KPI cards — full width, more compact */
+    .kpi-card {
+      padding: 12px;
+    }
+    .kpi-value { font-size: 22px !important; }
+    .sparkline-wrap { height: 44px; }
+    .mini-table { font-size: 9px; }
+    .mini-table th, .mini-table td { padding: 2px 4px; }
+
+    /* Section labels */
+    .section-label { grid-column: 1 / -1; }
+
+    /* Market + FRED charts → single column */
+    div[style*="grid-template-columns:1fr 1fr"] {
+      grid-template-columns: 1fr !important;
+    }
+
+    /* Chart panels */
+    .chart-panel { padding: 12px; }
+    .panel-title { font-size: 11px; }
+
+    /* Tooltip overlay — slightly smaller text on mobile */
+    .kpi-tooltip { font-size: 10px; padding: 10px; }
+
+    /* Footer */
+    .footer {
+      flex-direction: column;
+      gap: 4px;
+      text-align: center;
+      padding: 10px 12px;
+    }
+
+    /* Error msg */
+    .error-msg { font-size: 10px; }
+
+    /* Refresh button */
+    .refresh-btn { padding: 5px 10px; font-size: 9px; }
+  }
+
+  @media (max-width: 480px) {
+    .logo span { display: none; }
+    .kpi-value { font-size: 20px !important; }
+    .live-badge span:last-child { display: none; }
+  }
 </style>
 </head>
 <body>
@@ -468,6 +549,7 @@
     <div class="kpi-date" id="date-Housing_Starts">–</div>
     <div class="sparkline-wrap"><canvas id="spark-Housing_Starts"></canvas></div>
     <div class="mini-table-wrap" id="mini-table-Housing_Starts"></div>
+    <div class="revision-tag flat" id="revision-Housing_Starts" style="display:none;"></div>
   </div>
 
   <div class="kpi-card" id="card-Retail_Sales" data-freq="mom">
@@ -478,6 +560,7 @@
     <div class="kpi-date" id="date-Retail_Sales">–</div>
     <div class="sparkline-wrap"><canvas id="spark-Retail_Sales"></canvas></div>
     <div class="mini-table-wrap" id="mini-table-Retail_Sales"></div>
+    <div class="revision-tag flat" id="revision-Retail_Sales" style="display:none;"></div>
   </div>
 
   <div class="kpi-card" id="card-CC_Delinquency" data-freq="qoq">
@@ -498,6 +581,7 @@
     <div class="kpi-date" id="date-GDP">–</div>
     <div class="sparkline-wrap"><canvas id="spark-GDP"></canvas></div>
     <div class="mini-table-wrap" id="mini-table-GDP"></div>
+    <div class="revision-tag flat" id="revision-GDP" style="display:none;"></div>
   </div>
 
 
@@ -679,6 +763,19 @@ async function fetchFRED(seriesId, apiKey, limit = 60) {
 }
 
 // ─── YAHOO FINANCE FETCH ──────────────────────────────────
+async function fetchVintage(seriesId, apiKey, vintageDates) {
+  // ALFRED — fetch a specific vintage (data as it was on release date)
+  const url = 'https://api.stlouisfed.org/fred/series/observations' +
+    '?series_id=' + seriesId +
+    '&api_key=' + apiKey +
+    '&file_type=json&sort_order=desc&limit=5' +
+    '&vintage_dates=' + vintageDates.join(',');
+  const j = await fetchWithProxy(url);
+  if (!j.observations) return null;
+  const valid = j.observations.filter(o => o.value !== '.' && o.value !== '');
+  return valid.length > 0 ? parseFloat(valid[0].value) : null;
+}
+
 async function fetchMarket(symbol) {
   // Build Yahoo URL without encoding the symbol — special chars like = ^ - . are valid in URL paths
   // encodeURIComponent is only applied to the full URL when passed to the proxy
@@ -901,6 +998,54 @@ async function fetchAll() {
   }
 
 
+
+  // ALFRED — fetch revision data for GDP, Retail Sales, Housing Starts
+  const revisionSeries = [
+    { name: 'GDP',           id: 'GDP',   decimals: 0, unit: 'B$' },
+    { name: 'Retail_Sales',  id: 'RSAFS', decimals: 0, unit: 'M$' },
+    { name: 'Housing_Starts',id: 'HOUST', decimals: 0, unit: 'K'  },
+  ];
+  for (const rs of revisionSeries) {
+    try {
+      await sleep(300);
+      // Get the latest observation date for this series
+      const currentObs = allFredData[rs.name];
+      if (!currentObs || currentObs.length < 1) continue;
+      const latestObs = currentObs[currentObs.length - 1];
+      const latestDate = latestObs.date;
+      const currentVal = latestObs.value;
+
+      // Find the first vintage date after the latest observation date
+      // ALFRED: get realtime_start = latestDate to get the initial release value
+      const initUrl = 'https://api.stlouisfed.org/fred/series/observations' +
+        '?series_id=' + rs.id +
+        '&api_key=' + apiKey +
+        '&file_type=json&sort_order=asc&limit=1' +
+        '&observation_start=' + latestDate +
+        '&observation_end=' + latestDate +
+        '&realtime_start=' + latestDate +
+        '&realtime_end=' + latestDate;
+      const initJson = await fetchWithProxy(initUrl);
+      if (!initJson.observations || initJson.observations.length === 0) continue;
+      const initVal = parseFloat(initJson.observations[0].value);
+      if (isNaN(initVal)) continue;
+
+      const diff = currentVal - initVal;
+      const el = document.getElementById('revision-' + rs.name);
+      if (!el) continue;
+      if (Math.abs(diff) < 0.01) {
+        el.className = 'revision-tag flat';
+        el.textContent = 'No revision';
+      } else {
+        const pos = diff > 0;
+        el.className = 'revision-tag ' + (pos ? 'up' : 'down');
+        el.textContent = 'Revised ' + (pos ? '+' : '') + diff.toFixed(rs.decimals) + rs.unit + ' from initial';
+      }
+      el.style.display = 'inline-block';
+    } catch(e) {
+      // revision fetch failing silently is fine
+    }
+  }
 
   // MARKET DATA — Yahoo Finance via proxy, fetched sequentially to avoid rate limits
   const marketSymbols = ['^GSPC', 'CL=F', 'DX-Y.NYB', '^VIX', 'GC=F', 'BTC-USD'];
