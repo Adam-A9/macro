@@ -632,8 +632,10 @@ async function fetchFRED(seriesId, apiKey, limit = 30) {
 
 // ─── YAHOO FINANCE FETCH ──────────────────────────────────
 async function fetchMarket(symbol) {
+  // Build Yahoo URL without encoding the symbol — special chars like = ^ - . are valid in URL paths
+  // encodeURIComponent is only applied to the full URL when passed to the proxy
   const yahooUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/' +
-    symbol +
+    symbol.replace('^', '%5E') +  // only encode ^ which breaks some proxies
     '?range=2y&interval=1d&events=history';
   const j = await fetchWithProxy(yahooUrl);
   const result = j.chart.result[0];
