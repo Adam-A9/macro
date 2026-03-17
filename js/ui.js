@@ -91,9 +91,7 @@ function updateCard(name, rawObs) {
         yoyCells +
       '</tr></tbody></table>';
   } else {
-    // Show raw value row with gradient coloring
-    const vals = displayObs.map(d => d.value);
-    const mn = Math.min(...vals), mx = Math.max(...vals), rng = mx - mn || 1;
+    // Show raw value row, red/green vs previous reading
     const hig = HIGHER_IS_GOOD.includes(name);
     const cells = displayObs.map((d, i) => {
       const prev = i > 0 ? displayObs[i - 1].value : null;
@@ -103,7 +101,8 @@ function updateCard(name, rawObs) {
       } else if (name === 'Spread') {
         bg = d.value > prev ? 'rgba(0,190,90,0.38)' : 'rgba(220,40,60,0.38)';
       } else {
-        bg = gradientColor((d.value - mn) / rng, hig);
+        const improving = hig ? d.value >= prev : d.value <= prev;
+        bg = improving ? 'rgba(0,190,90,0.38)' : 'rgba(220,40,60,0.38)';
       }
       return '<td style="background:' + bg + '">' +
         d.value.toLocaleString(undefined, { maximumFractionDigits: cfg.decimals }) + cfg.unit + '</td>';
