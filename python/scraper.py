@@ -68,7 +68,6 @@ HEADERS = {
 }
 
 TODAY  = date.today()
-LOOKBACK = TODAY - timedelta(days=7)  # 7-day lookback for most recent past events
 CUTOFF = TODAY + timedelta(days=90)   # 90-day forward window
 
 # ─── SERIES MAP ──────────────────────────────────────────────
@@ -212,10 +211,10 @@ def parse_date_flexible(s, year=None):
 
 
 def in_window(date_str):
-    """Check if a date string falls within LOOKBACK → CUTOFF."""
+    """Check if a date string falls within TODAY → CUTOFF."""
     try:
         d = datetime.strptime(date_str, '%Y-%m-%d').date()
-        return LOOKBACK <= d <= CUTOFF
+        return TODAY <= d <= CUTOFF
     except (ValueError, TypeError):
         return False
 
@@ -254,7 +253,7 @@ def scrape_fred_releases():
         f"https://api.stlouisfed.org/fred/releases/dates"
         f"?api_key={FRED_API_KEY}"
         f"&file_type=json"
-        f"&realtime_start={LOOKBACK.isoformat()}"
+        f"&realtime_start={TODAY.isoformat()}"
         f"&realtime_end={CUTOFF.isoformat()}"
         f"&include_release_dates_with_no_data=false"
     )
@@ -270,11 +269,7 @@ def scrape_fred_releases():
         return results
 
     release_dates = data.get('release_dates', [])
-    today_str = TODAY.isoformat()
-
-    # Track most recent past date and earliest upcoming date per series
-    past_best = {}    # sid → record with latest date < today
-    future_best = {}  # sid → record with earliest date >= today
+    seen = set()
 
     for entry in release_dates:
         rid = entry.get('release_id')
@@ -285,7 +280,12 @@ def scrape_fred_releases():
         meta = FRED_RELEASES[rid]
         sid  = meta['series_id']
 
-        rec = {
+        # Take only the earliest upcoming date per series
+        if sid in seen:
+            continue
+        seen.add(sid)
+
+        results.append({
             'series_id':    sid,
             'release_name': meta['name'],
             'release_date': rd,
@@ -294,31 +294,8 @@ def scrape_fred_releases():
             'unit':         meta.get('unit', ''),
             'source':       meta.get('source', 'FRED'),
             'impact':       meta.get('impact', 'low'),
-        }
-
-        if rd < today_str:
-            if sid not in past_best or rd > past_best[sid]['release_date']:
-                past_best[sid] = rec
-        else:
-            if sid not in future_best or rd < future_best[sid]['release_date']:
-                future_best[sid] = rec
-
-    # Combine: all upcoming + most recent past per series
-    seen = set()
-    for sid, rec in future_best.items():
-        key = (sid, rec['release_date'])
-        if key not in seen:
-            seen.add(key)
-            results.append(rec)
-
-    for sid, rec in past_best.items():
-        key = (sid, rec['release_date'])
-        if key not in seen:
-            seen.add(key)
-            results.append(rec)
-
-    for r in results:
-        log.info(f"  {r['series_id']:<22} {r['release_name']:<40} → {r['release_date']}")
+        })
+        log.info(f"  {sid:<22} {meta['name']:<40} → {rd}")
 
     log.info(f"  Total: {len(results)} releases from FRED API")
     return results
@@ -341,7 +318,6 @@ def scrape_bls():
         ("https://www.bls.gov/schedule/news_release/ximpim.htm", "Import/Export Prices",    "IR",       "%",  "low"),
     ]
 
-    today_str = TODAY.isoformat()
     for url, release_name, series_id, unit, impact in pages:
         try:
             resp = safe_get(url)
@@ -355,8 +331,6 @@ def scrape_bls():
                 continue
 
             schedule_table = tables[1]
-            past_best = None
-            future_found = False
             for row in schedule_table.find_all('tr')[1:]:
                 cells = row.find_all('td')
                 if len(cells) < 2:
@@ -367,7 +341,7 @@ def scrape_bls():
                 if not rd or not in_window(rd):
                     continue
 
-                rec = {
+                results.append({
                     'series_id':    series_id,
                     'release_name': release_name,
                     'release_date': rd,
@@ -376,18 +350,9 @@ def scrape_bls():
                     'unit':         unit,
                     'source':       'BLS',
                     'impact':       impact,
-                }
-
-                if rd < today_str:
-                    past_best = rec  # keep overwriting to get most recent past
-                elif not future_found:
-                    results.append(rec)
-                    log.info(f"  {series_id:<22} {release_name} → {rd}")
-                    future_found = True
-
-            if past_best:
-                results.append(past_best)
-                log.info(f"  {series_id:<22} {release_name} → {past_best['release_date']} (past)")
+                })
+                log.info(f"  {series_id:<22} {release_name} → {rd}")
+                break  # only next upcoming
 
         except Exception as e:
             log.error(f"  {series_id} error: {e}")
@@ -1374,10 +1339,9 @@ def scrape_conference_board():
 # ═══════════════════════════════════════════════════════════════
 def merge_results(*source_lists):
     """
-    Merge records from multiple sources, keyed by (series_id, release_date).
-    Priority:
+    Merge records from multiple sources. Priority:
     1. Prefer records with consensus estimates over those without
-    2. Prefer government sources (BLS/BEA/Census) for metadata
+    2. Prefer government sources (BLS/BEA/Census) for dates
     3. Prefer market sources (MarketWatch/Investing) for estimates
     """
     merged = {}
@@ -1385,22 +1349,22 @@ def merge_results(*source_lists):
 
     for source in source_lists:
         for item in source:
-            key = (item['series_id'], item.get('release_date', ''))
-            if key not in merged:
-                merged[key] = item.copy()
+            sid = item['series_id']
+            if sid not in merged:
+                merged[sid] = item.copy()
             else:
-                existing = merged[key]
+                existing = merged[sid]
                 # If new item has an estimate and existing doesn't, take the estimate
                 if item.get('estimate') is not None and existing.get('estimate') is None:
                     existing['estimate'] = item['estimate']
                 # If new item has an actual and existing doesn't, take the actual
                 if item.get('actual') is not None and existing.get('actual') is None:
                     existing['actual'] = item['actual']
-                # Prefer government source for impact/metadata
+                # Prefer government source dates
                 if (item.get('source') in PRIORITY_SOURCES and
                         existing.get('source') not in PRIORITY_SOURCES):
+                    existing['release_date'] = item['release_date']
                     existing['source'] = item['source']
-                    existing['impact'] = item.get('impact', existing.get('impact'))
 
     return list(merged.values())
 
