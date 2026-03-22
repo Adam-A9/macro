@@ -25,7 +25,7 @@ function renderCalendar(events, from, to) {
   if (!grid) return;
 
   if (sorted.length === 0) {
-    grid.innerHTML = '<div class="cal-empty">No events in the next 14 days.</div>';
+    grid.innerHTML = '<div class="cal-empty">No recent or upcoming events found.</div>';
     return;
   }
 
@@ -45,10 +45,17 @@ function renderCalendar(events, from, to) {
     const evParts  = ev.date.split('-').map(Number);
     const evDate   = new Date(evParts[0], evParts[1] - 1, evParts[2]);
     const daysAway = Math.round((evDate - today) / 86400000);
+    const isPast   = daysAway < 0;
+    const pastClass = isPast ? ' cal-past' : '';
     const daysColor =
+      isPast         ? 'var(--muted)'   :
       daysAway === 0 ? 'var(--accent2)' :
       daysAway <= 3  ? 'var(--warn)'    : 'var(--text)';
-    const daysLabel = daysAway === 0 ? 'today' : daysAway === 1 ? 'day' : 'days';
+    const daysLabel =
+      isPast         ? (daysAway === -1 ? 'day ago' : 'days ago') :
+      daysAway === 0 ? 'today' :
+      daysAway === 1 ? 'day' : 'days';
+    const daysNum = isPast ? Math.abs(daysAway) : (daysAway === 0 ? '–' : daysAway);
 
     // Impact badge — only render for high and medium; skip low
     let impactBadge = '';
@@ -59,20 +66,20 @@ function renderCalendar(events, from, to) {
     }
 
     html +=
-      '<div class="cal-date' + lastClass + fomcClass + '">' +
+      '<div class="cal-date' + lastClass + fomcClass + pastClass + '">' +
         '<div class="cal-date-day">' + dateStr + '</div>' +
         (timeStr ? '<div class="cal-date-time">' + timeStr + '</div>' : '') +
       '</div>' +
 
-      '<div class="cal-days' + lastClass + fomcClass + '">' +
+      '<div class="cal-days' + lastClass + fomcClass + pastClass + '">' +
         '<div class="cal-days-num" style="color:' + daysColor + ';">' +
-          (daysAway === 0 ? '–' : daysAway) +
+          daysNum +
         '</div>' +
         '<div class="cal-days-label">' + daysLabel + '</div>' +
       '</div>' +
 
-      '<div class="cal-event' + fomcClass + lastClass + '">' +
-        '<span class="cal-bar" style="background:' + color + ';"></span>' +
+      '<div class="cal-event' + fomcClass + lastClass + pastClass + '">' +
+        '<span class="cal-bar" style="background:' + color + ';' + (isPast ? 'opacity:0.4;' : '') + '"></span>' +
         '<div>' +
           '<div class="cal-name">' + ev.event + '</div>' +
           '<div class="cal-sub">' + ev.source + ' · ' + ev.freq + '</div>' +
@@ -80,7 +87,7 @@ function renderCalendar(events, from, to) {
         impactBadge +
       '</div>' +
 
-      '<div class="cal-prev' + fomcClass + lastClass + '">' +
+      '<div class="cal-prev' + fomcClass + lastClass + pastClass + '">' +
         '<div style="text-align:right;">' +
           '<div class="cal-prev-label">' + ev.freq + '</div>' +
         '</div>' +
@@ -120,6 +127,12 @@ const RELEASE_META = {
   175: { name: 'Construction Spending',            time: '10:00', freq: 'MoM', source: 'Census',          impact: 'low'    },
   180: { name: 'Consumer Sentiment',               time: '10:00', freq: 'MoM', source: 'Univ of Michigan',impact: 'low'    },
   200: { name: 'Pending Home Sales',               time: '10:00', freq: 'MoM', source: 'NAR',             impact: 'low'    },
+  22:  { name: 'Durable Goods Orders',            time: '08:30', freq: 'MoM', source: 'Census',          impact: 'medium' },
+  32:  { name: 'Average Hourly Earnings',          time: '08:30', freq: 'MoM', source: 'BLS',             impact: 'medium' },
+  69:  { name: 'Trade Balance',                    time: '08:30', freq: 'MoM', source: 'Census/BEA',      impact: 'medium' },
+  83:  { name: 'Factory Orders',                   time: '10:00', freq: 'MoM', source: 'Census',          impact: 'low'    },
+  116: { name: 'Capacity Utilization',             time: '09:15', freq: 'MoM', source: 'Federal Reserve', impact: 'low'    },
+  117: { name: 'Continuing Jobless Claims',        time: '08:30', freq: 'WoW', source: 'Dept of Labor',   impact: 'low'    },
 };
 
 // FOMC meeting decision dates (announced ~1 year in advance by the Fed).
@@ -147,7 +160,8 @@ const FOMC_DATES = [
 async function fetchCalendar() {
   const now    = new Date();
   const today  = now.toISOString().slice(0, 10);
-  const future = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const past   = new Date(now.getTime() - 7 * 86400000).toISOString().slice(0, 10);
+  const future = new Date(now.getTime() + 14 * 86400000).toISOString().slice(0, 10);
 
   let events = [];
 
@@ -155,7 +169,7 @@ async function fetchCalendar() {
     const url = 'https://api.stlouisfed.org/fred/releases/dates' +
       '?api_key=' + FRED_API_KEY +
       '&file_type=json' +
-      '&realtime_start=' + today +
+      '&realtime_start=' + past +
       '&realtime_end='   + future +
       '&include_release_dates_with_no_data=false';
 
@@ -163,7 +177,7 @@ async function fetchCalendar() {
 
     if (json.release_dates && Array.isArray(json.release_dates)) {
       events = json.release_dates
-        .filter(r => r.date >= today && r.date <= future && RELEASE_META[r.release_id])
+        .filter(r => r.date >= past && r.date <= future && RELEASE_META[r.release_id])
         .map(r => {
           const meta = RELEASE_META[r.release_id];
           return {
@@ -180,9 +194,9 @@ async function fetchCalendar() {
     console.warn('Calendar fetch failed:', e.message);
   }
 
-  // Merge in FOMC dates
+  // Merge in FOMC dates (include recent past)
   FOMC_DATES.forEach(f => {
-    if (f.date >= today && f.date <= future) {
+    if (f.date >= past && f.date <= future) {
       events.push({
         date:   f.date,
         time:   f.time,
@@ -203,5 +217,21 @@ async function fetchCalendar() {
     return true;
   });
 
-  renderCalendar(events, today, future);
+  // Separate past and upcoming events
+  var pastEvents = events.filter(ev => ev.date < today);
+  var upcoming   = events.filter(ev => ev.date >= today);
+
+  // Sort each group by date
+  pastEvents.sort((a, b) => new Date(b.date) - new Date(a.date)); // most recent first
+  upcoming.sort((a, b) => new Date(a.date) - new Date(b.date));   // soonest first
+
+  // Guarantee: 1 most recent past + at least 2 upcoming (if available)
+  var display = [];
+  if (pastEvents.length > 0) display.push(pastEvents[0]);
+  display = display.concat(upcoming.slice(0, Math.max(2, upcoming.length)));
+
+  // Final sort chronologically for rendering
+  display.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  renderCalendar(display, past, future);
 }
