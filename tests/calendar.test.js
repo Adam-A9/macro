@@ -44,10 +44,10 @@ describe('renderCalendar', () => {
     document.body.removeChild(container);
   });
 
-  it('shows "No events" message when event list is empty', () => {
+  it('shows empty message when event list is empty', () => {
     renderCalendar([], '2026-03-17', '2026-03-31');
     const grid = document.getElementById('calendarGrid');
-    assert.ok(grid.textContent.includes('No events'), 'should show empty state');
+    assert.ok(grid.textContent.includes('No recent or upcoming'), 'should show empty state');
   });
 
   it('renders event rows for each provided event', () => {
@@ -91,6 +91,27 @@ describe('renderCalendar', () => {
     renderCalendar(events, '2026-03-17', '2026-03-31');
     const grid = document.getElementById('calendarGrid');
     assert.ok(grid.innerHTML.includes('cal-fomc'), 'Fed events should have fomc CSS class');
+  });
+
+  it('applies cal-past CSS class for events before today', () => {
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    const events = [
+      { date: yesterday, time: '08:30', event: 'Past CPI', freq: 'MoM', source: 'BLS', impact: 'high' },
+    ];
+    renderCalendar(events, '2026-03-10', '2026-03-31');
+    const grid = document.getElementById('calendarGrid');
+    assert.ok(grid.innerHTML.includes('cal-past'), 'past events should have cal-past CSS class');
+    assert.ok(grid.innerHTML.includes('ago'), 'past events should show "ago" in days label');
+  });
+
+  it('does not apply cal-past class for future events', () => {
+    const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+    const events = [
+      { date: tomorrow, time: '08:30', event: 'Future GDP', freq: 'QoQ', source: 'BEA', impact: 'high' },
+    ];
+    renderCalendar(events, '2026-03-10', '2026-03-31');
+    const grid = document.getElementById('calendarGrid');
+    assert.ok(!grid.innerHTML.includes('cal-past'), 'future events should not have cal-past class');
   });
 });
 
@@ -151,5 +172,63 @@ describe('RELEASE_META', () => {
 
   it('Jobless Claims (release 50) is marked medium impact', () => {
     assert.equal(RELEASE_META[50]?.impact, 'medium', 'Jobless Claims should be medium impact');
+  });
+
+  it('Durable Goods (release 22) is present and medium impact', () => {
+    assert.ok(RELEASE_META[22], 'Durable Goods should exist');
+    assert.equal(RELEASE_META[22].impact, 'medium', 'Durable Goods should be medium impact');
+  });
+
+  it('Trade Balance (release 69) is present and medium impact', () => {
+    assert.ok(RELEASE_META[69], 'Trade Balance should exist');
+    assert.equal(RELEASE_META[69].impact, 'medium', 'Trade Balance should be medium impact');
+  });
+
+  it('all release IDs in RELEASE_META match scraper FRED_RELEASES', () => {
+    // Verify key releases are mapped
+    const expectedIds = [10, 11, 15, 17, 19, 21, 22, 31, 32, 46, 50, 51, 53, 54, 55, 56, 69, 82, 83, 86, 113, 116, 117, 118, 160, 161, 175, 180, 200];
+    expectedIds.forEach(id => {
+      assert.ok(RELEASE_META[id], 'RELEASE_META should contain release ID ' + id);
+    });
+  });
+});
+
+describe('SERIES_META', () => {
+  it('is a non-empty object keyed by FRED series IDs', () => {
+    const keys = Object.keys(SERIES_META);
+    assert.ok(keys.length > 0, 'should have at least one series mapped');
+  });
+
+  it('each entry has name, time, and freq fields', () => {
+    Object.entries(SERIES_META).forEach(([sid, meta]) => {
+      assert.ok('name' in meta, sid + ' missing name');
+      assert.ok('time' in meta, sid + ' missing time');
+      assert.ok('freq' in meta, sid + ' missing freq');
+    });
+  });
+
+  it('covers all key series from the scraper', () => {
+    const expectedSeries = [
+      'CPIAUCSL', 'PPIACO', 'PAYEMS', 'ICSA', 'GDP', 'PCEPI',
+      'RSAFS', 'HOUST', 'DGORDER', 'BOPGSTB', 'MANEMP', 'NMFCI'
+    ];
+    expectedSeries.forEach(sid => {
+      assert.ok(SERIES_META[sid], 'SERIES_META should contain ' + sid);
+    });
+  });
+
+  it('CPI series has correct display metadata', () => {
+    assert.equal(SERIES_META['CPIAUCSL'].time, '08:30');
+    assert.equal(SERIES_META['CPIAUCSL'].freq, 'MoM');
+  });
+
+  it('weekly series (ICSA, CCSA) use WoW frequency', () => {
+    assert.equal(SERIES_META['ICSA'].freq, 'WoW', 'Initial Claims should be WoW');
+    assert.equal(SERIES_META['CCSA'].freq, 'WoW', 'Continuing Claims should be WoW');
+  });
+
+  it('quarterly series (GDP, ECI) use QoQ frequency', () => {
+    assert.equal(SERIES_META['GDP'].freq, 'QoQ', 'GDP should be QoQ');
+    assert.equal(SERIES_META['ECIWAG'].freq, 'QoQ', 'ECI should be QoQ');
   });
 });
