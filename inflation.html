@@ -467,7 +467,7 @@
   }
   .calendar-grid {
     display: grid;
-    grid-template-columns: 80px 52px 1fr auto;
+    grid-template-columns: 80px 52px 1fr 70px 70px 70px;
     border: 1px solid var(--border);
   }
   .cal-date {
@@ -517,16 +517,32 @@
     letter-spacing: 0.05em;
     margin-top: 2px;
   }
-  .cal-prev {
-    padding: 8px 12px;
+  .cal-col-prev, .cal-col-est, .cal-col-act {
+    padding: 8px 8px;
     border-bottom: 1px solid var(--border);
     border-left: 1px solid var(--border);
     display: flex;
     align-items: center;
     justify-content: flex-end;
   }
-  .cal-prev-label { color: var(--muted); font-size: 9px; }
-  .cal-prev-val { color: var(--text); font-size: 10px; margin-top: 1px; text-align: right; }
+  .cal-hdr {
+    border-bottom: 1px solid var(--border);
+  }
+  .cal-hdr-label {
+    padding: 4px 8px;
+    border-left: 1px solid var(--border);
+    font-size: 8px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    text-align: right;
+    text-transform: uppercase;
+  }
+  .cal-est-dash {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+  }
   .cal-est-group {
     display: grid;
     grid-template-columns: auto auto;
@@ -562,7 +578,9 @@
   }
   .cal-grid-last .cal-date,
   .cal-grid-last .cal-event,
-  .cal-grid-last .cal-prev { border-bottom: none; }
+  .cal-grid-last .cal-col-prev,
+  .cal-grid-last .cal-col-est,
+  .cal-grid-last .cal-col-act { border-bottom: none; }
   .cal-legend {
     display: flex;
     gap: 16px;
@@ -591,7 +609,7 @@
   @media (max-width: 768px) {
     .calendar-section { padding: 0 12px 16px; }
     .calendar-grid { grid-template-columns: 65px 1fr; }
-    .cal-prev { display: none; }
+    .cal-col-prev, .cal-col-est, .cal-col-act, .cal-hdr-label { display: none; }
     .cal-days { display: none; }
   }
 
@@ -1240,7 +1258,7 @@
   }
   .calendar-grid {
     display: grid;
-    grid-template-columns: 80px 52px 1fr auto;
+    grid-template-columns: 80px 52px 1fr 70px 70px 70px;
     border: 1px solid var(--border);
   }
   .cal-date {
@@ -1290,16 +1308,32 @@
     letter-spacing: 0.05em;
     margin-top: 2px;
   }
-  .cal-prev {
-    padding: 8px 12px;
+  .cal-col-prev, .cal-col-est, .cal-col-act {
+    padding: 8px 8px;
     border-bottom: 1px solid var(--border);
     border-left: 1px solid var(--border);
     display: flex;
     align-items: center;
     justify-content: flex-end;
   }
-  .cal-prev-label { color: var(--muted); font-size: 9px; }
-  .cal-prev-val { color: var(--text); font-size: 10px; margin-top: 1px; text-align: right; }
+  .cal-hdr {
+    border-bottom: 1px solid var(--border);
+  }
+  .cal-hdr-label {
+    padding: 4px 8px;
+    border-left: 1px solid var(--border);
+    font-size: 8px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    text-align: right;
+    text-transform: uppercase;
+  }
+  .cal-est-dash {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+  }
   .cal-est-group {
     display: grid;
     grid-template-columns: auto auto;
@@ -1335,7 +1369,9 @@
   }
   .cal-grid-last .cal-date,
   .cal-grid-last .cal-event,
-  .cal-grid-last .cal-prev { border-bottom: none; }
+  .cal-grid-last .cal-col-prev,
+  .cal-grid-last .cal-col-est,
+  .cal-grid-last .cal-col-act { border-bottom: none; }
   .cal-legend {
     display: flex;
     gap: 16px;
@@ -1364,7 +1400,7 @@
   @media (max-width: 768px) {
     .calendar-section { padding: 0 12px 16px; }
     .calendar-grid { grid-template-columns: 65px 1fr; }
-    .cal-prev { display: none; }
+    .cal-col-prev, .cal-col-est, .cal-col-act, .cal-hdr-label { display: none; }
     .cal-days { display: none; }
   }
 

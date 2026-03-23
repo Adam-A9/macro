@@ -32,7 +32,13 @@ function renderCalendar(events, from, to) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  let html = '';
+  let html =
+    '<div class="cal-hdr"></div>' +
+    '<div class="cal-hdr"></div>' +
+    '<div class="cal-hdr"></div>' +
+    '<div class="cal-hdr cal-hdr-label">Previous</div>' +
+    '<div class="cal-hdr cal-hdr-label">Estimate</div>' +
+    '<div class="cal-hdr cal-hdr-label">Actual</div>';
   sorted.forEach((ev, idx) => {
     const isLast    = idx === sorted.length - 1;
     const lastClass = isLast  ? ' cal-grid-last' : '';
@@ -87,27 +93,22 @@ function renderCalendar(events, from, to) {
         impactBadge +
       '</div>' +
 
-      '<div class="cal-prev' + fomcClass + lastClass + pastClass + '">' +
+      '<div class="cal-col-prev' + fomcClass + lastClass + pastClass + '">' +
+        (ev.prior != null ? '<span class="cal-est-val cal-est-prior">' + ev.prior + (ev.unit || '') + '</span>' : '<span class="cal-est-dash">–</span>') +
+      '</div>' +
+
+      '<div class="cal-col-est' + fomcClass + lastClass + pastClass + '">' +
+        (ev.estimate != null ? '<span class="cal-est-val">' + ev.estimate + (ev.unit || '') + '</span>' : '<span class="cal-est-dash">–</span>') +
+      '</div>' +
+
+      '<div class="cal-col-act' + fomcClass + lastClass + pastClass + '">' +
         (function() {
-          if (ev.estimate == null && ev.actual == null && ev.prior == null) {
-            return '<div style="text-align:right;"><div class="cal-prev-label">' + ev.freq + '</div></div>';
-          }
-          var u = ev.unit || '';
-          var parts = [];
-          if (ev.actual != null) {
-            var surpriseClass = '';
-            if (ev.estimate != null) {
-              surpriseClass = ev.actual > ev.estimate ? ' cal-beat' : ev.actual < ev.estimate ? ' cal-miss' : ' cal-inline';
-            }
-            parts.push('<span class="cal-est-label">A</span><span class="cal-est-val' + surpriseClass + '">' + ev.actual + u + '</span>');
-          }
+          if (ev.actual == null) return '<span class="cal-est-dash">–</span>';
+          var surpriseClass = '';
           if (ev.estimate != null) {
-            parts.push('<span class="cal-est-label">E</span><span class="cal-est-val">' + ev.estimate + u + '</span>');
+            surpriseClass = ev.actual > ev.estimate ? ' cal-beat' : ev.actual < ev.estimate ? ' cal-miss' : ' cal-inline';
           }
-          if (ev.prior != null) {
-            parts.push('<span class="cal-est-label">P</span><span class="cal-est-val cal-est-prior">' + ev.prior + u + '</span>');
-          }
-          return '<div class="cal-est-group">' + parts.join('') + '</div>';
+          return '<span class="cal-est-val' + surpriseClass + '">' + ev.actual + (ev.unit || '') + '</span>';
         })() +
       '</div>';
   });

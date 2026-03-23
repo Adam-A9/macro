@@ -112,7 +112,8 @@ describe('renderCalendar', () => {
     ];
     renderCalendar(events, '2026-03-17', '2026-03-31');
     const grid = document.getElementById('calendarGrid');
-    assert.ok(grid.innerHTML.includes('cal-est-group'), 'should render estimate group');
+    assert.ok(grid.innerHTML.includes('cal-col-est'), 'should render estimate column');
+    assert.ok(grid.innerHTML.includes('cal-col-prev'), 'should render previous column');
     assert.ok(grid.textContent.includes('2.9%'), 'should display estimate value');
     assert.ok(grid.textContent.includes('2.7%'), 'should display prior value');
     assert.ok(grid.innerHTML.includes('cal-est-prior'), 'prior should have prior styling');
@@ -142,15 +143,17 @@ describe('renderCalendar', () => {
     assert.ok(grid.innerHTML.includes('cal-miss'), 'actual < estimate should have miss class');
   });
 
-  it('falls back to frequency label when no estimates exist', () => {
+  it('renders dash placeholders when no estimates exist', () => {
     const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
     const events = [
       { date: tomorrow, time: '14:00', event: 'Fed Decision', freq: 'Fed', source: 'Federal Reserve', impact: 'high' },
     ];
     renderCalendar(events, '2026-03-17', '2026-03-31');
     const grid = document.getElementById('calendarGrid');
-    assert.ok(grid.innerHTML.includes('cal-prev-label'), 'events without estimates should show freq label');
-    assert.ok(!grid.innerHTML.includes('cal-est-group'), 'should not render estimate group');
+    assert.ok(grid.innerHTML.includes('cal-est-dash'), 'events without data should show dash placeholders');
+    assert.ok(grid.innerHTML.includes('cal-col-prev'), 'should still render previous column');
+    assert.ok(grid.innerHTML.includes('cal-col-est'), 'should still render estimate column');
+    assert.ok(grid.innerHTML.includes('cal-col-act'), 'should still render actual column');
   });
 
   it('does not apply cal-past class for future events', () => {
