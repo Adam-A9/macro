@@ -1388,6 +1388,9 @@ def merge_results(*source_lists):
                 # If new item has an actual and existing doesn't, take the actual
                 if item.get('actual') is not None and existing.get('actual') is None:
                     existing['actual'] = item['actual']
+                # If new item has a prior and existing doesn't, take the prior
+                if item.get('prior') is not None and existing.get('prior') is None:
+                    existing['prior'] = item['prior']
                 # Prefer government source metadata
                 if (item.get('source') in PRIORITY_SOURCES and
                         existing.get('source') not in PRIORITY_SOURCES):
@@ -1440,6 +1443,91 @@ def apply_manual_estimates(records):
 
 
 # ═══════════════════════════════════════════════════════════════
+# PRIOR VALUES (from FRED observations)
+# ═══════════════════════════════════════════════════════════════
+# Series where FRED stores raw levels but the calendar shows period-over-period % change.
+# For these, we compute: (value / prev_value - 1) * 100, rounded to 1 decimal.
+_PCT_CHANGE_SERIES = {
+    "CPIAUCSL", "CPILFESL", "PPIACO", "PCEPI", "PCEPILFE",
+    "RSAFS", "INDPRO",
+}
+
+# Series where FRED stores raw levels and the calendar shows month-over-month change in thousands.
+_DIFF_SERIES = {
+    "PAYEMS",
+}
+
+# Series that are not available as standard FRED observation endpoints
+# (e.g. composite/text releases like Beige Book, FOMC minutes)
+_SKIP_SERIES = {"BEIGE_BOOK", "FOMC_MINUTES"}
+
+
+def fetch_prior_values(records):
+    """
+    Fetch the most recent released observation from FRED for each series
+    and attach it as the 'prior' field on each record.
+    """
+    log.info("── Prior Values (FRED) ──────────────────────────")
+
+    # Collect unique series IDs that need priors
+    series_ids = sorted({r['series_id'] for r in records} - _SKIP_SERIES)
+    if not series_ids:
+        log.info("  No series to fetch priors for")
+        return records
+
+    prior_map = {}  # series_id → prior value
+
+    for sid in series_ids:
+        # Fetch the two most recent observations so we can compute % change if needed
+        limit = 2 if sid in _PCT_CHANGE_SERIES or sid in _DIFF_SERIES else 1
+        url = (
+            f"https://api.stlouisfed.org/fred/series/observations"
+            f"?series_id={sid}&api_key={FRED_API_KEY}"
+            f"&file_type=json&sort_order=desc&limit={limit}"
+        )
+        resp = safe_get(url, retries=2, timeout=10)
+        if not resp:
+            continue
+        try:
+            obs = resp.json().get('observations', [])
+            if not obs:
+                continue
+            raw = obs[0].get('value', '').strip()
+            if raw in ('', '.'):
+                continue
+            val = float(raw)
+
+            if sid in _PCT_CHANGE_SERIES and len(obs) >= 2:
+                prev_raw = obs[1].get('value', '').strip()
+                if prev_raw not in ('', '.'):
+                    prev_val = float(prev_raw)
+                    if prev_val != 0:
+                        prior_map[sid] = round((val / prev_val - 1) * 100, 1)
+            elif sid in _DIFF_SERIES and len(obs) >= 2:
+                prev_raw = obs[1].get('value', '').strip()
+                if prev_raw not in ('', '.'):
+                    prior_map[sid] = round(val - float(prev_raw), 1)
+            else:
+                prior_map[sid] = val
+        except (ValueError, KeyError, json.JSONDecodeError) as e:
+            log.warning(f"  Prior parse error for {sid}: {e}")
+
+    # Attach priors to records
+    applied = 0
+    for r in records:
+        sid = r['series_id']
+        if sid in prior_map:
+            r['prior'] = prior_map[sid]
+            applied += 1
+
+    log.info(f"  Fetched priors for {len(prior_map)}/{len(series_ids)} series, applied to {applied} records")
+    for sid, val in sorted(prior_map.items()):
+        log.info(f"    {sid:<22} prior={val}")
+
+    return records
+
+
+# ═══════════════════════════════════════════════════════════════
 # SUPABASE UPSERT
 # ═══════════════════════════════════════════════════════════════
 def upsert_to_supabase(records):
@@ -1466,6 +1554,7 @@ def upsert_to_supabase(records):
         "release_date": r['release_date'],
         "estimate":     r.get('estimate'),
         "actual":       r.get('actual'),
+        "prior":        r.get('prior'),
         "unit":         r.get('unit', ''),
         "source":       r.get('source', ''),
         "impact":       r.get('impact', 'low'),
@@ -1645,6 +1734,9 @@ if __name__ == "__main__":
         merged = apply_manual_estimates(merged)
     else:
         log.info("  None set — edit MANUAL_ESTIMATES dict to add them")
+
+    # ── Fetch prior values from FRED ──
+    merged = fetch_prior_values(merged)
 
     # ── Print results ──
     print_summary(merged, market_data)
