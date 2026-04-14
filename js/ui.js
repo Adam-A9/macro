@@ -47,8 +47,8 @@ function updateCard(name, rawObs) {
   chgEl.textContent = '';
   dateEl.textContent = cfg.freq;
 
-  // Sparkline — use cfg.bar colour if defined, otherwise cyan default
-  makeSparkline('spark-' + name, obs, '#3b82f6');
+  // Sparkline — same 8-point window as the mini-table below
+  makeSparkline('spark-' + name, obs.slice(-8), '#3b82f6');
 
   // ── Mini heatmap table ────────────────────────────────
   const tableObs9 = obs.slice(-9);
