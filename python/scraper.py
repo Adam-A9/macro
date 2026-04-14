@@ -266,50 +266,100 @@ def _fred_transform(sid, observations):
 
 
 def fetch_fred_values(records):
-    """Fetch prior + actual values from FRED for all series in records."""
+    """Fetch prior + actual values from FRED for all series in records.
+
+    Fetches a 6-month observation window per series (sorted ascending), then
+    for each record finds the last observation whose date falls before the
+    release_date — that observation represents the period being released.
+    The one before it is the prior.  This correctly handles:
+      • Multiple records per series in the window (e.g. weekly ICSA)
+      • FRED publishing delays (recent `.` values are skipped automatically)
+      • PCT_CHANGE / DIFF_SERIES transformations per record
+    """
     log.info("── FRED Observations (Priors + Actuals) ─────────")
 
     sids = sorted({r['series_id'] for r in records.values()})
     log.info(f"  Fetching {len(sids)} series...")
 
-    value_map = {}  # sid → (actual, prior)
+    obs_start = (TODAY - timedelta(days=180)).isoformat()
 
+    # obs_map: sid → list of (date_str, float_value) sorted ascending
+    obs_map = {}
     for sid in sids:
-        limit = 3 if sid in PCT_CHANGE or sid in DIFF_SERIES else 2
         url = (
             f"https://api.stlouisfed.org/fred/series/observations"
             f"?series_id={sid}&api_key={FRED_API_KEY}"
-            f"&file_type=json&sort_order=desc&limit={limit}"
+            f"&file_type=json&sort_order=asc"
+            f"&observation_start={obs_start}"
+            f"&observation_end={TODAY.isoformat()}"
         )
         resp = safe_get(url, retries=2, timeout=10)
         if not resp:
+            log.warning(f"  {sid}: FRED request failed")
             continue
         try:
-            obs = resp.json().get('observations', [])
-            actual, prior = _fred_transform(sid, obs)
-            if actual is not None or prior is not None:
-                value_map[sid] = (actual, prior)
+            pairs = []
+            for obs in resp.json().get('observations', []):
+                raw = obs.get('value', '').strip()
+                if raw in ('', '.'):
+                    continue
+                try:
+                    pairs.append((obs['date'], float(raw)))
+                except (ValueError, KeyError):
+                    continue
+            if pairs:
+                obs_map[sid] = pairs
+            else:
+                log.warning(f"  {sid}: no valid observations")
         except Exception as e:
             log.warning(f"  {sid}: parse error: {e}")
 
-    # Apply to records
+    # Apply to records — match each record to the right observation
     applied_act = 0
     applied_pri = 0
     for key, rec in records.items():
         sid = rec['series_id']
-        if sid not in value_map:
+        if sid not in obs_map:
             continue
-        actual, prior = value_map[sid]
+
+        pairs = obs_map[sid]          # [(date, value), ...] ascending
+        release_date = rec['release_date']
+
+        # Find the last observation whose date is strictly before release_date.
+        # That observation corresponds to the period being released.
+        curr_idx = None
+        for i, (obs_date, _) in enumerate(pairs):
+            if obs_date < release_date:
+                curr_idx = i
+            else:
+                break
+
+        if curr_idx is None:
+            continue
+
+        curr_val = pairs[curr_idx][1]
+        prev_val = pairs[curr_idx - 1][1] if curr_idx >= 1 else None
+        prev_prev_val = pairs[curr_idx - 2][1] if curr_idx >= 2 else None
+
+        if sid in PCT_CHANGE:
+            actual = round((curr_val / prev_val - 1) * 100, 1) if prev_val else None
+            prior = round((prev_val / prev_prev_val - 1) * 100, 1) if (prev_val and prev_prev_val) else None
+        elif sid in DIFF_SERIES:
+            actual = round(curr_val - prev_val, 1) if prev_val is not None else None
+            prior = round(prev_val - prev_prev_val, 1) if (prev_val is not None and prev_prev_val is not None) else None
+        else:
+            actual = curr_val
+            prior = prev_val
 
         # Only set actual for past/today events
-        if actual is not None and rec['release_date'] <= TODAY.isoformat():
+        if actual is not None and release_date <= TODAY.isoformat():
             rec['actual'] = actual
             applied_act += 1
-        if prior is not None:
+        if prior is not None and rec['prior'] is None:
             rec['prior'] = prior
             applied_pri += 1
 
-    log.info(f"  Values: {len(value_map)}/{len(sids)} series | "
+    log.info(f"  Values: {len(obs_map)}/{len(sids)} series | "
              f"Actuals applied: {applied_act} | Priors applied: {applied_pri}")
     return records
 
@@ -321,6 +371,8 @@ def fetch_investing_estimates(records):
     """
     Scrape Investing.com economic calendar for consensus estimates.
     Uses their server-rendered HTML with aggressive headers.
+    FRED observations are the authoritative source for actuals/priors;
+    this step only fills in consensus estimates that FRED doesn't provide.
     """
     log.info("── Investing.com Estimates ─────────────────────")
     estimates_found = 0
@@ -331,77 +383,59 @@ def fetch_investing_estimates(records):
         log.info("  All records already have estimates")
         return records
 
-    # Scrape current week and next week
-    for week_offset in range(3):
-        target = TODAY + timedelta(weeks=week_offset)
-        start = target - timedelta(days=target.weekday())  # Monday
-        end = start + timedelta(days=6)  # Sunday
+    url = "https://www.investing.com/economic-calendar/"
+    resp = safe_get(url, headers={
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                      "AppleWebKit/537.36 (KHTML, like Gecko) "
+                      "Chrome/126.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": "https://www.google.com/",
+        "Cache-Control": "no-cache",
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "cross-site",
+    })
+    if not resp:
+        log.warning("  Investing.com request failed")
+        return records
 
-        url = "https://www.investing.com/economic-calendar/"
-        resp = safe_get(url, headers={
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                          "AppleWebKit/537.36 (KHTML, like Gecko) "
-                          "Chrome/126.0.0.0 Safari/537.36",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Language": "en-US,en;q=0.9",
-            "Referer": "https://www.google.com/",
-            "Cache-Control": "no-cache",
-            "Sec-Fetch-Dest": "document",
-            "Sec-Fetch-Mode": "navigate",
-            "Sec-Fetch-Site": "cross-site",
-        })
-        if not resp:
-            continue
+    try:
+        from bs4 import BeautifulSoup
+        soup = BeautifulSoup(resp.text, 'html.parser')
 
-        try:
-            from bs4 import BeautifulSoup
-            soup = BeautifulSoup(resp.text, 'html.parser')
-
-            for row in soup.find_all('tr', class_=re.compile(r'js-event-item')):
-                # US events only
-                flag = row.find('td', class_=re.compile(r'flag'))
-                if flag:
-                    span = flag.find('span')
-                    if span and 'United States' not in span.get('title', ''):
-                        continue
-
-                event_cell = row.find('td', class_=re.compile(r'event'))
-                if not event_cell:
+        for row in soup.find_all('tr', class_=re.compile(r'js-event-item')):
+            # US events only
+            flag = row.find('td', class_=re.compile(r'flag'))
+            if flag:
+                span = flag.find('span')
+                if span and 'United States' not in span.get('title', ''):
                     continue
 
-                event_name = event_cell.get_text(strip=True)
-                sid = match_event_name(event_name)
-                if not sid or sid not in needs_estimate:
-                    continue
+            event_cell = row.find('td', class_=re.compile(r'event'))
+            if not event_cell:
+                continue
 
-                # Extract forecast
-                fore_cell = row.find('td', class_=re.compile(r'fore'))
-                if fore_cell:
-                    text = fore_cell.get_text(strip=True).replace(',', '')
-                    m = re.search(r'(-?\d+\.?\d*)', text)
-                    if m:
-                        estimate = float(m.group(1))
-                        # Apply to matching records
-                        for rec in records.values():
-                            if rec['series_id'] == sid and rec['estimate'] is None:
-                                rec['estimate'] = estimate
-                                estimates_found += 1
-                        needs_estimate.discard(sid)
+            event_name = event_cell.get_text(strip=True)
+            sid = match_event_name(event_name)
+            if not sid or sid not in needs_estimate:
+                continue
 
-                # Extract actual if present
-                act_cell = row.find('td', class_=re.compile(r'act'))
-                if act_cell:
-                    text = act_cell.get_text(strip=True).replace(',', '')
-                    m = re.search(r'(-?\d+\.?\d*)', text)
-                    if m:
-                        actual = float(m.group(1))
-                        for rec in records.values():
-                            if rec['series_id'] == sid and rec['actual'] is None:
-                                if rec['release_date'] <= TODAY.isoformat():
-                                    rec['actual'] = actual
+            # Extract forecast
+            fore_cell = row.find('td', class_=re.compile(r'fore'))
+            if fore_cell:
+                text = fore_cell.get_text(strip=True).replace(',', '')
+                m = re.search(r'(-?\d+\.?\d*)', text)
+                if m:
+                    estimate = float(m.group(1))
+                    for rec in records.values():
+                        if rec['series_id'] == sid and rec['estimate'] is None:
+                            rec['estimate'] = estimate
+                            estimates_found += 1
+                    needs_estimate.discard(sid)
 
-        except Exception as e:
-            log.warning(f"  Investing.com parse error: {e}")
+    except Exception as e:
+        log.warning(f"  Investing.com parse error: {e}")
 
     log.info(f"  Estimates found: {estimates_found}")
     return records
@@ -558,6 +592,12 @@ def upsert_to_supabase(records):
     # Fetch existing to preserve non-null values
     existing = _fetch_existing(list(records.keys()), headers)
 
+    def _coalesce(new, old):
+        """Prefer new value; fall back to old only when new is None.
+        Using `or` would incorrectly discard legitimate zero values (e.g. 0.0% CPI).
+        """
+        return new if new is not None else old
+
     rows = []
     for key, rec in records.items():
         prev = existing.get(key, {})
@@ -565,9 +605,9 @@ def upsert_to_supabase(records):
             "series_id":    rec['series_id'],
             "release_name": rec['release_name'],
             "release_date": rec['release_date'],
-            "estimate":     rec.get('estimate') or prev.get('estimate'),
-            "actual":       rec.get('actual') or prev.get('actual'),
-            "prior":        rec.get('prior') or prev.get('prior'),
+            "estimate":     _coalesce(rec.get('estimate'), prev.get('estimate')),
+            "actual":       _coalesce(rec.get('actual'),   prev.get('actual')),
+            "prior":        _coalesce(rec.get('prior'),    prev.get('prior')),
             "unit":         rec.get('unit', ''),
             "source":       rec.get('source', ''),
             "impact":       rec.get('impact', 'low'),
