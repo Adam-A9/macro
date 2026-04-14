@@ -1443,14 +1443,14 @@
 </head>
 <body>
 <header class="header">
-  <div class="logo">MACRO<span> // Markets Dashboard</span></div>
+  <div class="logo">MACRO<span> // Sectors Dashboard</span></div>
   <div class="header-right">
     <div class="live-badge"><div class="live-dot"></div>Auto-Refresh ON</div>
     <span id="last-updated">–</span>
     <button class="refresh-btn" id="refreshBtn" onclick="fetchAll()">↻ Refresh</button>
   </div>
 </header>
-<nav class="nav-bar"><a href="index.html" class="nav-link">Macro</a><a href="inflation.html" class="nav-link">Inflation</a><a href="housing.html" class="nav-link">Housing</a><a href="labor.html" class="nav-link">Labor</a><a href="markets.html" class="nav-link active">Markets</a></nav>
+<nav class="nav-bar"><a href="index.html" class="nav-link">Macro</a><a href="inflation.html" class="nav-link">Inflation</a><a href="housing.html" class="nav-link">Housing</a><a href="labor.html" class="nav-link">Labor</a><a href="markets.html" class="nav-link active">Sectors</a></nav>
 <main class="main">
   <div class="error-msg" id="errorMsg"></div>
   <div class="kpi-card" id="card-Yield10Y" data-freq="dod">
@@ -1514,67 +1514,117 @@
     <div class="mini-table-wrap" id="mini-table-FedFunds"></div>
   </div>
 
-  <div class="section-label" style="grid-column:1/-1;">// Market Charts</div>
-  <div style="grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+  <div class="section-label" style="grid-column:1/-1;">// Sector Performance (SPDR ETFs · Daily)</div>
+  <div style="grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
     <div class="chart-panel" style="animation-delay:0.45s;">
       <div class="panel-header">
-        <div><div class="panel-title">S&P 500</div><div class="panel-sub">SPX · Daily</div></div>
+        <div><div class="panel-title">Technology</div><div class="panel-sub">XLK · SPDR</div></div>
         <div style="display:flex;gap:8px;align-items:center;">
-          <span id="spx-val" style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;">–</span>
-          <span id="spx-chg" style="font-size:11px;">–</span>
+          <span id="xlk-val" style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;">–</span>
+          <span id="xlk-chg" style="font-size:11px;">–</span>
         </div>
       </div>
-      <div class="chart-container" style="height:150px"><canvas id="chartSPX"></canvas></div>
+      <div class="chart-container" style="height:150px"><canvas id="chartXLK"></canvas></div>
     </div>
     <div class="chart-panel" style="animation-delay:0.5s;">
       <div class="panel-header">
-        <div><div class="panel-title">Nasdaq</div><div class="panel-sub">COMP · Daily</div></div>
+        <div><div class="panel-title">Industrials</div><div class="panel-sub">XLI · SPDR</div></div>
         <div style="display:flex;gap:8px;align-items:center;">
-          <span id="ndx-val" style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;">–</span>
-          <span id="ndx-chg" style="font-size:11px;">–</span>
+          <span id="xli-val" style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;">–</span>
+          <span id="xli-chg" style="font-size:11px;">–</span>
         </div>
       </div>
-      <div class="chart-container" style="height:150px"><canvas id="chartNDX"></canvas></div>
+      <div class="chart-container" style="height:150px"><canvas id="chartXLI"></canvas></div>
     </div>
     <div class="chart-panel" style="animation-delay:0.55s;">
       <div class="panel-header">
-        <div><div class="panel-title">Russell 2000</div><div class="panel-sub">RUT · Small Cap</div></div>
+        <div><div class="panel-title">Financials</div><div class="panel-sub">XLF · SPDR</div></div>
         <div style="display:flex;gap:8px;align-items:center;">
-          <span id="rut-val" style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;">–</span>
-          <span id="rut-chg" style="font-size:11px;">–</span>
+          <span id="xlf-val" style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;">–</span>
+          <span id="xlf-chg" style="font-size:11px;">–</span>
         </div>
       </div>
-      <div class="chart-container" style="height:150px"><canvas id="chartRUT"></canvas></div>
+      <div class="chart-container" style="height:150px"><canvas id="chartXLF"></canvas></div>
     </div>
     <div class="chart-panel" style="animation-delay:0.6s;">
       <div class="panel-header">
-        <div><div class="panel-title">VIX</div><div class="panel-sub">Fear Index · Daily</div></div>
+        <div><div class="panel-title">Energy</div><div class="panel-sub">XLE · SPDR</div></div>
         <div style="display:flex;gap:8px;align-items:center;">
-          <span id="vix-val" style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;">–</span>
-          <span id="vix-chg" style="font-size:11px;">–</span>
+          <span id="xle-val" style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;">–</span>
+          <span id="xle-chg" style="font-size:11px;">–</span>
         </div>
       </div>
-      <div class="chart-container" style="height:150px"><canvas id="chartVIX"></canvas></div>
+      <div class="chart-container" style="height:150px"><canvas id="chartXLE"></canvas></div>
     </div>
     <div class="chart-panel" style="animation-delay:0.65s;">
       <div class="panel-header">
-        <div><div class="panel-title">Gold</div><div class="panel-sub">GC=F · Safe Haven</div></div>
+        <div><div class="panel-title">Health Care</div><div class="panel-sub">XLV · SPDR</div></div>
         <div style="display:flex;gap:8px;align-items:center;">
-          <span id="gold-val" style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;">–</span>
-          <span id="gold-chg" style="font-size:11px;">–</span>
+          <span id="xlv-val" style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;">–</span>
+          <span id="xlv-chg" style="font-size:11px;">–</span>
         </div>
       </div>
-      <div class="chart-container" style="height:150px"><canvas id="chartGold"></canvas></div>
+      <div class="chart-container" style="height:150px"><canvas id="chartXLV"></canvas></div>
     </div>
     <div class="chart-panel" style="animation-delay:0.7s;">
       <div class="panel-header">
-        <div><div class="panel-title">Bitcoin</div><div class="panel-sub">BTC-USD · Daily</div></div>
+        <div><div class="panel-title">Consumer Disc.</div><div class="panel-sub">XLY · SPDR</div></div>
         <div style="display:flex;gap:8px;align-items:center;">
-          <span id="btc-val" style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;">–</span>
-          <span id="btc-chg" style="font-size:11px;">–</span>
+          <span id="xly-val" style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;">–</span>
+          <span id="xly-chg" style="font-size:11px;">–</span>
         </div>
       </div>
-      <div class="chart-container" style="height:150px"><canvas id="chartBTC"></canvas></div>
+      <div class="chart-container" style="height:150px"><canvas id="chartXLY"></canvas></div>
+    </div>
+    <div class="chart-panel" style="animation-delay:0.75s;">
+      <div class="panel-header">
+        <div><div class="panel-title">Consumer Staples</div><div class="panel-sub">XLP · SPDR</div></div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span id="xlp-val" style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;">–</span>
+          <span id="xlp-chg" style="font-size:11px;">–</span>
+        </div>
+      </div>
+      <div class="chart-container" style="height:150px"><canvas id="chartXLP"></canvas></div>
+    </div>
+    <div class="chart-panel" style="animation-delay:0.8s;">
+      <div class="panel-header">
+        <div><div class="panel-title">Utilities</div><div class="panel-sub">XLU · SPDR</div></div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span id="xlu-val" style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;">–</span>
+          <span id="xlu-chg" style="font-size:11px;">–</span>
+        </div>
+      </div>
+      <div class="chart-container" style="height:150px"><canvas id="chartXLU"></canvas></div>
+    </div>
+    <div class="chart-panel" style="animation-delay:0.85s;">
+      <div class="panel-header">
+        <div><div class="panel-title">Materials</div><div class="panel-sub">XLB · SPDR</div></div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span id="xlb-val" style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;">–</span>
+          <span id="xlb-chg" style="font-size:11px;">–</span>
+        </div>
+      </div>
+      <div class="chart-container" style="height:150px"><canvas id="chartXLB"></canvas></div>
+    </div>
+    <div class="chart-panel" style="animation-delay:0.9s;">
+      <div class="panel-header">
+        <div><div class="panel-title">Real Estate</div><div class="panel-sub">XLRE · SPDR</div></div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span id="xlre-val" style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;">–</span>
+          <span id="xlre-chg" style="font-size:11px;">–</span>
+        </div>
+      </div>
+      <div class="chart-container" style="height:150px"><canvas id="chartXLRE"></canvas></div>
+    </div>
+    <div class="chart-panel" style="animation-delay:0.95s;">
+      <div class="panel-header">
+        <div><div class="panel-title">Comm. Services</div><div class="panel-sub">XLC · SPDR</div></div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span id="xlc-val" style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;">–</span>
+          <span id="xlc-chg" style="font-size:11px;">–</span>
+        </div>
+      </div>
+      <div class="chart-container" style="height:150px"><canvas id="chartXLC"></canvas></div>
     </div>
   </div>
 <script src="js/config.js"></script>
@@ -1592,12 +1642,17 @@ const FRED_SERIES = {
   "Yield30Y":    { id: "DGS30",          label: "30-Year Yield",       unit: "%", decimals: 2, freq: "DoD", desc: "The 30-year Treasury yield represents very long-term growth and inflation expectations — a three-decade bet on the US economy. It is the benchmark rate for long-term mortgages and pension fund liabilities. A key relationship to watch is whether the 30Y rises while the Fed is cutting rates: if long yields go up as the Fed cuts short rates, it signals the bond market does not believe inflation is beaten and is demanding more compensation for holding long duration. This bear steepening — short rates falling while long rates rise — has historically been associated with stagflationary environments." }
 };
 const MARKET = {
-  "^GSPC":   { label: "S&P 500",     canvasId: "chartSPX",  valId: "spx-val",  chgId: "spx-chg",  color: "#00d4ff" },
-  "^IXIC":   { label: "Nasdaq",      canvasId: "chartNDX",  valId: "ndx-val",  chgId: "ndx-chg",  color: "#00ff9d" },
-  "^RUT":    { label: "Russell 2000",canvasId: "chartRUT",  valId: "rut-val",  chgId: "rut-chg",  color: "#a78bfa" },
-  "^VIX":    { label: "VIX",         canvasId: "chartVIX",  valId: "vix-val",  chgId: "vix-chg",  color: "#ff3b5c" },
-  "GC=F":    { label: "Gold",        canvasId: "chartGold", valId: "gold-val", chgId: "gold-chg", color: "#ffd700" },
-  "BTC-USD": { label: "Bitcoin",     canvasId: "chartBTC",  valId: "btc-val",  chgId: "btc-chg",  color: "#f7931a" }
+  "XLK":  { label: "Technology",       canvasId: "chartXLK",  valId: "xlk-val",  chgId: "xlk-chg",  color: "#00d4ff" },
+  "XLI":  { label: "Industrials",      canvasId: "chartXLI",  valId: "xli-val",  chgId: "xli-chg",  color: "#ffd700" },
+  "XLF":  { label: "Financials",       canvasId: "chartXLF",  valId: "xlf-val",  chgId: "xlf-chg",  color: "#00ff9d" },
+  "XLE":  { label: "Energy",           canvasId: "chartXLE",  valId: "xle-val",  chgId: "xle-chg",  color: "#ff6b35" },
+  "XLV":  { label: "Health Care",      canvasId: "chartXLV",  valId: "xlv-val",  chgId: "xlv-chg",  color: "#a78bfa" },
+  "XLY":  { label: "Consumer Disc.",   canvasId: "chartXLY",  valId: "xly-val",  chgId: "xly-chg",  color: "#ff3b5c" },
+  "XLP":  { label: "Consumer Staples", canvasId: "chartXLP",  valId: "xlp-val",  chgId: "xlp-chg",  color: "#82cfff" },
+  "XLU":  { label: "Utilities",        canvasId: "chartXLU",  valId: "xlu-val",  chgId: "xlu-chg",  color: "#60a5fa" },
+  "XLB":  { label: "Materials",        canvasId: "chartXLB",  valId: "xlb-val",  chgId: "xlb-chg",  color: "#4ade80" },
+  "XLRE": { label: "Real Estate",      canvasId: "chartXLRE", valId: "xlre-val", chgId: "xlre-chg", color: "#fb923c" },
+  "XLC":  { label: "Comm. Services",   canvasId: "chartXLC",  valId: "xlc-val",  chgId: "xlc-chg",  color: "#f7931a" }
 };
 const HIGHER_IS_GOOD = ["Spread"];
 const DUAL_ROW       = [];
