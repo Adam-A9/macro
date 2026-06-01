@@ -63,3 +63,40 @@ describe('cellColor', () => {
     assert.equal(cellColor(5, 'CPI', false), null);
   });
 });
+
+describe('display interval helpers', () => {
+  beforeEach(() => { window.DUAL_ROW = []; });
+
+  it('uses configured frequency for standard series', () => {
+    const cfg = { freq: 'DoD', unit: '%', decimals: 2 };
+    assert.equal(getDisplayInterval('Yield10Y', cfg), 'DoD');
+
+    const display = buildDisplaySeries('Yield10Y', [
+      { date: '2026-05-29', value: 4.42 },
+      { date: '2026-06-01', value: 4.45 }
+    ], cfg);
+    assert.equal(display.interval, 'DoD');
+    assert.equal(display.unit, '%');
+    assert.equal(display.obs.length, 2);
+    assert.equal(formatDisplayValue(display.obs[1].value, display), '4.45%');
+  });
+
+  it('uses YoY display data for dual-row series so charts and tables match', () => {
+    window.DUAL_ROW = ['CPI'];
+    const cfg = { freq: 'MoM', unit: '', decimals: 2 };
+    const obs = [
+      { date: '2025-04-01', value: 100 },
+      { date: '2025-05-01', value: 110 },
+      { date: '2026-04-01', value: 105 },
+      { date: '2026-05-01', value: 121 }
+    ];
+
+    const display = buildDisplaySeries('CPI', obs, cfg);
+    assert.equal(display.interval, 'YoY');
+    assert.equal(display.unit, '%');
+    assert.deepEqual(display.obs.map(d => d.date), ['2026-04-01', '2026-05-01']);
+    assert.closeTo(display.obs[0].value, 5, 0.0001);
+    assert.closeTo(display.obs[1].value, 10, 0.0001);
+    assert.equal(formatDisplayValue(display.obs[1].value, display), '+10%');
+  });
+});

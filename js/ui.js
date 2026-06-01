@@ -20,6 +20,63 @@ function gradientColor(t, higherIsGood) {
   return 'rgba(0,' + gr + ',60,0.4)';
 }
 
+function findPriorObservation(obs, date, yearsBack) {
+  const priorDate = (parseInt(date.slice(0, 4), 10) - yearsBack) + date.slice(4);
+  const exact = obs.find(p => p.date === priorDate);
+  if (exact) return exact;
+
+  const target = Date.parse(priorDate + 'T00:00:00Z');
+  let closest = null;
+  let closestDays = Infinity;
+  obs.forEach(p => {
+    if (p.date >= date) return;
+    const distanceDays = Math.abs(Date.parse(p.date + 'T00:00:00Z') - target) / 86400000;
+    if (distanceDays <= 45 && distanceDays < closestDays) {
+      closest = p;
+      closestDays = distanceDays;
+    }
+  });
+  return closest;
+}
+
+function getDisplayInterval(name, cfg) {
+  if (cfg.displayFreq) return cfg.displayFreq;
+  return DUAL_ROW.includes(name) ? 'YoY' : cfg.freq;
+}
+
+function buildDisplaySeries(name, obs, cfg) {
+  const interval = getDisplayInterval(name, cfg);
+  if (interval !== 'YoY') {
+    return {
+      interval,
+      unit: cfg.unit,
+      decimals: cfg.decimals,
+      showSign: false,
+      obs
+    };
+  }
+
+  const fullObs = seriesRawData[name] || obs;
+  return {
+    interval,
+    unit: '%',
+    decimals: 2,
+    showSign: true,
+    obs: obs.map(d => {
+      const prior = findPriorObservation(fullObs, d.date, 1);
+      return {
+        date: d.date,
+        value: prior ? ((d.value - prior.value) / Math.abs(prior.value)) * 100 : null
+      };
+    }).filter(d => d.value !== null)
+  };
+}
+
+function formatDisplayValue(value, display) {
+  const prefix = display.showSign && value > 0 ? '+' : '';
+  return prefix + value.toLocaleString(undefined, { maximumFractionDigits: display.decimals }) + display.unit;
+}
+
 // ─── UPDATE KPI CARD ─────────────────────────────────────
 // References globals: FRED_SERIES, HIGHER_IS_GOOD, DUAL_ROW, seriesRawData
 function updateCard(name, rawObs) {
@@ -45,53 +102,31 @@ function updateCard(name, rawObs) {
     '<span class="kpi-unit">' + cfg.unit + '</span>';
   chgEl.className  = 'kpi-change neutral';
   chgEl.textContent = '';
-  dateEl.textContent = cfg.freq;
+  const display = buildDisplaySeries(name, obs, cfg);
+  dateEl.textContent = display.interval;
 
   // Sparkline — same 8-point window as the mini-table below
-  makeSparkline('spark-' + name, obs.slice(-8), '#3b82f6');
+  makeSparkline('spark-' + name, display.obs.slice(-8), '#3b82f6');
 
   // ── Mini heatmap table ────────────────────────────────
-  const tableObs9 = obs.slice(-9);
+  const tableObs = display.obs.slice(-8);
   const wrap = document.getElementById('mini-table-' + name);
-  if (!wrap || tableObs9.length < 2) return;
+  if (!wrap || tableObs.length < 1) return;
 
-  const displayObs = tableObs9.slice(-8);
-  const headers    = displayObs.map(d => {
+  const headers    = tableObs.map(d => {
     const p = d.date.split('-');
     const short = parseInt(p[1]) + '/' + parseInt(p[2].slice(0, 2));
     const full  = p[1] + '/' + p[2].slice(0, 2) + '/' + p[0];
     return '<th title="' + full + '">' + short + '</th>';
   }).join('');
 
-  if (DUAL_ROW.includes(name)) {
-    // Show YoY % change row
-    const fullObs = seriesRawData[name] || obs;
-    const yoyVals = displayObs.map(d => {
-      const priorDate = (parseInt(d.date.slice(0, 4)) - 1) + d.date.slice(4);
-      const pr = fullObs.find(p => p.date === priorDate) ||
-        fullObs.filter(p => p.date < d.date && p.date >= priorDate).slice(-1)[0];
-      return pr ? ((d.value - pr.value) / Math.abs(pr.value)) * 100 : null;
-    });
-    const yoyCells = yoyVals.map((v, i) => {
-      if (v === null) return '<td style="color:var(--muted)">–</td>';
-      return '<td>' + (v >= 0 ? '+' : '') + v.toFixed(2) + '%</td>';
-    }).join('');
-    wrap.innerHTML =
-      '<table class="mini-table"><thead><tr><th></th>' + headers + '</tr></thead>' +
-      '<tbody><tr>' +
-        '<td style="color:var(--muted);font-size:8px;padding-right:6px;white-space:nowrap;">YoY</td>' +
-        yoyCells +
-      '</tr></tbody></table>';
-  } else {
-    // Show raw value row
-    const cells = displayObs.map((d, i) => {
-      return '<td>' +
-        d.value.toLocaleString(undefined, { maximumFractionDigits: cfg.decimals }) + cfg.unit + '</td>';
-    }).join('');
-    wrap.innerHTML =
-      '<table class="mini-table"><thead><tr>' + headers + '</tr></thead>' +
-      '<tbody><tr>' + cells + '</tr></tbody></table>';
-  }
+  const cells = tableObs.map(d => '<td>' + formatDisplayValue(d.value, display) + '</td>').join('');
+  wrap.innerHTML =
+    '<table class="mini-table"><thead><tr><th></th>' + headers + '</tr></thead>' +
+    '<tbody><tr>' +
+      '<td style="color:var(--muted);font-size:8px;padding-right:6px;white-space:nowrap;">' + display.interval + '</td>' +
+      cells +
+    '</tr></tbody></table>';
 }
 
 // ─── STANDARD FETCH ALL ──────────────────────────────────
@@ -193,7 +228,8 @@ function openModal(name) {
   document.getElementById('modal-title').textContent = cfg.label;
   var modalSeriesEl = document.getElementById('modal-series');
   if (modalSeriesEl) modalSeriesEl.style.display = 'none';
-  document.getElementById('modal-freq').textContent = cfg.freq;
+  const display = buildDisplaySeries(name, obs, cfg);
+  document.getElementById('modal-freq').textContent = display.interval;
 
   const latest = obs[obs.length - 1];
   const prior  = obs[obs.length - 2];
@@ -212,7 +248,13 @@ function openModal(name) {
   chgEl.className = 'kpi-change ' + (pos ? 'pos' : 'neg');
 
   // Full chart
-  makeModalChart('modal-chart-canvas', obs.map(d => d.date), obs.map(d => d.value), '#3b82f6', cfg.unit);
+  makeModalChart(
+    'modal-chart-canvas',
+    display.obs.map(d => d.date),
+    display.obs.map(d => d.value),
+    '#3b82f6',
+    display.unit
+  );
 
   // Enlarged heatmap table
   const tableWrap = document.getElementById('modal-table');
