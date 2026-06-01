@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MACRO — Test Suite</title>
-<link rel="stylesheet" href="https://unpkg.com/mocha/mocha.css">
+<link rel="stylesheet" href="https://unpkg.com/mocha@10.7.3/mocha.css">
 <style>
   body { background: #080c10; color: #e8edf2; font-family: 'Space Mono', monospace; margin: 0; padding: 20px; }
   #mocha { font-family: monospace; }
@@ -23,11 +23,11 @@
 <div id="mocha"></div>
 
 <!-- Mocha + Chai -->
-<script src="https://unpkg.com/mocha/mocha.js"></script>
-<script src="https://unpkg.com/chai/chai.js"></script>
+<script src="https://unpkg.com/mocha@10.7.3/mocha.js"></script>
+<script src="https://unpkg.com/chai@4.3.10/chai.js"></script>
 <script>
   mocha.setup({ ui: 'bdd', timeout: 5000 });
-  const assert = chai.assert;
+  var assert = chai.assert;
   // Expose assert globally so test files can use it directly
   window.assert = assert;
 </script>
