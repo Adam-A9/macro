@@ -202,6 +202,11 @@ def fetch_fred_dates():
 
         meta = RELEASES[rid]
         sid = meta['sid']
+        # Fed policy dates are managed by the explicit FOMC schedule below.
+        # The broad FRED Federal Reserve release calendar produces extra
+        # FEDFUNDS rows that are not actual rate-decision events.
+        if sid == 'FEDFUNDS':
+            continue
         key = (sid, rd)
         if key in records:
             continue
@@ -351,13 +356,19 @@ def fetch_fred_values(records):
             actual = curr_val
             prior = prev_val
 
-        # Only set actual for past/today events
-        if actual is not None and release_date <= TODAY.isoformat():
-            rec['actual'] = actual
-            applied_act += 1
-        if prior is not None and rec['prior'] is None:
-            rec['prior'] = prior
-            applied_pri += 1
+        if release_date <= TODAY.isoformat():
+            if actual is not None:
+                rec['actual'] = actual
+                applied_act += 1
+            if prior is not None and rec['prior'] is None:
+                rec['prior'] = prior
+                applied_pri += 1
+        else:
+            # For upcoming releases, the previous displayed value is the
+            # latest already-published value. The actual remains empty.
+            if actual is not None and rec['prior'] is None:
+                rec['prior'] = actual
+                applied_pri += 1
 
     log.info(f"  Values: {len(obs_map)}/{len(sids)} series | "
              f"Actuals applied: {applied_act} | Priors applied: {applied_pri}")
@@ -501,6 +512,17 @@ def fetch_marketwatch_estimates(records):
             log.warning(f"  MarketWatch parse error: {e}")
 
     log.info(f"  Backup estimates found: {found}")
+    return records
+
+
+def fill_missing_estimates_from_prior(records):
+    """Use the previous reported value as a baseline estimate when no consensus is available."""
+    filled = 0
+    for rec in records.values():
+        if rec.get('estimate') is None and rec.get('prior') is not None:
+            rec['estimate'] = rec['prior']
+            filled += 1
+    log.info(f"  Baseline estimates filled from prior: {filled}")
     return records
 
 
@@ -696,6 +718,7 @@ if __name__ == "__main__":
     # Phase 4: Fetch consensus estimates (aggressive, multiple sources)
     records = fetch_investing_estimates(records)
     records = fetch_marketwatch_estimates(records)
+    records = fill_missing_estimates_from_prior(records)
 
     # Summary
     print_summary(records)
