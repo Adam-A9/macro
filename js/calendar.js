@@ -3,6 +3,9 @@ const FREQ_COLORS = {
   DoD: '#00d4ff', WoW: '#a78bfa', MoM: '#00ff9d', QoQ: '#ffd700', Fed: '#ff3b5c'
 };
 
+const CALENDAR_PCT_CHANGE = new Set(['CPIAUCSL', 'CPILFESL', 'PPIACO', 'PCEPI', 'PCEPILFE', 'RSAFS', 'INDPRO']);
+const CALENDAR_DIFF_SERIES = new Set(['PAYEMS']);
+
 function formatCalDate(dateStr) {
   var d = new Date(dateStr + 'T12:00:00'); // noon UTC avoids timezone shift
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -158,35 +161,35 @@ const SERIES_META = {
 
 // FRED release_id → metadata (used for FRED fallback only)
 const RELEASE_META = {
-  10:  { name: 'Consumer Price Index (CPI)',      time: '08:30', freq: 'MoM', source: 'BLS',             impact: 'high'   },
-  11:  { name: 'Import & Export Prices',           time: '08:30', freq: 'MoM', source: 'BLS',             impact: 'low'    },
-  15:  { name: 'Retail Sales',                     time: '08:30', freq: 'MoM', source: 'Census',          impact: 'high'   },
-  17:  { name: 'Consumer Confidence',              time: '10:00', freq: 'MoM', source: 'Conference Board',impact: 'medium' },
-  19:  { name: 'Existing Home Sales',              time: '10:00', freq: 'MoM', source: 'NAR',             impact: 'low'    },
-  21:  { name: 'M2 Money Supply',                  time: '13:30', freq: 'MoM', source: 'Federal Reserve', impact: 'low'    },
-  22:  { name: 'Durable Goods Orders',            time: '08:30', freq: 'MoM', source: 'Census',          impact: 'medium' },
-  31:  { name: 'Producer Price Index (PPI)',       time: '08:30', freq: 'MoM', source: 'BLS',             impact: 'medium' },
-  32:  { name: 'Average Hourly Earnings',          time: '08:30', freq: 'MoM', source: 'BLS',             impact: 'medium' },
-  46:  { name: 'Nonfarm Payrolls',                 time: '08:30', freq: 'MoM', source: 'BLS',             impact: 'high'   },
-  50:  { name: 'Initial Jobless Claims',           time: '08:30', freq: 'WoW', source: 'Dept of Labor',   impact: 'medium' },
-  51:  { name: 'JOLTS Job Openings',               time: '10:00', freq: 'MoM', source: 'BLS',             impact: 'medium' },
-  53:  { name: 'GDP',                              time: '08:30', freq: 'QoQ', source: 'BEA',             impact: 'high'   },
-  54:  { name: 'New Home Sales',                   time: '10:00', freq: 'MoM', source: 'Census',          impact: 'low'    },
-  55:  { name: 'PCE / Personal Income',            time: '08:30', freq: 'MoM', source: 'BEA',             impact: 'medium' },
-  56:  { name: 'Housing Starts & Permits',         time: '08:30', freq: 'MoM', source: 'Census',          impact: 'medium' },
-  69:  { name: 'Trade Balance',                    time: '08:30', freq: 'MoM', source: 'Census/BEA',      impact: 'medium' },
-  82:  { name: 'Leading Economic Indicators',      time: '10:00', freq: 'MoM', source: 'Conference Board',impact: 'low'    },
-  83:  { name: 'Factory Orders',                   time: '10:00', freq: 'MoM', source: 'Census',          impact: 'low'    },
-  86:  { name: 'Industrial Production',            time: '09:15', freq: 'MoM', source: 'Federal Reserve', impact: 'low'    },
-  113: { name: 'Employment Cost Index',            time: '08:30', freq: 'QoQ', source: 'BLS',             impact: 'medium' },
-  116: { name: 'Capacity Utilization',             time: '09:15', freq: 'MoM', source: 'Federal Reserve', impact: 'low'    },
-  117: { name: 'Continuing Jobless Claims',        time: '08:30', freq: 'WoW', source: 'Dept of Labor',   impact: 'low'    },
-  118: { name: 'Case-Shiller Home Prices',         time: '09:00', freq: 'MoM', source: 'S&P/Case-Shiller',impact: 'low'    },
-  160: { name: 'ISM Manufacturing PMI',            time: '10:00', freq: 'MoM', source: 'ISM',             impact: 'medium' },
-  161: { name: 'ISM Services PMI',                 time: '10:00', freq: 'MoM', source: 'ISM',             impact: 'medium' },
-  175: { name: 'Construction Spending',            time: '10:00', freq: 'MoM', source: 'Census',          impact: 'low'    },
-  180: { name: 'Consumer Sentiment',               time: '10:00', freq: 'MoM', source: 'Univ of Michigan',impact: 'low'    },
-  200: { name: 'Pending Home Sales',               time: '10:00', freq: 'MoM', source: 'NAR',             impact: 'low'    },
+  10:  { sid: 'CPIAUCSL',       name: 'Consumer Price Index (CPI)',      time: '08:30', freq: 'MoM', source: 'BLS',             impact: 'high'   },
+  11:  { sid: 'IR',             name: 'Import & Export Prices',           time: '08:30', freq: 'MoM', source: 'BLS',             impact: 'low'    },
+  15:  { sid: 'RSAFS',          name: 'Retail Sales',                     time: '08:30', freq: 'MoM', source: 'Census',          impact: 'high'   },
+  17:  { sid: 'CSCICP03USM665S',name: 'Consumer Confidence',              time: '10:00', freq: 'MoM', source: 'Conference Board',impact: 'medium' },
+  19:  { sid: 'EXHOSLUSM495S',  name: 'Existing Home Sales',              time: '10:00', freq: 'MoM', source: 'NAR',             impact: 'low'    },
+  21:  { sid: 'M2SL',           name: 'M2 Money Supply',                  time: '13:30', freq: 'MoM', source: 'Federal Reserve', impact: 'low'    },
+  22:  { sid: 'DGORDER',        name: 'Durable Goods Orders',             time: '08:30', freq: 'MoM', source: 'Census',          impact: 'medium' },
+  31:  { sid: 'PPIACO',         name: 'Producer Price Index (PPI)',       time: '08:30', freq: 'MoM', source: 'BLS',             impact: 'medium' },
+  32:  { sid: 'CES0500000003',  name: 'Average Hourly Earnings',          time: '08:30', freq: 'MoM', source: 'BLS',             impact: 'medium' },
+  46:  { sid: 'PAYEMS',         name: 'Nonfarm Payrolls',                 time: '08:30', freq: 'MoM', source: 'BLS',             impact: 'high'   },
+  50:  { sid: 'ICSA',           name: 'Initial Jobless Claims',           time: '08:30', freq: 'WoW', source: 'Dept of Labor',   impact: 'medium' },
+  51:  { sid: 'JTSJOL',         name: 'JOLTS Job Openings',               time: '10:00', freq: 'MoM', source: 'BLS',             impact: 'medium' },
+  53:  { sid: 'GDP',            name: 'GDP',                              time: '08:30', freq: 'QoQ', source: 'BEA',             impact: 'high'   },
+  54:  { sid: 'HSN1F',          name: 'New Home Sales',                   time: '10:00', freq: 'MoM', source: 'Census',          impact: 'low'    },
+  55:  { sid: 'PCEPI',          name: 'PCE / Personal Income',            time: '08:30', freq: 'MoM', source: 'BEA',             impact: 'medium' },
+  56:  { sid: 'HOUST',          name: 'Housing Starts & Permits',         time: '08:30', freq: 'MoM', source: 'Census',          impact: 'medium' },
+  69:  { sid: 'BOPGSTB',        name: 'Trade Balance',                    time: '08:30', freq: 'MoM', source: 'Census/BEA',      impact: 'medium' },
+  82:  { sid: 'USSLIND',        name: 'Leading Economic Indicators',      time: '10:00', freq: 'MoM', source: 'Conference Board',impact: 'low'    },
+  83:  { sid: 'AMTMNO',         name: 'Factory Orders',                   time: '10:00', freq: 'MoM', source: 'Census',          impact: 'low'    },
+  86:  { sid: 'INDPRO',         name: 'Industrial Production',            time: '09:15', freq: 'MoM', source: 'Federal Reserve', impact: 'low'    },
+  113: { sid: 'ECIWAG',         name: 'Employment Cost Index',            time: '08:30', freq: 'QoQ', source: 'BLS',             impact: 'medium' },
+  116: { sid: 'TCU',            name: 'Capacity Utilization',             time: '09:15', freq: 'MoM', source: 'Federal Reserve', impact: 'low'    },
+  117: { sid: 'CCSA',           name: 'Continuing Jobless Claims',        time: '08:30', freq: 'WoW', source: 'Dept of Labor',   impact: 'low'    },
+  118: { sid: 'CSUSHPISA',      name: 'Case-Shiller Home Prices',         time: '09:00', freq: 'MoM', source: 'S&P/Case-Shiller',impact: 'low'    },
+  160: { sid: 'MANEMP',         name: 'ISM Manufacturing PMI',            time: '10:00', freq: 'MoM', source: 'ISM',             impact: 'medium' },
+  161: { sid: 'NMFCI',          name: 'ISM Services PMI',                 time: '10:00', freq: 'MoM', source: 'ISM',             impact: 'medium' },
+  175: { sid: 'TTLCONS',        name: 'Construction Spending',            time: '10:00', freq: 'MoM', source: 'Census',          impact: 'low'    },
+  180: { sid: 'UMCSENT',        name: 'Consumer Sentiment',               time: '10:00', freq: 'MoM', source: 'Univ of Michigan',impact: 'low'    },
+  200: { sid: 'PHSI',           name: 'Pending Home Sales',               time: '10:00', freq: 'MoM', source: 'NAR',             impact: 'low'    },
 };
 
 // FOMC meeting decision dates
@@ -211,6 +214,111 @@ const FOMC_DATES = [
 
 // ─── SUPABASE FETCH (primary) ────────────────────────────────
 // Fetches from `consensus` table with a wider window: 14 days back + 30 days forward
+function isBogusFedFundsCalendarRow(r) {
+  return r.series_id === 'FEDFUNDS' && r.frequency !== 'Fed';
+}
+
+function hasCalendarMetrics(ev) {
+  return ev.prior != null || ev.estimate != null || ev.actual != null;
+}
+
+function uniqueCalendarSeries(events) {
+  var seen = new Set();
+  return events.filter(function(ev) {
+    var key = ev.seriesId || ev.event;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function transformCalendarValue(sid, current, previous) {
+  if (current == null) return null;
+  if (previous == null) return current;
+  if (CALENDAR_PCT_CHANGE.has(sid)) {
+    return previous !== 0 ? Math.round(((current / previous - 1) * 100) * 10) / 10 : null;
+  }
+  if (CALENDAR_DIFF_SERIES.has(sid)) {
+    return Math.round((current - previous) * 10) / 10;
+  }
+  return current;
+}
+
+function getCalendarObservationValues(sid, pairs, releaseDate, today) {
+  var currIdx = null;
+  pairs.forEach(function(pair, idx) {
+    if (pair.date < releaseDate) currIdx = idx;
+  });
+  if (currIdx == null) return { prior: null, actual: null };
+
+  var current = pairs[currIdx] ? pairs[currIdx].value : null;
+  var previous = currIdx >= 1 ? pairs[currIdx - 1].value : null;
+  var previousPrevious = currIdx >= 2 ? pairs[currIdx - 2].value : null;
+  var latestReported = transformCalendarValue(sid, current, previous);
+  var priorReported = transformCalendarValue(sid, previous, previousPrevious);
+
+  if (releaseDate > today) {
+    return { prior: latestReported, actual: null };
+  }
+  return { prior: priorReported, actual: latestReported };
+}
+
+async function fetchCalendarObservations(seriesId) {
+  var observationStart = new Date(Date.now() - 730 * 86400000).toISOString().slice(0, 10);
+  var url = 'https://api.stlouisfed.org/fred/series/observations' +
+    '?series_id=' + seriesId +
+    '&api_key=' + FRED_API_KEY +
+    '&file_type=json&sort_order=asc' +
+    '&observation_start=' + observationStart;
+  var json = null;
+  for (var attempt = 0; attempt < 3; attempt++) {
+    try {
+      json = await fetchWithProxy(url);
+      break;
+    } catch (e) {
+      if (attempt === 2) throw e;
+      await sleep(750 * (attempt + 1));
+    }
+  }
+  if (!json.observations) return [];
+  return json.observations
+    .filter(function(o) { return o.value !== '.' && o.value !== ''; })
+    .map(function(o) { return { date: o.date, value: parseFloat(o.value) }; })
+    .filter(function(o) { return !isNaN(o.value); });
+}
+
+async function enrichCalendarValues(events) {
+  var today = new Date().toISOString().slice(0, 10);
+  var seriesIds = Array.from(new Set(events.map(function(ev) { return ev.seriesId; }).filter(Boolean)));
+  var obsBySeries = {};
+
+  for (var i = 0; i < seriesIds.length; i++) {
+    var sid = seriesIds[i];
+    try {
+      var obs = await fetchCalendarObservations(sid);
+      if (obs.length > 0) obsBySeries[sid] = obs;
+      if (i < seriesIds.length - 1) await sleep(400);
+    } catch (e) {
+      console.warn('Calendar: FRED enrichment failed for ' + sid + ':', e.message);
+    }
+  }
+
+  return events.map(function(ev) {
+    var obs = obsBySeries[ev.seriesId];
+    if (!obs) return ev;
+
+    var values = getCalendarObservationValues(ev.seriesId, obs, ev.date, today);
+    var enriched = Object.assign({}, ev);
+    if (enriched.prior == null && values.prior != null) enriched.prior = values.prior;
+    if (enriched.actual == null && values.actual != null) enriched.actual = values.actual;
+    if (enriched.estimate == null && enriched.prior != null) {
+      enriched.estimate = enriched.prior;
+      enriched.estimateFallback = true;
+    }
+    return enriched;
+  });
+}
+
 async function fetchFromSupabase(pastDate, futureDate) {
   if (!SUPABASE_ANON) return null;
 
@@ -232,9 +340,12 @@ async function fetchFromSupabase(pastDate, futureDate) {
   var rows = await res.json();
   if (!Array.isArray(rows) || rows.length === 0) return null;
 
-  return rows.map(function(r) {
+  return rows.filter(function(r) {
+    return !isBogusFedFundsCalendarRow(r);
+  }).map(function(r) {
     var meta = SERIES_META[r.series_id] || {};
     return {
+      seriesId: r.series_id,
       date:     r.release_date,
       time:     meta.time || '',
       event:    r.release_name || meta.name || r.series_id,
@@ -270,6 +381,7 @@ async function fetchFromFRED(pastDate, futureDate) {
         date:   r.date,
         time:   meta.time,
         event:  meta.name,
+        seriesId: meta.sid,
         freq:   meta.freq,
         source: meta.source,
         impact: meta.impact
@@ -288,14 +400,15 @@ async function fetchCalendar() {
 
   var events = [];
 
-  // Try Supabase first, fall back to FRED
+  // Use Supabase consensus rows when available, supplemented by FRED's release calendar.
   try {
     var supabaseEvents = await fetchFromSupabase(pastDate, futureDate);
+    var fredEvents = await fetchFromFRED(pastDate, futureDate);
     if (supabaseEvents && supabaseEvents.length > 0) {
-      events = supabaseEvents;
-      console.info('Calendar: loaded ' + events.length + ' events from Supabase');
+      events = supabaseEvents.concat(fredEvents);
+      console.info('Calendar: loaded ' + supabaseEvents.length + ' events from Supabase + ' + fredEvents.length + ' from FRED');
     } else {
-      events = await fetchFromFRED(pastDate, futureDate);
+      events = fredEvents;
       console.info('Calendar: loaded ' + events.length + ' events from FRED (fallback)');
     }
   } catch (e) {
@@ -314,6 +427,7 @@ async function fetchCalendar() {
         date:   f.date,
         time:   f.time,
         event:  'Fed Interest Rate Decision',
+        seriesId: 'FEDFUNDS',
         freq:   'Fed',
         source: 'Federal Reserve',
         impact: 'high'
@@ -324,7 +438,7 @@ async function fetchCalendar() {
   // De-duplicate by date+event name
   var seen = new Set();
   events = events.filter(function(ev) {
-    var key = ev.date + '|' + ev.event;
+    var key = ev.date + '|' + (ev.seriesId || ev.event);
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
@@ -333,17 +447,32 @@ async function fetchCalendar() {
   // Split into past and upcoming
   var pastEvents = events
     .filter(function(ev) { return ev.date < today; })
-    .sort(function(a, b) { return new Date(b.date) - new Date(a.date); }) // newest first
-    .slice(0, 5)   // last 5 past events
+    .sort(function(a, b) { return new Date(b.date) - new Date(a.date); }); // newest first
+  pastEvents = uniqueCalendarSeries(pastEvents)
+    .slice(0, 10)
     .reverse();     // back to chronological
 
   var upcoming = events
     .filter(function(ev) { return ev.date >= today; })
-    .sort(function(a, b) { return new Date(a.date) - new Date(b.date); })
+    .sort(function(a, b) { return new Date(a.date) - new Date(b.date); });
+  upcoming = uniqueCalendarSeries(upcoming)
     .slice(0, 10);  // up to 10 upcoming events
 
-  // Combine: 5 past + 10 upcoming (max 15 total)
+  // Combine candidates, enrich values, then keep rows that can show metrics.
   var display = pastEvents.concat(upcoming);
+  display = await enrichCalendarValues(display);
+  display = display.filter(hasCalendarMetrics);
+
+  pastEvents = display
+    .filter(function(ev) { return ev.date < today; })
+    .sort(function(a, b) { return new Date(b.date) - new Date(a.date); })
+    .slice(0, 5)
+    .reverse();
+  upcoming = display
+    .filter(function(ev) { return ev.date >= today; })
+    .sort(function(a, b) { return new Date(a.date) - new Date(b.date); })
+    .slice(0, 10);
+  display = pastEvents.concat(upcoming);
 
   // Final sort chronologically
   display.sort(function(a, b) { return new Date(a.date) - new Date(b.date); });

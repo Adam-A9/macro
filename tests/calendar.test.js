@@ -29,6 +29,50 @@ describe('formatCalTime', () => {
   });
 });
 
+describe('calendar value enrichment helpers', () => {
+  const monthlyObs = [
+    { date: '2026-02-01', value: 100 },
+    { date: '2026-03-01', value: 105 },
+    { date: '2026-04-01', value: 110 },
+  ];
+
+  it('uses latest reported value as previous for upcoming releases', () => {
+    const values = getCalendarObservationValues('CPIAUCSL', monthlyObs, '2026-06-10', '2026-06-01');
+    assert.closeTo(values.prior, 4.8, 0.0001);
+    assert.equal(values.actual, null);
+  });
+
+  it('uses prior and actual values for past releases', () => {
+    const values = getCalendarObservationValues('CPIAUCSL', monthlyObs, '2026-05-10', '2026-06-01');
+    assert.closeTo(values.prior, 5, 0.0001);
+    assert.closeTo(values.actual, 4.8, 0.0001);
+  });
+
+  it('filters non-Fed FEDFUNDS rows from Supabase calendar results', () => {
+    assert.equal(isBogusFedFundsCalendarRow({ series_id: 'FEDFUNDS', frequency: 'MoM' }), true);
+    assert.equal(isBogusFedFundsCalendarRow({ series_id: 'FEDFUNDS', frequency: 'Fed' }), false);
+    assert.equal(isBogusFedFundsCalendarRow({ series_id: 'CPIAUCSL', frequency: 'MoM' }), false);
+  });
+
+  it('keeps calendar display rows only when a metric can be shown', () => {
+    assert.equal(hasCalendarMetrics({ prior: null, estimate: null, actual: null }), false);
+    assert.equal(hasCalendarMetrics({ prior: 1.2, estimate: null, actual: null }), true);
+    assert.equal(hasCalendarMetrics({ prior: null, estimate: 1.2, actual: null }), true);
+    assert.equal(hasCalendarMetrics({ prior: null, estimate: null, actual: 1.2 }), true);
+  });
+
+  it('deduplicates candidate rows by series before display', () => {
+    const events = [
+      { seriesId: 'INDPRO', event: 'Industrial Production', date: '2026-05-20' },
+      { seriesId: 'INDPRO', event: 'Industrial Production', date: '2026-05-21' },
+      { seriesId: 'GDP', event: 'GDP', date: '2026-05-22' },
+    ];
+    const unique = uniqueCalendarSeries(events);
+    assert.equal(unique.length, 2);
+    assert.deepEqual(unique.map(ev => ev.seriesId), ['INDPRO', 'GDP']);
+  });
+});
+
 describe('renderCalendar', () => {
   let container;
 
