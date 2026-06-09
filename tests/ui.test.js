@@ -67,18 +67,21 @@ describe('cellColor', () => {
 describe('display interval helpers', () => {
   beforeEach(() => { window.DUAL_ROW = []; });
 
-  it('uses configured frequency for standard series', () => {
-    const cfg = { freq: 'DoD', unit: '%', decimals: 2 };
-    assert.equal(getDisplayInterval('Yield10Y', cfg), 'DoD');
+  it('uses monthly samples for rates configured as MoM', () => {
+    const cfg = { freq: 'MoM', sample: 'monthly', unit: '%', decimals: 2 };
+    assert.equal(getDisplayInterval('Yield10Y', cfg), 'MoM');
 
     const display = buildDisplaySeries('Yield10Y', [
+      { date: '2026-05-01', value: 4.40 },
       { date: '2026-05-29', value: 4.42 },
-      { date: '2026-06-01', value: 4.45 }
+      { date: '2026-06-01', value: 4.45 },
+      { date: '2026-06-08', value: 4.48 }
     ], cfg);
-    assert.equal(display.interval, 'DoD');
+    assert.equal(display.interval, 'MoM');
     assert.equal(display.unit, '%');
     assert.equal(display.obs.length, 2);
-    assert.equal(formatDisplayValue(display.obs[1].value, display), '4.45%');
+    assert.deepEqual(display.obs.map(d => d.date), ['2026-05-29', '2026-06-08']);
+    assert.equal(formatDisplayValue(display.obs[1].value, display), '4.48%');
   });
 
   it('uses YoY display data for dual-row series so charts and tables match', () => {

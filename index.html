@@ -811,7 +811,7 @@
   <div class="error-msg" id="errorMsg"></div>
 
   <!-- KPI CARDS -->
-  <div class="kpi-card" id="card-10Y_Yield" data-freq="dod">
+  <div class="kpi-card" id="card-10Y_Yield" data-freq="mom">
     <div class="kpi-label">10-Year Treasury Yield <span class="kpi-series-id">DGS10</span><span class="kpi-info">?</span></div>
     <div class="kpi-tooltip" id="tip-10Y_Yield"></div>
     <div class="kpi-value loading-text" id="val-10Y_Yield">Loading…</div>
@@ -821,7 +821,7 @@
     <div class="mini-table-wrap" id="mini-table-10Y_Yield"></div>
   </div>
 
-  <div class="kpi-card" id="card-Spread" data-freq="dod">
+  <div class="kpi-card" id="card-Spread" data-freq="mom">
     <div class="kpi-label">Yield Curve 10Y-2Y <span class="kpi-series-id">T10Y2Y</span><span class="kpi-info">?</span></div>
     <div class="kpi-tooltip" id="tip-Spread"></div>
     <div class="kpi-value loading-text" id="val-Spread">Loading…</div>
@@ -831,7 +831,7 @@
     <div class="mini-table-wrap" id="mini-table-Spread"></div>
   </div>
 
-  <div class="kpi-card" id="card-Jobless_Claims" data-freq="wow">
+  <div class="kpi-card" id="card-Jobless_Claims" data-freq="mom">
     <div class="kpi-label">Jobless Claims <span class="kpi-series-id">ICSA</span><span class="kpi-info">?</span></div>
     <div class="kpi-tooltip" id="tip-Jobless_Claims"></div>
     <div class="kpi-value loading-text" id="val-Jobless_Claims">Loading…</div>
@@ -1049,12 +1049,12 @@
 <script>
 // ─── PAGE CONFIG ─────────────────────────────────────────
 const FRED_SERIES = {
-  // DoD
-  "10Y_Yield":    { id: "DGS10",         label: "10-Year Yield",         unit: "%",   decimals: 2, freq: "DoD", bar: "#00d4ff", desc: "The 10-year Treasury yield is the annualized return on a US government bond maturing in 10 years. Because Treasuries are considered risk-free, this rate serves as the foundation for virtually all other borrowing costs in the economy — mortgages, corporate bonds, auto loans, and student debt all price off of it. It also reflects the bond market's collective expectation for future growth and inflation. When yields rise sharply, financial conditions tighten across the board: stocks get repriced lower (future earnings are worth less today), and borrowing becomes more expensive for everyone." },
+  // MoM
+  "10Y_Yield":    { id: "DGS10",         label: "10-Year Yield",         unit: "%",   decimals: 2, freq: "MoM", sample: "monthly", bar: "#00d4ff", desc: "The 10-year Treasury yield is the annualized return on a US government bond maturing in 10 years. Because Treasuries are considered risk-free, this rate serves as the foundation for virtually all other borrowing costs in the economy — mortgages, corporate bonds, auto loans, and student debt all price off of it. It also reflects the bond market's collective expectation for future growth and inflation. When yields rise sharply, financial conditions tighten across the board: stocks get repriced lower (future earnings are worth less today), and borrowing becomes more expensive for everyone." },
   FedFunds:       { id: "FEDFUNDS",       label: "Fed Funds Rate",         unit: "%",   decimals: 2, freq: "MoM", bar: "#00ff9d", desc: "The federal funds rate is the interest rate at which banks lend reserves to each other overnight, set by the Federal Reserve's FOMC. It is the single most powerful lever in all of macroeconomics — every loan, mortgage, bond yield, and stock valuation in the world is influenced by this number. When the Fed raises rates, borrowing becomes more expensive, slowing inflation but also growth. When it cuts, credit loosens and the economy is stimulated. Markets obsess over every FOMC meeting because a single 0.25% move here ripples through the entire global financial system." },
-  Spread:         { id: "T10Y2Y",         label: "Yield Curve 10Y-2Y",     unit: "%",   decimals: 2, freq: "DoD", bar: "#ffd700", desc: "The yield curve spread is the difference between the 10-year and 2-year Treasury yields. In a normal, healthy economy this is positive — investors demand more compensation for locking up money for longer. When it turns negative (inverted), it means short-term rates exceed long-term rates, typically because the Fed has hiked rates aggressively. An inverted yield curve has preceded every US recession since the 1960s, usually with a 6-18 month lead time. It inverted sharply in 2022-2023 and is one of the most closely watched signals on Wall Street." },
-  // WoW
-  Jobless_Claims: { id: "ICSA",           label: "Jobless Claims",         unit: "K",   decimals: 0, freq: "WoW", bar: "#a78bfa", desc: "Initial jobless claims counts the number of people filing for unemployment insurance for the first time in a given week, released every Thursday morning. Because it is weekly, it is the most timely labor market data available — stress in the job market shows up here weeks before the monthly unemployment rate captures it. A healthy economy typically sees claims below 250,000 per week. A sustained move above 300,000-350,000 is a warning sign. Sharp spikes — like those seen in March 2020 when claims hit 6 million in a single week — are among the first hard data signals of economic collapse." },
+  Spread:         { id: "T10Y2Y",         label: "Yield Curve 10Y-2Y",     unit: "%",   decimals: 2, freq: "MoM", sample: "monthly", bar: "#ffd700", desc: "The yield curve spread is the difference between the 10-year and 2-year Treasury yields. In a normal, healthy economy this is positive — investors demand more compensation for locking up money for longer. When it turns negative (inverted), it means short-term rates exceed long-term rates, typically because the Fed has hiked rates aggressively. An inverted yield curve has preceded every US recession since the 1960s, usually with a 6-18 month lead time. It inverted sharply in 2022-2023 and is one of the most closely watched signals on Wall Street." },
+  // MoM
+  Jobless_Claims: { id: "ICSA",           label: "Jobless Claims",         unit: "K",   decimals: 0, freq: "MoM", sample: "monthly", bar: "#a78bfa", desc: "Initial jobless claims counts the number of people filing for unemployment insurance for the first time in a given week, released every Thursday morning. Because it is weekly, it is the most timely labor market data available — stress in the job market shows up here weeks before the monthly unemployment rate captures it. A healthy economy typically sees claims below 250,000 per week. A sustained move above 300,000-350,000 is a warning sign. Sharp spikes — like those seen in March 2020 when claims hit 6 million in a single week — are among the first hard data signals of economic collapse." },
   // MoM
   Unemployment:   { id: "UNRATE",         label: "Unemployment",           unit: "%",   decimals: 1, freq: "MoM", bar: "#ff6b35", desc: "The unemployment rate measures the share of people in the labor force who are actively looking for a job but cannot find one. Released every first Friday of the month by the Bureau of Labor Statistics — it is one of the most market-moving data points on the calendar. A reading below 4% is considered a strong, healthy labor market. Above 5-6% signals stress. The Fed is mandated to keep unemployment low alongside controlling inflation, so this number directly shapes rate decisions. Sustained rises here are often a recession warning." },
   CPI:            { id: "CPIAUCSL",       label: "CPI",                    unit: "",    decimals: 2, freq: "MoM", bar: "#00ff9d", desc: "The Consumer Price Index tracks how much a fixed basket of everyday goods and services — food, rent, gasoline, healthcare, clothing — costs over time. It is the Fed's primary gauge of whether inflation is under control. Their official target is 2% annual growth. When CPI runs significantly above target, the Fed raises interest rates aggressively to slow borrowing and cool demand. The 2022-2023 rate hike cycle, the fastest in 40 years, was a direct response to CPI hitting 9.1%. When CPI falls toward target, rate cuts become possible." },
@@ -1097,7 +1097,8 @@ async function fetchAll() {
     if (i > 0) await sleep(300);
     const name = fredNames[i];
     try {
-      const obs = await fetchFRED(FRED_SERIES[name].id, 40);
+      const cfg = FRED_SERIES[name];
+      const obs = await fetchFRED(cfg.id, cfg.sample === "monthly" ? 260 : 40);
       seriesRawData[name] = obs;
       allFredData[name]   = obs;
       updateCard(name, obs);

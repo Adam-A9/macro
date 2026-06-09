@@ -1453,7 +1453,7 @@
 <nav class="nav-bar"><a href="index.html" class="nav-link">Macro</a><a href="inflation.html" class="nav-link">Inflation</a><a href="housing.html" class="nav-link">Housing</a><a href="labor.html" class="nav-link">Labor</a><a href="markets.html" class="nav-link active">Sectors</a></nav>
 <main class="main">
   <div class="error-msg" id="errorMsg"></div>
-  <div class="kpi-card" id="card-Yield10Y" data-freq="dod">
+  <div class="kpi-card" id="card-Yield10Y" data-freq="mom">
     <div class="kpi-label">10-Year Yield <span class="kpi-series-id">DGS10</span><span class="kpi-info">?</span></div>
     <div class="kpi-tooltip" id="tip-Yield10Y"></div>
     <div class="kpi-value loading-text" id="val-Yield10Y">Loading…</div>
@@ -1463,7 +1463,7 @@
     <div class="mini-table-wrap" id="mini-table-Yield10Y"></div>
   </div>
 
-<div class="kpi-card" id="card-Yield2Y" data-freq="dod">
+<div class="kpi-card" id="card-Yield2Y" data-freq="mom">
     <div class="kpi-label">2-Year Yield <span class="kpi-series-id">DGS2</span><span class="kpi-info">?</span></div>
     <div class="kpi-tooltip" id="tip-Yield2Y"></div>
     <div class="kpi-value loading-text" id="val-Yield2Y">Loading…</div>
@@ -1473,7 +1473,7 @@
     <div class="mini-table-wrap" id="mini-table-Yield2Y"></div>
   </div>
 
-<div class="kpi-card" id="card-Spread" data-freq="dod">
+<div class="kpi-card" id="card-Spread" data-freq="mom">
     <div class="kpi-label">Yield Curve 10Y-2Y <span class="kpi-series-id">T10Y2Y</span><span class="kpi-info">?</span></div>
     <div class="kpi-tooltip" id="tip-Spread"></div>
     <div class="kpi-value loading-text" id="val-Spread">Loading…</div>
@@ -1483,7 +1483,7 @@
     <div class="mini-table-wrap" id="mini-table-Spread"></div>
   </div>
 
-<div class="kpi-card" id="card-CreditSpread" data-freq="dod">
+<div class="kpi-card" id="card-CreditSpread" data-freq="mom">
     <div class="kpi-label">HY Credit Spread <span class="kpi-series-id">BAMLH0A0HYM2</span><span class="kpi-info">?</span></div>
     <div class="kpi-tooltip" id="tip-CreditSpread"></div>
     <div class="kpi-value loading-text" id="val-CreditSpread">Loading…</div>
@@ -1493,7 +1493,7 @@
     <div class="mini-table-wrap" id="mini-table-CreditSpread"></div>
   </div>
 
-<div class="kpi-card" id="card-Yield30Y" data-freq="dod">
+<div class="kpi-card" id="card-Yield30Y" data-freq="mom">
     <div class="kpi-label">30-Year Yield <span class="kpi-series-id">DGS30</span><span class="kpi-info">?</span></div>
     <div class="kpi-tooltip" id="tip-Yield30Y"></div>
     <div class="kpi-value loading-text" id="val-Yield30Y">Loading…</div>
@@ -1634,12 +1634,12 @@
 <script>
 // ─── PAGE CONFIG ─────────────────────────────────────────
 const FRED_SERIES = {
-  "Yield10Y":    { id: "DGS10",          label: "10-Year Yield",       unit: "%", decimals: 2, freq: "DoD", desc: "The 10-year Treasury yield is the annualized return on a US government bond maturing in 10 years — the single most important interest rate in global finance. Because Treasuries are considered risk-free, this rate serves as the foundation for virtually all other borrowing costs in the economy. Mortgages, corporate bonds, auto loans, and student debt all price off the 10-year. It also encodes the bond market's collective forecast for future growth and inflation. When yields rise sharply, financial conditions tighten everywhere: stocks get repriced lower as future earnings are discounted more heavily." },
-  "Yield2Y":     { id: "DGS2",           label: "2-Year Yield",        unit: "%", decimals: 2, freq: "DoD", desc: "The 2-year Treasury yield is the most policy-sensitive point on the yield curve, moving fastest in response to changing Fed rate expectations. When markets expect rate cuts, the 2Y falls sharply as traders buy short-duration bonds. When inflation surprises force the Fed to hike, the 2Y spikes. The spread between the 2Y and the current Fed Funds rate tells you whether markets think the Fed is ahead of or behind the curve. A 2Y significantly below Fed Funds means markets expect imminent cuts; a 2Y above Fed Funds means they expect more hikes — a real-time vote on Fed policy credibility." },
-  "Spread":      { id: "T10Y2Y",         label: "Yield Curve 10Y-2Y",  unit: "%", decimals: 2, freq: "DoD", desc: "The yield curve spread subtracts the 2-year Treasury yield from the 10-year yield. In a normal economy this is positive — investors demand more compensation for locking up money for a decade. When it turns negative (inverted), short-term rates exceed long-term rates, typically because the Fed raised rates while the market expects future cuts and weak growth. An inverted yield curve has preceded every US recession since the 1960s, typically with a 6-18 month lead time. It inverted sharply in 2022-2023 following aggressive Fed hikes and is one of the most closely watched macroeconomic signals in existence." },
+  "Yield10Y":    { id: "DGS10",          label: "10-Year Yield",       unit: "%", decimals: 2, freq: "MoM", sample: "monthly", desc: "The 10-year Treasury yield is the annualized return on a US government bond maturing in 10 years — the single most important interest rate in global finance. Because Treasuries are considered risk-free, this rate serves as the foundation for virtually all other borrowing costs in the economy. Mortgages, corporate bonds, auto loans, and student debt all price off the 10-year. It also encodes the bond market's collective forecast for future growth and inflation. When yields rise sharply, financial conditions tighten everywhere: stocks get repriced lower as future earnings are discounted more heavily." },
+  "Yield2Y":     { id: "DGS2",           label: "2-Year Yield",        unit: "%", decimals: 2, freq: "MoM", sample: "monthly", desc: "The 2-year Treasury yield is the most policy-sensitive point on the yield curve, moving fastest in response to changing Fed rate expectations. When markets expect rate cuts, the 2Y falls sharply as traders buy short-duration bonds. When inflation surprises force the Fed to hike, the 2Y spikes. The spread between the 2Y and the current Fed Funds rate tells you whether markets think the Fed is ahead of or behind the curve. A 2Y significantly below Fed Funds means markets expect imminent cuts; a 2Y above Fed Funds means they expect more hikes — a real-time vote on Fed policy credibility." },
+  "Spread":      { id: "T10Y2Y",         label: "Yield Curve 10Y-2Y",  unit: "%", decimals: 2, freq: "MoM", sample: "monthly", desc: "The yield curve spread subtracts the 2-year Treasury yield from the 10-year yield. In a normal economy this is positive — investors demand more compensation for locking up money for a decade. When it turns negative (inverted), short-term rates exceed long-term rates, typically because the Fed raised rates while the market expects future cuts and weak growth. An inverted yield curve has preceded every US recession since the 1960s, typically with a 6-18 month lead time. It inverted sharply in 2022-2023 following aggressive Fed hikes and is one of the most closely watched macroeconomic signals in existence." },
   "FedFunds":    { id: "FEDFUNDS",       label: "Fed Funds Rate",      unit: "%", decimals: 2, freq: "MoM", desc: "The federal funds rate is the interest rate at which banks lend their excess reserves to each other overnight, set by the Federal Reserve's FOMC at meetings held eight times per year. It is the most powerful single lever in all of macroeconomics — every loan, mortgage, bond yield, stock valuation, and currency exchange rate in the world is ultimately influenced by where the Fed sets this rate. Raising it makes borrowing expensive, slowing inflation but risking recession. Cutting it loosens credit, stimulating growth but risking inflation. Markets obsess over every Fed meeting because even a 0.25% move ripples through the entire global financial system." },
-  "CreditSpread":{ id: "BAMLH0A0HYM2",  label: "HY Credit Spread",    unit: "%", decimals: 2, freq: "DoD", desc: "The high-yield credit spread measures the additional yield that junk-rated corporate bonds pay above comparable Treasury yields, compensating investors for default risk. When this spread widens, credit markets are stressed — lenders demand more compensation to lend to riskier companies, reflecting fears about defaults and economic deterioration. A spiking credit spread is one of the most reliable early warning signals of financial market stress, often preceding equity selloffs. Spreads exceeded 2,000 basis points during the 2008 financial crisis and spiked sharply in March 2020 before Fed intervention compressed them." },
-  "Yield30Y":    { id: "DGS30",          label: "30-Year Yield",       unit: "%", decimals: 2, freq: "DoD", desc: "The 30-year Treasury yield represents very long-term growth and inflation expectations — a three-decade bet on the US economy. It is the benchmark rate for long-term mortgages and pension fund liabilities. A key relationship to watch is whether the 30Y rises while the Fed is cutting rates: if long yields go up as the Fed cuts short rates, it signals the bond market does not believe inflation is beaten and is demanding more compensation for holding long duration. This bear steepening — short rates falling while long rates rise — has historically been associated with stagflationary environments." }
+  "CreditSpread":{ id: "BAMLH0A0HYM2",  label: "HY Credit Spread",    unit: "%", decimals: 2, freq: "MoM", sample: "monthly", desc: "The high-yield credit spread measures the additional yield that junk-rated corporate bonds pay above comparable Treasury yields, compensating investors for default risk. When this spread widens, credit markets are stressed — lenders demand more compensation to lend to riskier companies, reflecting fears about defaults and economic deterioration. A spiking credit spread is one of the most reliable early warning signals of financial market stress, often preceding equity selloffs. Spreads exceeded 2,000 basis points during the 2008 financial crisis and spiked sharply in March 2020 before Fed intervention compressed them." },
+  "Yield30Y":    { id: "DGS30",          label: "30-Year Yield",       unit: "%", decimals: 2, freq: "MoM", sample: "monthly", desc: "The 30-year Treasury yield represents very long-term growth and inflation expectations — a three-decade bet on the US economy. It is the benchmark rate for long-term mortgages and pension fund liabilities. A key relationship to watch is whether the 30Y rises while the Fed is cutting rates: if long yields go up as the Fed cuts short rates, it signals the bond market does not believe inflation is beaten and is demanding more compensation for holding long duration. This bear steepening — short rates falling while long rates rise — has historically been associated with stagflationary environments." }
 };
 const MARKET = {
   "XLK":  { label: "Technology",       canvasId: "chartXLK",  valId: "xlk-val",  chgId: "xlk-chg",  color: "#00d4ff" },

@@ -20,6 +20,41 @@ function parseFREDJson(json) {
     .reverse();
 }
 
+function sampleMonthlyObservations(obs) {
+  const monthly = new Map();
+  obs.forEach(d => monthly.set(d.date.slice(0, 7), d));
+  return Array.from(monthly.values());
+}
+
+function findPriorObservation(obs, date, yearsBack) {
+  const priorDate = (parseInt(date.slice(0, 4), 10) - yearsBack) + date.slice(4);
+  const exact = obs.find(p => p.date === priorDate);
+  if (exact) return exact;
+
+  const target = Date.parse(priorDate + 'T00:00:00Z');
+  let closest = null;
+  let closestDays = Infinity;
+  obs.forEach(p => {
+    if (p.date >= date) return;
+    const distanceDays = Math.abs(Date.parse(p.date + 'T00:00:00Z') - target) / 86400000;
+    if (distanceDays <= 45 && distanceDays < closestDays) {
+      closest = p;
+      closestDays = distanceDays;
+    }
+  });
+  return closest;
+}
+
+function calculateYoYObservations(obs) {
+  return obs.map(d => {
+    const prior = findPriorObservation(obs, d.date, 1);
+    return {
+      date: d.date,
+      value: prior ? ((d.value - prior.value) / Math.abs(prior.value)) * 100 : null
+    };
+  }).filter(d => d.value !== null);
+}
+
 // ─── FETCH ───────────────────────────────────────────────
 async function fetchWithProxy(url) {
   const res = await fetch(PROXY_URL + encodeURIComponent(url));
@@ -35,6 +70,10 @@ async function fetchFRED(seriesId, limit = 60) {
   return parseFREDJson(await fetchWithProxy(url));
 }
 
+async function fetchFREDHistory(seriesId) {
+  return fetchFRED(seriesId, 100000);
+}
+
 async function fetchVintage(seriesId, vintageDates) {
   const url = 'https://api.stlouisfed.org/fred/series/observations' +
     '?series_id=' + seriesId +
@@ -48,9 +87,17 @@ async function fetchVintage(seriesId, vintageDates) {
 }
 
 async function fetchMarket(symbol) {
+  return fetchMarketRange(symbol, '3y', '1d');
+}
+
+async function fetchMarketHistory(symbol) {
+  return fetchMarketRange(symbol, 'max', '1mo');
+}
+
+async function fetchMarketRange(symbol, range, interval) {
   const url = 'https://query1.finance.yahoo.com/v8/finance/chart/' +
     symbol.replace('^', '%5E') +
-    '?range=3y&interval=1d&events=history';
+    '?range=' + range + '&interval=' + interval + '&events=history';
   const j = await fetchWithProxy(url);
   if (!j.chart || !j.chart.result || !j.chart.result[0]) {
     const err = j.chart?.error?.description || j['Error Message'] || 'no data returned';

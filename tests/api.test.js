@@ -80,6 +80,30 @@ describe('filterToTwoYears', () => {
   });
 });
 
+describe('observation transforms', () => {
+  it('keeps the latest observation from each month', () => {
+    const result = sampleMonthlyObservations([
+      { date: '2026-04-01', value: 1 },
+      { date: '2026-04-30', value: 2 },
+      { date: '2026-05-01', value: 3 },
+      { date: '2026-05-29', value: 4 }
+    ]);
+    assert.deepEqual(result, [
+      { date: '2026-04-30', value: 2 },
+      { date: '2026-05-29', value: 4 }
+    ]);
+  });
+
+  it('calculates annual changes against the matching prior period', () => {
+    const result = calculateYoYObservations([
+      { date: '2025-05-01', value: 100 },
+      { date: '2026-05-01', value: 110 }
+    ]);
+    assert.equal(result.length, 1);
+    assert.closeTo(result[0].value, 10, 0.0001);
+  });
+});
+
 describe('sleep', () => {
   it('resolves after approximately the specified delay', async () => {
     const start = Date.now();

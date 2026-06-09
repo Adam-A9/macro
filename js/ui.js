@@ -20,25 +20,6 @@ function gradientColor(t, higherIsGood) {
   return 'rgba(0,' + gr + ',60,0.4)';
 }
 
-function findPriorObservation(obs, date, yearsBack) {
-  const priorDate = (parseInt(date.slice(0, 4), 10) - yearsBack) + date.slice(4);
-  const exact = obs.find(p => p.date === priorDate);
-  if (exact) return exact;
-
-  const target = Date.parse(priorDate + 'T00:00:00Z');
-  let closest = null;
-  let closestDays = Infinity;
-  obs.forEach(p => {
-    if (p.date >= date) return;
-    const distanceDays = Math.abs(Date.parse(p.date + 'T00:00:00Z') - target) / 86400000;
-    if (distanceDays <= 45 && distanceDays < closestDays) {
-      closest = p;
-      closestDays = distanceDays;
-    }
-  });
-  return closest;
-}
-
 function getDisplayInterval(name, cfg) {
   if (cfg.displayFreq) return cfg.displayFreq;
   return DUAL_ROW.includes(name) ? 'YoY' : cfg.freq;
@@ -46,13 +27,14 @@ function getDisplayInterval(name, cfg) {
 
 function buildDisplaySeries(name, obs, cfg) {
   const interval = getDisplayInterval(name, cfg);
+  const sampledObs = cfg.sample === 'monthly' ? sampleMonthlyObservations(obs) : obs;
   if (interval !== 'YoY') {
     return {
       interval,
       unit: cfg.unit,
       decimals: cfg.decimals,
       showSign: false,
-      obs
+      obs: sampledObs
     };
   }
 
@@ -62,13 +44,7 @@ function buildDisplaySeries(name, obs, cfg) {
     unit: '%',
     decimals: 2,
     showSign: true,
-    obs: obs.map(d => {
-      const prior = findPriorObservation(fullObs, d.date, 1);
-      return {
-        date: d.date,
-        value: prior ? ((d.value - prior.value) / Math.abs(prior.value)) * 100 : null
-      };
-    }).filter(d => d.value !== null)
+    obs: calculateYoYObservations(fullObs)
   };
 }
 
@@ -147,7 +123,8 @@ async function fetchAll() {
     if (i > 0) await sleep(300);
     const name = fredNames[i];
     try {
-      const obs = await fetchFRED(FRED_SERIES[name].id, 80);
+      const cfg = FRED_SERIES[name];
+      const obs = await fetchFRED(cfg.id, cfg.sample === 'monthly' ? 260 : 80);
       updateCard(name, obs);
     } catch (e) {
       errors.push('FRED ' + FRED_SERIES[name].id + ': ' + e.message);
@@ -214,6 +191,26 @@ function _finishFetch(errors) {
 }
 
 // ─── EXPAND MODAL ───────────────────────────────────────
+function openChartWindow(params) {
+  const query = new URLSearchParams(params);
+  window.open('chart.html?' + query.toString(), '_blank', 'noopener');
+}
+
+function openFREDChart(name) {
+  const cfg = FRED_SERIES[name];
+  if (!cfg) return;
+  openChartWindow({
+    source: 'fred',
+    id: cfg.id,
+    label: cfg.label,
+    unit: cfg.unit,
+    decimals: cfg.decimals,
+    interval: getDisplayInterval(name, cfg),
+    sample: cfg.sample || '',
+    color: cfg.bar || '#3b82f6'
+  });
+}
+
 function openModal(name) {
   const cfg = FRED_SERIES[name];
   if (!cfg) return;
@@ -297,24 +294,33 @@ function initPage() {
     icon.addEventListener('mouseenter', () => card.classList.add('show-tip'));
     icon.addEventListener('mouseleave', () => card.classList.remove('show-tip'));
   });
-  // Click-to-expand modal on KPI cards
+  // Open full-history FRED charts in a dedicated window.
   document.querySelectorAll('.kpi-card').forEach(card => {
     card.style.cursor = 'pointer';
     card.addEventListener('click', (e) => {
-      // Don't open modal if clicking the info icon
       if (e.target.closest('.kpi-info')) return;
       const name = card.id.replace('card-', '');
-      openModal(name);
+      openFREDChart(name);
     });
   });
 
-  // Modal close handlers
-  const overlay = document.getElementById('kpi-modal-overlay');
-  const closeBtn = document.getElementById('modal-close-btn');
-  if (overlay) overlay.addEventListener('click', closeModal);
-  if (closeBtn) closeBtn.addEventListener('click', closeModal);
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeModal();
+  // Market chart panels use the same full-history window.
+  Object.keys(MARKET).forEach(symbol => {
+    const cfg = MARKET[symbol];
+    const panel = document.getElementById(cfg.canvasId)?.closest('.chart-panel');
+    if (!panel) return;
+    panel.style.cursor = 'pointer';
+    panel.addEventListener('click', () => {
+      openChartWindow({
+        source: 'market',
+        id: symbol,
+        label: cfg.label,
+        unit: cfg.unit || '',
+        decimals: cfg.decimals ?? 2,
+        interval: 'MoM',
+        color: cfg.color
+      });
+    });
   });
 
   fetchAll();
