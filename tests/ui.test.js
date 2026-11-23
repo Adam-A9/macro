@@ -100,6 +100,6 @@ describe('display interval helpers', () => {
     assert.deepEqual(display.obs.map(d => d.date), ['2026-04-01', '2026-05-01']);
     assert.closeTo(display.obs[0].value, 5, 0.0001);
     assert.closeTo(display.obs[1].value, 10, 0.0001);
-    assert.equal(formatDisplayValue(display.obs[1].value, display), '+10%');
+    assert.equal(formatDisplayValue(display.obs[1].value, display), '+10.00%');
   });
 });

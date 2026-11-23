@@ -151,10 +151,6 @@
     top: 0; left: 0; right: 0;
     height: 3px;
   }
-  .kpi-card[data-freq="dod"]::before { background: linear-gradient(90deg, #00d4ff, transparent); }
-  .kpi-card[data-freq="wow"]::before { background: linear-gradient(90deg, #a78bfa, transparent); }
-  .kpi-card[data-freq="mom"]::before { background: linear-gradient(90deg, #00ff9d, transparent); }
-  .kpi-card[data-freq="qoq"]::before { background: linear-gradient(90deg, #ffd700, transparent); }
 
   @keyframes fadeIn {
     to { opacity: 1; transform: translateY(0); }
@@ -787,10 +783,6 @@
     top: 0; left: 0; right: 0;
     height: 3px;
   }
-  .kpi-card[data-freq="dod"]::before { background: linear-gradient(90deg, #00d4ff, transparent); }
-  .kpi-card[data-freq="wow"]::before { background: linear-gradient(90deg, #a78bfa, transparent); }
-  .kpi-card[data-freq="mom"]::before { background: linear-gradient(90deg, #00ff9d, transparent); }
-  .kpi-card[data-freq="qoq"]::before { background: linear-gradient(90deg, #ffd700, transparent); }
 
   @keyframes fadeIn {
     to { opacity: 1; transform: translateY(0); }
@@ -1441,6 +1433,7 @@
   @media(max-width:768px){.nav-bar{overflow-x:auto;top:auto;}.nav-link{padding:8px 12px;font-size:9px;}}
 </style>
 </head>
+<link rel="stylesheet" href="css/modules.css">
 <body>
 <header class="header">
   <div class="logo">MACRO<span> // Sectors Dashboard</span></div>
@@ -1453,66 +1446,7 @@
 <nav class="nav-bar"><a href="index.html" class="nav-link">Macro</a><a href="inflation.html" class="nav-link">Inflation</a><a href="housing.html" class="nav-link">Housing</a><a href="labor.html" class="nav-link">Labor</a><a href="markets.html" class="nav-link active">Sectors</a></nav>
 <main class="main">
   <div class="error-msg" id="errorMsg"></div>
-  <div class="kpi-card" id="card-Yield10Y" data-freq="mom">
-    <div class="kpi-label">10-Year Yield <span class="kpi-series-id">DGS10</span><span class="kpi-info">?</span></div>
-    <div class="kpi-tooltip" id="tip-Yield10Y"></div>
-    <div class="kpi-value loading-text" id="val-Yield10Y">Loading…</div>
-    <div class="kpi-change neutral" id="chg-Yield10Y">–</div>
-    <div class="kpi-date" id="date-Yield10Y">–</div>
-    <div class="sparkline-wrap"><canvas id="spark-Yield10Y"></canvas></div>
-    <div class="mini-table-wrap" id="mini-table-Yield10Y"></div>
-  </div>
-
-<div class="kpi-card" id="card-Yield2Y" data-freq="mom">
-    <div class="kpi-label">2-Year Yield <span class="kpi-series-id">DGS2</span><span class="kpi-info">?</span></div>
-    <div class="kpi-tooltip" id="tip-Yield2Y"></div>
-    <div class="kpi-value loading-text" id="val-Yield2Y">Loading…</div>
-    <div class="kpi-change neutral" id="chg-Yield2Y">–</div>
-    <div class="kpi-date" id="date-Yield2Y">–</div>
-    <div class="sparkline-wrap"><canvas id="spark-Yield2Y"></canvas></div>
-    <div class="mini-table-wrap" id="mini-table-Yield2Y"></div>
-  </div>
-
-<div class="kpi-card" id="card-Spread" data-freq="mom">
-    <div class="kpi-label">Yield Curve 10Y-2Y <span class="kpi-series-id">T10Y2Y</span><span class="kpi-info">?</span></div>
-    <div class="kpi-tooltip" id="tip-Spread"></div>
-    <div class="kpi-value loading-text" id="val-Spread">Loading…</div>
-    <div class="kpi-change neutral" id="chg-Spread">–</div>
-    <div class="kpi-date" id="date-Spread">–</div>
-    <div class="sparkline-wrap"><canvas id="spark-Spread"></canvas></div>
-    <div class="mini-table-wrap" id="mini-table-Spread"></div>
-  </div>
-
-<div class="kpi-card" id="card-CreditSpread" data-freq="mom">
-    <div class="kpi-label">HY Credit Spread <span class="kpi-series-id">BAMLH0A0HYM2</span><span class="kpi-info">?</span></div>
-    <div class="kpi-tooltip" id="tip-CreditSpread"></div>
-    <div class="kpi-value loading-text" id="val-CreditSpread">Loading…</div>
-    <div class="kpi-change neutral" id="chg-CreditSpread">–</div>
-    <div class="kpi-date" id="date-CreditSpread">–</div>
-    <div class="sparkline-wrap"><canvas id="spark-CreditSpread"></canvas></div>
-    <div class="mini-table-wrap" id="mini-table-CreditSpread"></div>
-  </div>
-
-<div class="kpi-card" id="card-Yield30Y" data-freq="mom">
-    <div class="kpi-label">30-Year Yield <span class="kpi-series-id">DGS30</span><span class="kpi-info">?</span></div>
-    <div class="kpi-tooltip" id="tip-Yield30Y"></div>
-    <div class="kpi-value loading-text" id="val-Yield30Y">Loading…</div>
-    <div class="kpi-change neutral" id="chg-Yield30Y">–</div>
-    <div class="kpi-date" id="date-Yield30Y">–</div>
-    <div class="sparkline-wrap"><canvas id="spark-Yield30Y"></canvas></div>
-    <div class="mini-table-wrap" id="mini-table-Yield30Y"></div>
-  </div>
-
-
-<div class="kpi-card" id="card-FedFunds" data-freq="mom">
-    <div class="kpi-label">Fed Funds Rate <span class="kpi-series-id">FEDFUNDS</span><span class="kpi-info">?</span></div>
-    <div class="kpi-tooltip" id="tip-FedFunds"></div>
-    <div class="kpi-value loading-text" id="val-FedFunds">Loading…</div>
-    <div class="kpi-change neutral" id="chg-FedFunds">–</div>
-    <div class="kpi-date" id="date-FedFunds">–</div>
-    <div class="sparkline-wrap"><canvas id="spark-FedFunds"></canvas></div>
-    <div class="mini-table-wrap" id="mini-table-FedFunds"></div>
-  </div>
+  <div class="modules" id="modules"></div>
 
   <div class="section-label" style="grid-column:1/-1;">// Sector Performance (SPDR ETFs · Daily)</div>
   <div style="grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
@@ -1656,6 +1590,10 @@ const MARKET = {
 };
 const HIGHER_IS_GOOD = ["Spread"];
 const DUAL_ROW       = [];
+const LAYOUT = [
+  { title: 'Policy Rate & Treasury Curve', series: ['FedFunds', 'Yield2Y', 'Yield10Y', 'Yield30Y', 'Spread'] },
+  { title: 'Credit',                       series: ['CreditSpread'] }
+];
 </script>
 
 <!-- KPI Expand Modal -->

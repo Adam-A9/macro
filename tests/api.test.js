@@ -112,3 +112,109 @@ describe('sleep', () => {
     assert.ok(elapsed >= 45, 'should wait at least ~50ms');
   });
 });
+
+describe('module view modes', () => {
+  const monthly = [
+    { date: '2025-01-01', value: 100 },
+    { date: '2025-02-01', value: 102 },
+    { date: '2026-01-01', value: 105 },
+    { date: '2026-02-01', value: 108.12 }
+  ];
+
+  it('labels quarterly series QoQ and others MoM', () => {
+    assert.deepEqual(seriesModes({ freq: 'MoM' }), ['Level', 'MoM', 'YoY']);
+    assert.deepEqual(seriesModes({ freq: 'QoQ' }), ['Level', 'QoQ', 'YoY']);
+  });
+
+  it('measures % series in percentage points and others in percent', () => {
+    assert.equal(changeKind({ unit: '%' }), 'pp');
+    assert.equal(changeKind({ unit: 'B$' }), 'pct');
+    assert.equal(changeKind({ unit: 'K', change: 'diff' }), 'diff');
+  });
+
+  it('Level mode returns observations unchanged', () => {
+    const d = buildModeSeries(monthly, { unit: '', decimals: 2 }, 'Level');
+    assert.equal(d.mode, 'Level');
+    assert.equal(d.obs.length, 4);
+    assert.isFalse(d.showSign);
+  });
+
+  it('MoM mode computes percent change from the prior observation', () => {
+    const d = buildModeSeries(monthly, { unit: '', decimals: 2 }, 'MoM');
+    assert.equal(d.unit, '%');
+    assert.equal(d.obs.length, 3);
+    assert.closeTo(d.obs[0].value, 2, 1e-9);
+    assert.closeTo(d.obs[2].value, (108.12 / 105 - 1) * 100, 1e-9);
+  });
+
+  it('YoY mode compares against the same month a year earlier', () => {
+    const d = buildModeSeries(monthly, { unit: '', decimals: 2 }, 'YoY');
+    assert.deepEqual(d.obs.map(o => o.date), ['2026-01-01', '2026-02-01']);
+    assert.closeTo(d.obs[0].value, 5, 1e-9);
+    assert.closeTo(d.obs[1].value, 6, 1e-9);
+  });
+
+  it('YoY for a rate series is a percentage-point difference', () => {
+    const rates = [{ date: '2025-03-01', value: 4.0 }, { date: '2026-03-01', value: 4.5 }];
+    const d = buildModeSeries(rates, { unit: '%', decimals: 1 }, 'YoY');
+    assert.equal(d.unit, ' pp');
+    assert.closeTo(d.obs[0].value, 0.5, 1e-9);
+  });
+
+  it('diff change kind keeps the series unit (e.g. jobs added)', () => {
+    const jobs = [{ date: '2026-01-01', value: 159000 }, { date: '2026-02-01', value: 159150 }];
+    const d = buildModeSeries(jobs, { unit: 'K', decimals: 0, change: 'diff' }, 'MoM');
+    assert.equal(d.unit, 'K');
+    assert.equal(d.obs[0].value, 150);
+  });
+});
+
+describe('historyStats', () => {
+  // 11 years of monthly values 0..131
+  const obs = [];
+  for (let i = 0; i < 132; i++) {
+    const y = 2015 + Math.floor(i / 12), m = (i % 12) + 1;
+    obs.push({ date: y + '-' + String(m).padStart(2, '0') + '-01', value: i });
+  }
+  const s = historyStats(obs);
+
+  it('reports the value one year earlier', () => {
+    assert.equal(s.latest, 131);
+    assert.equal(s.yearAgo, 119);
+  });
+
+  it('averages the trailing 5 and 10 years', () => {
+    assert.closeTo(s.avg5, (72 + 131) / 2, 1e-9);   // last 60 points: 72..131
+    assert.closeTo(s.avg10, (12 + 131) / 2, 1e-9);  // last 120 points: 12..131
+  });
+
+  it('reports the 10-year range and percentile', () => {
+    assert.equal(s.low10, 12);
+    assert.equal(s.high10, 131);
+    assert.equal(s.percentile, 100);
+  });
+});
+
+describe('mergeLatestObservation', () => {
+  it('replaces the current month with the latest raw reading', () => {
+    const monthly = [{ date: '2026-09-01', value: 4.1 }, { date: '2026-10-01', value: 4.2 }];
+    const merged = mergeLatestObservation(monthly, { date: '2026-10-17', value: 4.3 });
+    assert.deepEqual(merged, [{ date: '2026-09-01', value: 4.1 }, { date: '2026-10-17', value: 4.3 }]);
+  });
+
+  it('appends when the latest reading starts a new month', () => {
+    const monthly = [{ date: '2026-10-01', value: 4.2 }];
+    const merged = mergeLatestObservation(monthly, { date: '2026-11-19', value: 5.04 });
+    assert.equal(merged.length, 2);
+    assert.equal(merged[1].value, 5.04);
+  });
+});
+
+describe('formatObsDate', () => {
+  it('formats monthly, quarterly and daily dates', () => {
+    assert.equal(formatObsDate('2026-10-01', 'long'), 'Oct 2026');
+    assert.equal(formatObsDate('2026-10-01', 'short'), "Oct '26");
+    assert.equal(formatObsDate('2026-07-01', 'long', true), 'Q3 2026');
+    assert.equal(formatObsDate('2026-11-19', 'short'), '11/19');
+  });
+});

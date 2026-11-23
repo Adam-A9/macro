@@ -151,10 +151,6 @@
     top: 0; left: 0; right: 0;
     height: 3px;
   }
-  .kpi-card[data-freq="dod"]::before { background: linear-gradient(90deg, #00d4ff, transparent); }
-  .kpi-card[data-freq="wow"]::before { background: linear-gradient(90deg, #a78bfa, transparent); }
-  .kpi-card[data-freq="mom"]::before { background: linear-gradient(90deg, #00ff9d, transparent); }
-  .kpi-card[data-freq="qoq"]::before { background: linear-gradient(90deg, #ffd700, transparent); }
 
   @keyframes fadeIn {
     to { opacity: 1; transform: translateY(0); }
@@ -787,10 +783,6 @@
     top: 0; left: 0; right: 0;
     height: 3px;
   }
-  .kpi-card[data-freq="dod"]::before { background: linear-gradient(90deg, #00d4ff, transparent); }
-  .kpi-card[data-freq="wow"]::before { background: linear-gradient(90deg, #a78bfa, transparent); }
-  .kpi-card[data-freq="mom"]::before { background: linear-gradient(90deg, #00ff9d, transparent); }
-  .kpi-card[data-freq="qoq"]::before { background: linear-gradient(90deg, #ffd700, transparent); }
 
   @keyframes fadeIn {
     to { opacity: 1; transform: translateY(0); }
@@ -1441,6 +1433,7 @@
   @media(max-width:768px){.nav-bar{overflow-x:auto;top:auto;}.nav-link{padding:8px 12px;font-size:9px;}}
 </style>
 </head>
+<link rel="stylesheet" href="css/modules.css">
 <body>
 
 <header class="header">
@@ -1456,96 +1449,7 @@
 
 <main class="main">
   <div class="error-msg" id="errorMsg"></div>
-  <div class="kpi-card" id="card-Breakeven5" data-freq="mom">
-    <div class="kpi-label">5Y Breakeven Inflation <span class="kpi-series-id">T5YIE</span><span class="kpi-info">?</span></div>
-    <div class="kpi-tooltip" id="tip-Breakeven5"></div>
-    <div class="kpi-value loading-text" id="val-Breakeven5">Loading…</div>
-    <div class="kpi-change neutral" id="chg-Breakeven5">–</div>
-    <div class="kpi-date" id="date-Breakeven5">–</div>
-    <div class="sparkline-wrap"><canvas id="spark-Breakeven5"></canvas></div>
-    <div class="mini-table-wrap" id="mini-table-Breakeven5"></div>
-  </div>
-
-<div class="kpi-card" id="card-Breakeven10" data-freq="mom">
-    <div class="kpi-label">10Y Breakeven Inflation <span class="kpi-series-id">T10YIE</span><span class="kpi-info">?</span></div>
-    <div class="kpi-tooltip" id="tip-Breakeven10"></div>
-    <div class="kpi-value loading-text" id="val-Breakeven10">Loading…</div>
-    <div class="kpi-change neutral" id="chg-Breakeven10">–</div>
-    <div class="kpi-date" id="date-Breakeven10">–</div>
-    <div class="sparkline-wrap"><canvas id="spark-Breakeven10"></canvas></div>
-    <div class="mini-table-wrap" id="mini-table-Breakeven10"></div>
-  </div>
-
-<div class="kpi-card" id="card-CPI" data-freq="mom">
-    <div class="kpi-label">CPI (All Urban) <span class="kpi-series-id">CPIAUCSL</span><span class="kpi-info">?</span></div>
-    <div class="kpi-tooltip" id="tip-CPI"></div>
-    <div class="kpi-value loading-text" id="val-CPI">Loading…</div>
-    <div class="kpi-change neutral" id="chg-CPI">–</div>
-    <div class="kpi-date" id="date-CPI">–</div>
-    <div class="sparkline-wrap"><canvas id="spark-CPI"></canvas></div>
-    <div class="mini-table-wrap" id="mini-table-CPI"></div>
-  </div>
-
-<div class="kpi-card" id="card-CoreCPI" data-freq="mom">
-    <div class="kpi-label">Core CPI <span class="kpi-series-id">CPILFESL</span><span class="kpi-info">?</span></div>
-    <div class="kpi-tooltip" id="tip-CoreCPI"></div>
-    <div class="kpi-value loading-text" id="val-CoreCPI">Loading…</div>
-    <div class="kpi-change neutral" id="chg-CoreCPI">–</div>
-    <div class="kpi-date" id="date-CoreCPI">–</div>
-    <div class="sparkline-wrap"><canvas id="spark-CoreCPI"></canvas></div>
-    <div class="mini-table-wrap" id="mini-table-CoreCPI"></div>
-  </div>
-
-<div class="kpi-card" id="card-PCE" data-freq="mom">
-    <div class="kpi-label">PCE Price Index <span class="kpi-series-id">PCEPI</span><span class="kpi-info">?</span></div>
-    <div class="kpi-tooltip" id="tip-PCE"></div>
-    <div class="kpi-value loading-text" id="val-PCE">Loading…</div>
-    <div class="kpi-change neutral" id="chg-PCE">–</div>
-    <div class="kpi-date" id="date-PCE">–</div>
-    <div class="sparkline-wrap"><canvas id="spark-PCE"></canvas></div>
-    <div class="mini-table-wrap" id="mini-table-PCE"></div>
-  </div>
-
-<div class="kpi-card" id="card-CorePCE" data-freq="mom">
-    <div class="kpi-label">Core PCE <span class="kpi-series-id">PCEPILFE</span><span class="kpi-info">?</span></div>
-    <div class="kpi-tooltip" id="tip-CorePCE"></div>
-    <div class="kpi-value loading-text" id="val-CorePCE">Loading…</div>
-    <div class="kpi-change neutral" id="chg-CorePCE">–</div>
-    <div class="kpi-date" id="date-CorePCE">–</div>
-    <div class="sparkline-wrap"><canvas id="spark-CorePCE"></canvas></div>
-    <div class="mini-table-wrap" id="mini-table-CorePCE"></div>
-  </div>
-
-<div class="kpi-card" id="card-PPI" data-freq="mom">
-    <div class="kpi-label">Producer Price Index <span class="kpi-series-id">PPIACO</span><span class="kpi-info">?</span></div>
-    <div class="kpi-tooltip" id="tip-PPI"></div>
-    <div class="kpi-value loading-text" id="val-PPI">Loading…</div>
-    <div class="kpi-change neutral" id="chg-PPI">–</div>
-    <div class="kpi-date" id="date-PPI">–</div>
-    <div class="sparkline-wrap"><canvas id="spark-PPI"></canvas></div>
-    <div class="mini-table-wrap" id="mini-table-PPI"></div>
-  </div>
-
-<div class="kpi-card" id="card-M2" data-freq="mom">
-    <div class="kpi-label">M2 Money Supply <span class="kpi-series-id">M2SL</span><span class="kpi-info">?</span></div>
-    <div class="kpi-tooltip" id="tip-M2"></div>
-    <div class="kpi-value loading-text" id="val-M2">Loading…</div>
-    <div class="kpi-change neutral" id="chg-M2">–</div>
-    <div class="kpi-date" id="date-M2">–</div>
-    <div class="sparkline-wrap"><canvas id="spark-M2"></canvas></div>
-    <div class="mini-table-wrap" id="mini-table-M2"></div>
-  </div>
-
-<div class="kpi-card" id="card-RealRates" data-freq="mom">
-    <div class="kpi-label">Real Interest Rate <span class="kpi-series-id">REAINTRATREARAT10Y</span><span class="kpi-info">?</span></div>
-    <div class="kpi-tooltip" id="tip-RealRates"></div>
-    <div class="kpi-value loading-text" id="val-RealRates">Loading…</div>
-    <div class="kpi-change neutral" id="chg-RealRates">–</div>
-    <div class="kpi-date" id="date-RealRates">–</div>
-    <div class="sparkline-wrap"><canvas id="spark-RealRates"></canvas></div>
-    <div class="mini-table-wrap" id="mini-table-RealRates"></div>
-  </div>
-
+  <div class="modules" id="modules"></div>
 
   <div class="section-label" style="grid-column:1/-1;">// Market Charts</div>
   <div style="grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
@@ -1600,6 +1504,12 @@ const MARKET = {
 };
 const HIGHER_IS_GOOD = ["M2"];
 const DUAL_ROW       = ["CPI", "CoreCPI", "PCE", "CorePCE", "PPI", "M2"];
+const LAYOUT = [
+  { title: 'Consumer Prices',        series: ['CPI', 'CoreCPI', 'PCE', 'CorePCE'] },
+  { title: 'Pipeline Prices',        series: ['PPI'] },
+  { title: 'Market Expectations',    series: ['Breakeven5', 'Breakeven10', 'RealRates'] },
+  { title: 'Money Supply',           series: ['M2'] }
+];
 </script>
 
 <!-- KPI Expand Modal -->
