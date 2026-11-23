@@ -142,8 +142,8 @@ function fetchCalendar() {
 }
 
 // ─── NEXT UP (top of the Overview) ───────────────────────
-// The soonest releases plus the next Fed decision, which always shows even
-// when it's beyond the calendar's window. Cards link to the full calendar.
+// One line per release: the five soonest, plus the next Fed decision, which
+// always appears (even beyond the calendar's window), in date order.
 const NEXT_UP_COUNT = 5;
 
 function whenLabel(dateStr, timeStr, et) {
@@ -152,35 +152,43 @@ function whenLabel(dateStr, timeStr, et) {
   return day + ' · ' + formatCalTime(timeStr);
 }
 
+function nextUpRow(o) {
+  return '<a class="next-row' + (o.strong ? ' next-strong' : '') + '" href="#calendar">' +
+    '<span class="next-when">' + o.when + '</span>' +
+    '<span class="next-what"><span class="next-name">' + escapeHtml(o.name) + '</span>' +
+      (o.sub ? '<span class="next-sub">' + escapeHtml(o.sub) + '</span>' : '') + '</span>' +
+    '<span class="next-value">' + o.value + '</span>' +
+  '</a>';
+}
+
 function renderNextUpHtml(cal, et) {
   if (!cal || !Array.isArray(cal.events)) return '';
-  const soon = cal.events
+  const items = cal.events
     .filter(ev => ev.series !== 'DFEDTARU' && calendarStatus(ev, et) !== 'released')
     .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))
-    .slice(0, NEXT_UP_COUNT);
-  const cards = soon.map(ev => {
-    const status = calendarStatus(ev, et);
-    const prior = calendarValue(ev, 'prior');
-    const foot = status === 'pending' ? '<span class="cal-status">Awaiting data</span>'
-      : prior != null ? 'Previous <b>' + escapeHtml(prior) + '</b>' : 'Previous –';
-    return '<a class="next-card' + (ev.impact === 'high' ? ' next-high' : '') + '" href="#calendar">' +
-      '<span class="next-when">' + whenLabel(ev.date, ev.time, et) + '</span>' +
-      '<span class="next-name">' + escapeHtml(ev.label) + '</span>' +
-      '<span class="next-sub">' + escapeHtml([ev.period, ev.note].filter(Boolean).join(' · ')) + '</span>' +
-      '<span class="next-foot">' + foot + '</span>' +
-    '</a>';
-  });
+    .slice(0, NEXT_UP_COUNT)
+    .map(ev => {
+      const prior = calendarValue(ev, 'prior');
+      return {
+        key: ev.date + ev.time, strong: ev.impact === 'high',
+        when: whenLabel(ev.date, ev.time, et), name: ev.label,
+        sub: [ev.period, ev.note].filter(Boolean).join(' · '),
+        value: calendarStatus(ev, et) === 'pending' ? '<span class="cal-status">Awaiting data</span>'
+          : '<span class="next-label">Prev</span> ' + (prior != null ? escapeHtml(prior) : '–')
+      };
+    });
   const fed = cal.next_fomc;
   if (fed) {
     const days = daysBetween(et.date, fed.date);
-    cards.push('<a class="next-card next-fed" href="#calendar">' +
-      '<span class="next-when">' + whenLabel(fed.date, fed.time, et) + '</span>' +
-      '<span class="next-name">Fed rate decision</span>' +
-      '<span class="next-sub">' + (days > 1 ? 'in ' + days + ' days' : days === 1 ? 'tomorrow' : 'today') + '</span>' +
-      '<span class="next-foot">' + (fed.current ? 'Current <b>' + escapeHtml(fed.current) + '</b>' : '') + '</span>' +
-    '</a>');
+    items.push({
+      key: fed.date + fed.time, strong: true,
+      when: whenLabel(fed.date, fed.time, et), name: 'Fed rate decision',
+      sub: days > 1 ? 'in ' + days + ' days' : days === 1 ? 'tomorrow' : 'today',
+      value: fed.current ? '<span class="next-label">Now</span> ' + escapeHtml(fed.current) : ''
+    });
   }
-  return cards.join('');
+  items.sort((a, b) => a.key.localeCompare(b.key));
+  return items.map(nextUpRow).join('');
 }
 
 function renderNextUp() {

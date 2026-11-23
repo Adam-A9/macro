@@ -4,7 +4,7 @@ This dashboard answers one question per page: *where is the economy now, and how
 
 ## 1. Layout: overview first, then detail
 
-**The Overview opens with "Next up":** the five soonest releases and the next Fed decision. The Fed card always shows, even when the meeting is beyond the calendar's window, with the current target range and a countdown. The cards sit on the same 6-column grid as the tiles below and link to the full calendar at the bottom of the page.
+**The Overview opens with "Next up":** a single panel of one-line rows (when · release and period · previous value) for the five soonest releases, plus the next Fed decision with the current target range. The Fed row always appears, even when the meeting is beyond the calendar's window, and all rows sit in date order. Each row links to the full calendar at the bottom of the page. On phones the time moves under the name so nothing is cut off.
 
 **Every page opens with an "At a glance" grid: one identical tile per metric.** Selecting a tile scrolls to that metric's module and briefly highlights it; a floating button returns to the grid. The format follows four principles:
 - **Small multiples.** Tufte describes small multiples as one design repeated within the viewer's eye span, each instance showing different data [15]. Every tile has the same structure:
