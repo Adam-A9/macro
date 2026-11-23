@@ -151,10 +151,6 @@
     top: 0; left: 0; right: 0;
     height: 3px;
   }
-  .kpi-card[data-freq="dod"]::before { background: linear-gradient(90deg, #00d4ff, transparent); }
-  .kpi-card[data-freq="wow"]::before { background: linear-gradient(90deg, #a78bfa, transparent); }
-  .kpi-card[data-freq="mom"]::before { background: linear-gradient(90deg, #00ff9d, transparent); }
-  .kpi-card[data-freq="qoq"]::before { background: linear-gradient(90deg, #ffd700, transparent); }
 
   @keyframes fadeIn {
     to { opacity: 1; transform: translateY(0); }
@@ -794,6 +790,7 @@
   }
 </style>
 </head>
+<link rel="stylesheet" href="css/modules.css">
 <body>
 
 <header class="header">
@@ -810,131 +807,7 @@
 <main class="main">
   <div class="error-msg" id="errorMsg"></div>
 
-  <!-- KPI CARDS -->
-  <div class="kpi-card" id="card-10Y_Yield" data-freq="mom">
-    <div class="kpi-label">10-Year Treasury Yield <span class="kpi-series-id">DGS10</span><span class="kpi-info">?</span></div>
-    <div class="kpi-tooltip" id="tip-10Y_Yield"></div>
-    <div class="kpi-value loading-text" id="val-10Y_Yield">Loading…</div>
-    <div class="kpi-change neutral" id="chg-10Y_Yield">–</div>
-    <div class="kpi-date" id="date-10Y_Yield">–</div>
-    <div class="sparkline-wrap"><canvas id="spark-10Y_Yield"></canvas></div>
-    <div class="mini-table-wrap" id="mini-table-10Y_Yield"></div>
-  </div>
-
-  <div class="kpi-card" id="card-Spread" data-freq="mom">
-    <div class="kpi-label">Yield Curve 10Y-2Y <span class="kpi-series-id">T10Y2Y</span><span class="kpi-info">?</span></div>
-    <div class="kpi-tooltip" id="tip-Spread"></div>
-    <div class="kpi-value loading-text" id="val-Spread">Loading…</div>
-    <div class="kpi-change neutral" id="chg-Spread">–</div>
-    <div class="kpi-date" id="date-Spread">–</div>
-    <div class="sparkline-wrap"><canvas id="spark-Spread"></canvas></div>
-    <div class="mini-table-wrap" id="mini-table-Spread"></div>
-  </div>
-
-  <div class="kpi-card" id="card-Jobless_Claims" data-freq="mom">
-    <div class="kpi-label">Jobless Claims <span class="kpi-series-id">ICSA</span><span class="kpi-info">?</span></div>
-    <div class="kpi-tooltip" id="tip-Jobless_Claims"></div>
-    <div class="kpi-value loading-text" id="val-Jobless_Claims">Loading…</div>
-    <div class="kpi-change neutral" id="chg-Jobless_Claims">–</div>
-    <div class="kpi-date" id="date-Jobless_Claims">–</div>
-    <div class="sparkline-wrap"><canvas id="spark-Jobless_Claims"></canvas></div>
-    <div class="mini-table-wrap" id="mini-table-Jobless_Claims"></div>
-  </div>
-
-  <div class="kpi-card" id="card-FedFunds" data-freq="mom">
-    <div class="kpi-label">Fed Funds Rate <span class="kpi-series-id">FEDFUNDS</span><span class="kpi-info">?</span></div>
-    <div class="kpi-tooltip" id="tip-FedFunds"></div>
-    <div class="kpi-value loading-text" id="val-FedFunds">Loading…</div>
-    <div class="kpi-change neutral" id="chg-FedFunds">–</div>
-    <div class="kpi-date" id="date-FedFunds">–</div>
-    <div class="sparkline-wrap"><canvas id="spark-FedFunds"></canvas></div>
-    <div class="mini-table-wrap" id="mini-table-FedFunds"></div>
-  </div>
-
-  <div class="kpi-card" id="card-Unemployment" data-freq="mom">
-    <div class="kpi-label">Unemployment Rate <span class="kpi-series-id">UNRATE</span><span class="kpi-info">?</span></div>
-    <div class="kpi-tooltip" id="tip-Unemployment"></div>
-    <div class="kpi-value loading-text" id="val-Unemployment">Loading…</div>
-    <div class="kpi-change neutral" id="chg-Unemployment">–</div>
-    <div class="kpi-date" id="date-Unemployment">–</div>
-    <div class="sparkline-wrap"><canvas id="spark-Unemployment"></canvas></div>
-    <div class="mini-table-wrap" id="mini-table-Unemployment"></div>
-  </div>
-
-  <div class="kpi-card" id="card-CPI" data-freq="mom">
-    <div class="kpi-label">CPI (All Urban) <span class="kpi-series-id">CPIAUCSL</span><span class="kpi-info">?</span></div>
-    <div class="kpi-tooltip" id="tip-CPI"></div>
-    <div class="kpi-value loading-text" id="val-CPI">Loading…</div>
-    <div class="kpi-change neutral" id="chg-CPI">–</div>
-    <div class="kpi-date" id="date-CPI">–</div>
-    <div class="sparkline-wrap"><canvas id="spark-CPI"></canvas></div>
-    <div class="mini-table-wrap" id="mini-table-CPI"></div>
-  </div>
-
-  <div class="kpi-card" id="card-PPI" data-freq="mom">
-    <div class="kpi-label">Producer Price Index <span class="kpi-series-id">PPIACO</span><span class="kpi-info">?</span></div>
-    <div class="kpi-tooltip" id="tip-PPI"></div>
-    <div class="kpi-value loading-text" id="val-PPI">Loading…</div>
-    <div class="kpi-change neutral" id="chg-PPI">–</div>
-    <div class="kpi-date" id="date-PPI">–</div>
-    <div class="sparkline-wrap"><canvas id="spark-PPI"></canvas></div>
-    <div class="mini-table-wrap" id="mini-table-PPI"></div>
-  </div>
-
-  <div class="kpi-card" id="card-M2" data-freq="mom">
-    <div class="kpi-label">M2 Money Supply <span class="kpi-series-id">M2SL</span><span class="kpi-info">?</span></div>
-    <div class="kpi-tooltip" id="tip-M2"></div>
-    <div class="kpi-value loading-text" id="val-M2">Loading…</div>
-    <div class="kpi-change neutral" id="chg-M2">–</div>
-    <div class="kpi-date" id="date-M2">–</div>
-    <div class="sparkline-wrap"><canvas id="spark-M2"></canvas></div>
-    <div class="mini-table-wrap" id="mini-table-M2"></div>
-  </div>
-
-  <div class="kpi-card" id="card-Housing_Starts" data-freq="mom">
-    <div class="kpi-label">Housing Starts <span class="kpi-series-id">HOUST</span><span class="kpi-info">?</span></div>
-    <div class="kpi-tooltip" id="tip-Housing_Starts"></div>
-    <div class="kpi-value loading-text" id="val-Housing_Starts">Loading…</div>
-    <div class="kpi-change neutral" id="chg-Housing_Starts">–</div>
-    <div class="kpi-date" id="date-Housing_Starts">–</div>
-    <div class="sparkline-wrap"><canvas id="spark-Housing_Starts"></canvas></div>
-    <div class="mini-table-wrap" id="mini-table-Housing_Starts"></div>
-    <div class="revision-tag flat" id="revision-Housing_Starts" style="display:none;"></div>
-  </div>
-
-  <div class="kpi-card" id="card-Retail_Sales" data-freq="mom">
-    <div class="kpi-label">Retail Sales <span class="kpi-series-id">RSAFS</span><span class="kpi-info">?</span></div>
-    <div class="kpi-tooltip" id="tip-Retail_Sales"></div>
-    <div class="kpi-value loading-text" id="val-Retail_Sales">Loading…</div>
-    <div class="kpi-change neutral" id="chg-Retail_Sales">–</div>
-    <div class="kpi-date" id="date-Retail_Sales">–</div>
-    <div class="sparkline-wrap"><canvas id="spark-Retail_Sales"></canvas></div>
-    <div class="mini-table-wrap" id="mini-table-Retail_Sales"></div>
-    <div class="revision-tag flat" id="revision-Retail_Sales" style="display:none;"></div>
-  </div>
-
-  <div class="kpi-card" id="card-CC_Delinquency" data-freq="qoq">
-    <div class="kpi-label">Credit Card Delinquency <span class="kpi-series-id">DRCCLACBS</span><span class="kpi-info">?</span></div>
-    <div class="kpi-tooltip" id="tip-CC_Delinquency"></div>
-    <div class="kpi-value loading-text" id="val-CC_Delinquency">Loading…</div>
-    <div class="kpi-change neutral" id="chg-CC_Delinquency">–</div>
-    <div class="kpi-date" id="date-CC_Delinquency">–</div>
-    <div class="sparkline-wrap"><canvas id="spark-CC_Delinquency"></canvas></div>
-    <div class="mini-table-wrap" id="mini-table-CC_Delinquency"></div>
-  </div>
-
-  <div class="kpi-card" id="card-GDP" data-freq="qoq">
-    <div class="kpi-label">Real GDP <span class="kpi-series-id">GDP</span><span class="kpi-info">?</span></div>
-    <div class="kpi-tooltip" id="tip-GDP"></div>
-    <div class="kpi-value loading-text" id="val-GDP">Loading…</div>
-    <div class="kpi-change neutral" id="chg-GDP">–</div>
-    <div class="kpi-date" id="date-GDP">–</div>
-    <div class="sparkline-wrap"><canvas id="spark-GDP"></canvas></div>
-    <div class="mini-table-wrap" id="mini-table-GDP"></div>
-    <div class="revision-tag flat" id="revision-GDP" style="display:none;"></div>
-  </div>
-
-
+  <div class="modules" id="modules"></div>
 
   <div class="section-label" style="grid-column:1/-1;">// Market &amp; Rate Charts</div>
 
@@ -1054,7 +927,7 @@ const FRED_SERIES = {
   FedFunds:       { id: "FEDFUNDS",       label: "Fed Funds Rate",         unit: "%",   decimals: 2, freq: "MoM", bar: "#00ff9d", desc: "The federal funds rate is the interest rate at which banks lend reserves to each other overnight, set by the Federal Reserve's FOMC. It is the single most powerful lever in all of macroeconomics — every loan, mortgage, bond yield, and stock valuation in the world is influenced by this number. When the Fed raises rates, borrowing becomes more expensive, slowing inflation but also growth. When it cuts, credit loosens and the economy is stimulated. Markets obsess over every FOMC meeting because a single 0.25% move here ripples through the entire global financial system." },
   Spread:         { id: "T10Y2Y",         label: "Yield Curve 10Y-2Y",     unit: "%",   decimals: 2, freq: "MoM", sample: "monthly", bar: "#ffd700", desc: "The yield curve spread is the difference between the 10-year and 2-year Treasury yields. In a normal, healthy economy this is positive — investors demand more compensation for locking up money for longer. When it turns negative (inverted), it means short-term rates exceed long-term rates, typically because the Fed has hiked rates aggressively. An inverted yield curve has preceded every US recession since the 1960s, usually with a 6-18 month lead time. It inverted sharply in 2022-2023 and is one of the most closely watched signals on Wall Street." },
   // MoM
-  Jobless_Claims: { id: "ICSA",           label: "Jobless Claims",         unit: "K",   decimals: 0, freq: "MoM", sample: "monthly", bar: "#a78bfa", desc: "Initial jobless claims counts the number of people filing for unemployment insurance for the first time in a given week, released every Thursday morning. Because it is weekly, it is the most timely labor market data available — stress in the job market shows up here weeks before the monthly unemployment rate captures it. A healthy economy typically sees claims below 250,000 per week. A sustained move above 300,000-350,000 is a warning sign. Sharp spikes — like those seen in March 2020 when claims hit 6 million in a single week — are among the first hard data signals of economic collapse." },
+  Jobless_Claims: { id: "ICSA",           label: "Jobless Claims",         unit: "",    decimals: 0, freq: "MoM", sample: "monthly", bar: "#a78bfa", desc: "Initial jobless claims counts the number of people filing for unemployment insurance for the first time in a given week, released every Thursday morning. Because it is weekly, it is the most timely labor market data available — stress in the job market shows up here weeks before the monthly unemployment rate captures it. A healthy economy typically sees claims below 250,000 per week. A sustained move above 300,000-350,000 is a warning sign. Sharp spikes — like those seen in March 2020 when claims hit 6 million in a single week — are among the first hard data signals of economic collapse." },
   // MoM
   Unemployment:   { id: "UNRATE",         label: "Unemployment",           unit: "%",   decimals: 1, freq: "MoM", bar: "#ff6b35", desc: "The unemployment rate measures the share of people in the labor force who are actively looking for a job but cannot find one. Released every first Friday of the month by the Bureau of Labor Statistics — it is one of the most market-moving data points on the calendar. A reading below 4% is considered a strong, healthy labor market. Above 5-6% signals stress. The Fed is mandated to keep unemployment low alongside controlling inflation, so this number directly shapes rate decisions. Sustained rises here are often a recession warning." },
   CPI:            { id: "CPIAUCSL",       label: "CPI",                    unit: "",    decimals: 2, freq: "MoM", bar: "#00ff9d", desc: "The Consumer Price Index tracks how much a fixed basket of everyday goods and services — food, rent, gasoline, healthcare, clothing — costs over time. It is the Fed's primary gauge of whether inflation is under control. Their official target is 2% annual growth. When CPI runs significantly above target, the Fed raises interest rates aggressively to slow borrowing and cool demand. The 2022-2023 rate hike cycle, the fastest in 40 years, was a direct response to CPI hitting 9.1%. When CPI falls toward target, rate cuts become possible." },
@@ -1078,6 +951,13 @@ const MARKET = {
 
 const HIGHER_IS_GOOD = ['GDP', 'Retail_Sales', 'Housing_Starts', 'M2'];
 const DUAL_ROW       = ['CPI', 'PPI', 'GDP', 'Retail_Sales', 'Housing_Starts', 'M2'];
+const LAYOUT = [
+  { title: 'Growth & Spending',     series: ['GDP', 'Retail_Sales', 'Housing_Starts'] },
+  { title: 'Labor',                 series: ['Unemployment', 'Jobless_Claims'] },
+  { title: 'Inflation & Money',     series: ['CPI', 'PPI', 'M2'] },
+  { title: 'Fed Policy & Rates',    series: ['FedFunds', '10Y_Yield', 'Spread'] },
+  { title: 'Consumer Credit',       series: ['CC_Delinquency'] }
+];
 
 // ─── INDEX-SPECIFIC FETCH (overrides shared fetchAll) ────
 // Adds ALFRED revision data for GDP, Retail Sales, Housing Starts.
@@ -1098,7 +978,7 @@ async function fetchAll() {
     const name = fredNames[i];
     try {
       const cfg = FRED_SERIES[name];
-      const obs = await fetchFRED(cfg.id, cfg.sample === "monthly" ? 260 : 40);
+      const obs = await fetchFREDSeries(cfg);
       seriesRawData[name] = obs;
       allFredData[name]   = obs;
       updateCard(name, obs);

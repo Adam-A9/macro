@@ -6,25 +6,21 @@ function detailParams() {
     label: params.get('label') || params.get('id') || 'Economic chart',
     unit: params.get('unit') || '',
     decimals: Number(params.get('decimals') || 2),
-    interval: params.get('interval') || 'MoM',
+    interval: params.get('interval') || 'Level',
+    freq: params.get('freq') || '',
+    change: params.get('change') || '',
     sample: params.get('sample') || '',
     color: params.get('color') || '#3b82f6'
   };
 }
 
 function detailDisplaySeries(obs, cfg) {
-  if (cfg.interval === 'YoY') {
-    return {
-      obs: calculateYoYObservations(obs),
-      unit: '%',
-      decimals: 2
-    };
+  const sampled = cfg.sample === 'monthly' ? sampleMonthlyObservations(obs) : obs;
+  // Market panels and older links show raw levels.
+  if (cfg.source !== 'fred' || !['MoM', 'QoQ', 'YoY'].includes(cfg.interval)) {
+    return { obs: sampled, unit: cfg.unit, decimals: cfg.decimals };
   }
-  return {
-    obs: cfg.sample === 'monthly' ? sampleMonthlyObservations(obs) : obs,
-    unit: cfg.unit,
-    decimals: cfg.decimals
-  };
+  return buildModeSeries(sampled, cfg, cfg.interval);
 }
 
 async function loadFullHistoryChart() {
@@ -39,7 +35,7 @@ async function loadFullHistoryChart() {
   title.textContent = cfg.label;
   document.title = cfg.label + ' | MACRO';
   id.textContent = (cfg.source === 'fred' ? 'FRED ' : 'MARKET ') + cfg.id;
-  interval.textContent = cfg.interval + ' observations';
+  interval.textContent = (['MoM', 'QoQ', 'YoY'].includes(cfg.interval) ? cfg.interval + ' change' : 'Level');
   document.documentElement.style.setProperty('--accent', cfg.color);
 
   try {

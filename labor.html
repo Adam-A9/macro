@@ -151,10 +151,6 @@
     top: 0; left: 0; right: 0;
     height: 3px;
   }
-  .kpi-card[data-freq="dod"]::before { background: linear-gradient(90deg, #00d4ff, transparent); }
-  .kpi-card[data-freq="wow"]::before { background: linear-gradient(90deg, #a78bfa, transparent); }
-  .kpi-card[data-freq="mom"]::before { background: linear-gradient(90deg, #00ff9d, transparent); }
-  .kpi-card[data-freq="qoq"]::before { background: linear-gradient(90deg, #ffd700, transparent); }
 
   @keyframes fadeIn {
     to { opacity: 1; transform: translateY(0); }
@@ -787,10 +783,6 @@
     top: 0; left: 0; right: 0;
     height: 3px;
   }
-  .kpi-card[data-freq="dod"]::before { background: linear-gradient(90deg, #00d4ff, transparent); }
-  .kpi-card[data-freq="wow"]::before { background: linear-gradient(90deg, #a78bfa, transparent); }
-  .kpi-card[data-freq="mom"]::before { background: linear-gradient(90deg, #00ff9d, transparent); }
-  .kpi-card[data-freq="qoq"]::before { background: linear-gradient(90deg, #ffd700, transparent); }
 
   @keyframes fadeIn {
     to { opacity: 1; transform: translateY(0); }
@@ -1441,6 +1433,7 @@
   @media(max-width:768px){.nav-bar{overflow-x:auto;top:auto;}.nav-link{padding:8px 12px;font-size:9px;}}
 </style>
 </head>
+<link rel="stylesheet" href="css/modules.css">
 <body>
 <header class="header">
   <div class="logo">MACRO<span> // Labor Dashboard</span></div>
@@ -1453,96 +1446,7 @@
 <nav class="nav-bar"><a href="index.html" class="nav-link">Macro</a><a href="inflation.html" class="nav-link">Inflation</a><a href="housing.html" class="nav-link">Housing</a><a href="labor.html" class="nav-link active">Labor</a><a href="markets.html" class="nav-link">Sectors</a></nav>
 <main class="main">
   <div class="error-msg" id="errorMsg"></div>
-  <div class="kpi-card" id="card-JoblessClaims" data-freq="mom">
-    <div class="kpi-label">Initial Jobless Claims <span class="kpi-series-id">ICSA</span><span class="kpi-info">?</span></div>
-    <div class="kpi-tooltip" id="tip-JoblessClaims"></div>
-    <div class="kpi-value loading-text" id="val-JoblessClaims">Loading…</div>
-    <div class="kpi-change neutral" id="chg-JoblessClaims">–</div>
-    <div class="kpi-date" id="date-JoblessClaims">–</div>
-    <div class="sparkline-wrap"><canvas id="spark-JoblessClaims"></canvas></div>
-    <div class="mini-table-wrap" id="mini-table-JoblessClaims"></div>
-  </div>
-
-<div class="kpi-card" id="card-ContClaims" data-freq="mom">
-    <div class="kpi-label">Continuing Claims <span class="kpi-series-id">CCSA</span><span class="kpi-info">?</span></div>
-    <div class="kpi-tooltip" id="tip-ContClaims"></div>
-    <div class="kpi-value loading-text" id="val-ContClaims">Loading…</div>
-    <div class="kpi-change neutral" id="chg-ContClaims">–</div>
-    <div class="kpi-date" id="date-ContClaims">–</div>
-    <div class="sparkline-wrap"><canvas id="spark-ContClaims"></canvas></div>
-    <div class="mini-table-wrap" id="mini-table-ContClaims"></div>
-  </div>
-
-<div class="kpi-card" id="card-Unemployment" data-freq="mom">
-    <div class="kpi-label">Unemployment Rate <span class="kpi-series-id">UNRATE</span><span class="kpi-info">?</span></div>
-    <div class="kpi-tooltip" id="tip-Unemployment"></div>
-    <div class="kpi-value loading-text" id="val-Unemployment">Loading…</div>
-    <div class="kpi-change neutral" id="chg-Unemployment">–</div>
-    <div class="kpi-date" id="date-Unemployment">–</div>
-    <div class="sparkline-wrap"><canvas id="spark-Unemployment"></canvas></div>
-    <div class="mini-table-wrap" id="mini-table-Unemployment"></div>
-  </div>
-
-<div class="kpi-card" id="card-LFPR" data-freq="mom">
-    <div class="kpi-label">Labor Force Participation <span class="kpi-series-id">CIVPART</span><span class="kpi-info">?</span></div>
-    <div class="kpi-tooltip" id="tip-LFPR"></div>
-    <div class="kpi-value loading-text" id="val-LFPR">Loading…</div>
-    <div class="kpi-change neutral" id="chg-LFPR">–</div>
-    <div class="kpi-date" id="date-LFPR">–</div>
-    <div class="sparkline-wrap"><canvas id="spark-LFPR"></canvas></div>
-    <div class="mini-table-wrap" id="mini-table-LFPR"></div>
-  </div>
-
-<div class="kpi-card" id="card-JOLTS" data-freq="mom">
-    <div class="kpi-label">Job Openings (JOLTS) <span class="kpi-series-id">JTSJOL</span><span class="kpi-info">?</span></div>
-    <div class="kpi-tooltip" id="tip-JOLTS"></div>
-    <div class="kpi-value loading-text" id="val-JOLTS">Loading…</div>
-    <div class="kpi-change neutral" id="chg-JOLTS">–</div>
-    <div class="kpi-date" id="date-JOLTS">–</div>
-    <div class="sparkline-wrap"><canvas id="spark-JOLTS"></canvas></div>
-    <div class="mini-table-wrap" id="mini-table-JOLTS"></div>
-  </div>
-
-<div class="kpi-card" id="card-AHE" data-freq="mom">
-    <div class="kpi-label">Avg Hourly Earnings <span class="kpi-series-id">CES0500000003</span><span class="kpi-info">?</span></div>
-    <div class="kpi-tooltip" id="tip-AHE"></div>
-    <div class="kpi-value loading-text" id="val-AHE">Loading…</div>
-    <div class="kpi-change neutral" id="chg-AHE">–</div>
-    <div class="kpi-date" id="date-AHE">–</div>
-    <div class="sparkline-wrap"><canvas id="spark-AHE"></canvas></div>
-    <div class="mini-table-wrap" id="mini-table-AHE"></div>
-  </div>
-
-<div class="kpi-card" id="card-Underemployment" data-freq="mom">
-    <div class="kpi-label">Underemployment U-6 <span class="kpi-series-id">U6RATE</span><span class="kpi-info">?</span></div>
-    <div class="kpi-tooltip" id="tip-Underemployment"></div>
-    <div class="kpi-value loading-text" id="val-Underemployment">Loading…</div>
-    <div class="kpi-change neutral" id="chg-Underemployment">–</div>
-    <div class="kpi-date" id="date-Underemployment">–</div>
-    <div class="sparkline-wrap"><canvas id="spark-Underemployment"></canvas></div>
-    <div class="mini-table-wrap" id="mini-table-Underemployment"></div>
-  </div>
-
-<div class="kpi-card" id="card-NFP" data-freq="mom">
-    <div class="kpi-label">Nonfarm Payrolls <span class="kpi-series-id">PAYEMS</span><span class="kpi-info">?</span></div>
-    <div class="kpi-tooltip" id="tip-NFP"></div>
-    <div class="kpi-value loading-text" id="val-NFP">Loading…</div>
-    <div class="kpi-change neutral" id="chg-NFP">–</div>
-    <div class="kpi-date" id="date-NFP">–</div>
-    <div class="sparkline-wrap"><canvas id="spark-NFP"></canvas></div>
-    <div class="mini-table-wrap" id="mini-table-NFP"></div>
-  </div>
-
-<div class="kpi-card" id="card-QuitRate" data-freq="mom">
-    <div class="kpi-label">Quit Rate <span class="kpi-series-id">JTSQUR</span><span class="kpi-info">?</span></div>
-    <div class="kpi-tooltip" id="tip-QuitRate"></div>
-    <div class="kpi-value loading-text" id="val-QuitRate">Loading…</div>
-    <div class="kpi-change neutral" id="chg-QuitRate">–</div>
-    <div class="kpi-date" id="date-QuitRate">–</div>
-    <div class="sparkline-wrap"><canvas id="spark-QuitRate"></canvas></div>
-    <div class="mini-table-wrap" id="mini-table-QuitRate"></div>
-  </div>
-
+  <div class="modules" id="modules"></div>
 
   <div class="section-label" style="grid-column:1/-1;">// Market Charts</div>
   <div style="grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
@@ -1580,13 +1484,13 @@
 // ─── PAGE CONFIG ─────────────────────────────────────────
 const FRED_SERIES = {
   "Unemployment":  { id: "UNRATE",         label: "Unemployment Rate",        unit: "%", decimals: 1, freq: "MoM", desc: "The unemployment rate measures the share of the labor force actively looking for work but unable to find it. Released every first Friday by the Bureau of Labor Statistics — one of the most market-moving releases on the calendar. Below 4% is considered a strong labor market. Above 5-6% signals meaningful stress. The Fed is constitutionally mandated to pursue maximum employment alongside price stability, so this number directly shapes rate decisions. The Sahm Rule states that if the 3-month average unemployment rate rises 0.5% above its prior 12-month low, a recession has likely already begun." },
-  "JoblessClaims": { id: "ICSA",           label: "Initial Jobless Claims",   unit: "K", decimals: 0, freq: "MoM", sample: "monthly", desc: "Initial jobless claims counts people filing for unemployment insurance for the first time each week, released every Thursday at 8:30 AM ET. Because it is weekly, it is the most timely labor market indicator available — deterioration shows up here weeks before the monthly unemployment rate captures it. A healthy economy sees claims below 250,000 per week. A sustained move above 300,000-350,000 is a warning sign. The March 2020 spike to 6 million claims in a single week was one of the most dramatic economic data points ever recorded, signaling instantaneous economic collapse." },
-  "ContClaims":    { id: "CCSA",           label: "Continuing Claims",        unit: "K", decimals: 0, freq: "MoM", sample: "monthly", desc: "Continuing claims measures the total number of people currently receiving unemployment benefits — not new filers, but everyone still on the rolls. While initial claims show the rate of job losses, continuing claims shows how long people stay unemployed, reflecting how hard it is to find a new job. Rising continuing claims while initial claims are stable suggests the labor market is absorbing new workers but those already unemployed are struggling — often an early signal of softening labor demand before it shows up in the headline unemployment rate." },
+  "JoblessClaims": { id: "ICSA",           label: "Initial Jobless Claims",   unit: "",  decimals: 0, freq: "MoM", sample: "monthly", desc: "Initial jobless claims counts people filing for unemployment insurance for the first time each week, released every Thursday at 8:30 AM ET. Because it is weekly, it is the most timely labor market indicator available — deterioration shows up here weeks before the monthly unemployment rate captures it. A healthy economy sees claims below 250,000 per week. A sustained move above 300,000-350,000 is a warning sign. The March 2020 spike to 6 million claims in a single week was one of the most dramatic economic data points ever recorded, signaling instantaneous economic collapse." },
+  "ContClaims":    { id: "CCSA",           label: "Continuing Claims",        unit: "",  decimals: 0, freq: "MoM", sample: "monthly", desc: "Continuing claims measures the total number of people currently receiving unemployment benefits — not new filers, but everyone still on the rolls. While initial claims show the rate of job losses, continuing claims shows how long people stay unemployed, reflecting how hard it is to find a new job. Rising continuing claims while initial claims are stable suggests the labor market is absorbing new workers but those already unemployed are struggling — often an early signal of softening labor demand before it shows up in the headline unemployment rate." },
   "LFPR":          { id: "CIVPART",        label: "Labor Force Participation", unit: "%", decimals: 1, freq: "MoM", desc: "The labor force participation rate measures the percentage of civilians aged 16+ who are either employed or actively seeking work. It provides critical context for the headline unemployment rate — a falling unemployment rate can look good while actually reflecting discouraged workers who stopped searching and dropped out of the labor force. The LFPR fell sharply during COVID and has never fully recovered, partly due to early retirements, disability, and caregiving demands. A rising LFPR while unemployment stays low signals genuine labor market expansion rather than statistical shrinkage from dropouts." },
   "JOLTS":         { id: "JTSJOL",         label: "Job Openings (JOLTS)",     unit: "K", decimals: 0, freq: "MoM", desc: "The JOLTS survey counts unfilled job positions at month end. The Fed watches the openings-to-unemployed ratio extremely closely — when there are two openings for every unemployed person, employers compete for workers by raising wages, feeding services inflation. This was the situation in 2021-2022 when openings hit a record 12 million against 6 million unemployed. Former Chair Yellen and Chair Powell both cited this ratio as a key indicator of labor market imbalance requiring rate increases. A declining JOLTS figure signals that labor demand is cooling and wage pressure may be easing." },
   "AHE":           { id: "CES0500000003",  label: "Avg Hourly Earnings",      unit: "$", decimals: 2, freq: "MoM", desc: "Average hourly earnings measures the pace of nominal wage growth across all private sector employees. Rising wages are good for workers but create a dilemma for the Fed — if wages grow faster than productivity, businesses pass higher labor costs on as price increases, fueling a wage-price spiral. The Fed targets wage growth around 3-3.5% annually as consistent with 2% inflation. When AHE runs at 5-6%, it signals labor market tightness generating inflationary pressure in services that persists even after goods inflation normalizes — and services inflation is far harder to kill." },
   "Underemployment":{ id: "U6RATE",        label: "Underemployment U-6",      unit: "%", decimals: 1, freq: "MoM", desc: "The U-6 rate is the broadest official measure of labor underutilization. In addition to the standard unemployed (U-3), it includes marginally attached workers — people who want jobs and have looked recently but not in the past four weeks — plus part-time workers who want full-time work. This fuller picture reveals the true slack in the labor market. U-6 typically runs 1.7-2x the headline U-3 rate. When the gap between U-6 and U-3 is unusually wide, it signals many workers are stuck in part-time or gig work despite wanting full-time employment, indicating hidden labor market weakness." },
-  "NFP":           { id: "PAYEMS",         label: "Nonfarm Payrolls",         unit: "K", decimals: 0, freq: "MoM", desc: "Nonfarm payrolls measures the monthly change in total employed persons across all industries except farming — the headline jobs number released the first Friday of every month. It is arguably the most market-moving regular data release in the world. Expectations are set by ADP payrolls and jobless claims, and surprises routinely move equity markets, bond yields, and the dollar significantly within seconds of the 8:30 AM release. Above 200,000 is strong. Consecutive months below 100,000 raise recession concerns. The number is typically revised substantially in the following two months, meaning the initial print can be misleading." },
+  "NFP":           { id: "PAYEMS",         label: "Nonfarm Payrolls",         unit: "K", decimals: 0, freq: "MoM", change: "diff", mode: "MoM", desc: "Nonfarm payrolls measures the monthly change in total employed persons across all industries except farming — the headline jobs number released the first Friday of every month. It is arguably the most market-moving regular data release in the world. Expectations are set by ADP payrolls and jobless claims, and surprises routinely move equity markets, bond yields, and the dollar significantly within seconds of the 8:30 AM release. Above 200,000 is strong. Consecutive months below 100,000 raise recession concerns. The number is typically revised substantially in the following two months, meaning the initial print can be misleading." },
   "QuitRate":      { id: "JTSQUR",         label: "Quit Rate",                unit: "%", decimals: 1, freq: "MoM", desc: "The quit rate from the JOLTS survey measures the percentage of employed workers who voluntarily left their jobs during the month — sometimes called the take-this-job-and-shove-it index. A high quit rate signals extreme worker confidence: people only voluntarily quit when certain they can find something better, usually at higher pay. The record quit rates of 2021-2022 were a leading indicator of the wage inflation that followed as employers competed to replace departed workers with higher salaries. When the quit rate falls, workers are becoming cautious — often a leading signal of softening labor demand before unemployment rises." }
 };
 const MARKET = {
@@ -1595,6 +1499,12 @@ const MARKET = {
 };
 const HIGHER_IS_GOOD = ["LFPR", "JOLTS", "AHE", "NFP", "QuitRate"];
 const DUAL_ROW       = ["JOLTS", "AHE", "NFP"];
+const LAYOUT = [
+  { title: 'Jobs & Unemployment',    series: ['NFP', 'Unemployment', 'Underemployment', 'LFPR'] },
+  { title: 'Weekly Claims',          series: ['JoblessClaims', 'ContClaims'] },
+  { title: 'Labor Demand (JOLTS)',   series: ['JOLTS', 'QuitRate'] },
+  { title: 'Wages',                  series: ['AHE'] }
+];
 </script>
 
 <!-- KPI Expand Modal -->
