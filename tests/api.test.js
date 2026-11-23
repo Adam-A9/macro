@@ -142,9 +142,10 @@ describe('module view modes', () => {
   it('MoM mode computes percent change from the prior observation', () => {
     const d = buildModeSeries(monthly, { unit: '', decimals: 2 }, 'MoM');
     assert.equal(d.unit, '%');
-    assert.equal(d.obs.length, 3);
+    // Jan 2025 → Feb 2025 and Jan 2026 → Feb 2026; the 11-month gap is skipped.
+    assert.deepEqual(d.obs.map(o => o.date), ['2025-02-01', '2026-02-01']);
     assert.closeTo(d.obs[0].value, 2, 1e-9);
-    assert.closeTo(d.obs[2].value, (108.12 / 105 - 1) * 100, 1e-9);
+    assert.closeTo(d.obs[1].value, (108.12 / 105 - 1) * 100, 1e-9);
   });
 
   it('YoY mode compares against the same month a year earlier', () => {
@@ -190,5 +191,18 @@ describe('formatObsDate', () => {
     assert.equal(formatObsDate('2026-10-01', 'short'), "Oct '26");
     assert.equal(formatObsDate('2026-07-01', 'long', true), 'Q3 2026');
     assert.equal(formatObsDate('2026-11-19', 'short'), '11/19');
+  });
+});
+
+describe('gaps in source data', () => {
+  it('does not compute a MoM change across a missing month', () => {
+    const obs = [
+      { date: '2026-01-01', value: 100 },
+      { date: '2026-04-01', value: 110 },
+      { date: '2026-05-01', value: 121 }
+    ];
+    const d = buildModeSeries(obs, { unit: '', decimals: 2 }, 'MoM');
+    assert.deepEqual(d.obs.map(o => o.date), ['2026-05-01']);
+    assert.closeTo(d.obs[0].value, 10, 1e-9);
   });
 });

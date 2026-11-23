@@ -3,108 +3,40 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MACRO | Full History</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<title>Full History · Macro</title>
+<script>
+  try { var t = localStorage.getItem('macro.theme'); if (t) document.documentElement.dataset.theme = t; } catch (_) {}
+</script>
+<link rel="stylesheet" href="css/site.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
-  :root {
-    --bg: #080c10;
-    --panel: #0d1117;
-    --border: #1e2d3d;
-    --text: #e8edf2;
-    --muted: #7f91a4;
-    --accent: #3b82f6;
-    --red: #ff3b5c;
-  }
-  * { box-sizing: border-box; }
   html, body { height: 100%; }
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--text);
-    font-family: "Space Mono", monospace;
-  }
-  main {
-    display: grid;
-    grid-template-rows: auto minmax(360px, 1fr);
-    gap: 18px;
-    min-height: 100%;
-    padding: clamp(16px, 3vw, 32px);
-  }
-  header {
-    display: flex;
-    align-items: end;
-    justify-content: space-between;
-    gap: 24px;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 16px;
-  }
-  .eyebrow {
-    color: var(--accent);
-    font-size: 10px;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-  }
-  h1 {
-    margin: 6px 0 0;
-    font-size: clamp(22px, 4vw, 38px);
-    letter-spacing: 0;
-    line-height: 1.1;
-  }
-  .meta {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    gap: 8px 18px;
-    color: var(--muted);
-    font-size: 10px;
-    text-align: right;
-  }
-  .value {
-    color: var(--text);
-    font-family: "DM Mono", monospace;
-    font-size: 22px;
-    font-weight: 500;
-  }
-  .chart-wrap {
-    min-height: 0;
-    position: relative;
-  }
-  canvas { width: 100% !important; height: 100% !important; }
-  .state {
-    position: absolute;
-    inset: 0;
-    display: grid;
-    place-items: center;
-    color: var(--muted);
-    font-size: 12px;
-  }
-  .state.error { color: var(--red); }
-  @media (max-width: 700px) {
-    header { align-items: flex-start; flex-direction: column; }
-    .meta { justify-content: flex-start; text-align: left; }
-    main { grid-template-rows: auto minmax(420px, 1fr); }
-  }
+  .detail { display: grid; grid-template-rows: auto minmax(360px, 1fr); gap: 20px; min-height: 100%; padding: 24px var(--gutter); }
+  .detail-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; flex-wrap: wrap;
+                 border-bottom: 1px solid var(--border); padding-bottom: 16px; }
+  .detail-head h1 { font-size: 24px; font-weight: 650; margin-top: 2px; }
+  .detail-meta { display: flex; gap: 6px 18px; flex-wrap: wrap; color: var(--ink-3); font-size: 13px; align-items: baseline; }
+  .detail-value { color: var(--ink); font-size: 22px; font-weight: 650; }
+  .detail-chart { position: relative; min-height: 0; }
+  .detail-state { position: absolute; inset: 0; display: grid; place-items: center; color: var(--ink-3); }
 </style>
 </head>
 <body>
-<main>
-  <header>
+<main class="detail">
+  <header class="detail-head">
     <div>
-      <div class="eyebrow" id="series-id">Loading full history</div>
+      <div class="module-asof" id="series-id">Loading</div>
       <h1 id="series-title">Economic chart</h1>
     </div>
-    <div class="meta">
-      <span id="series-interval">--</span>
-      <span id="series-range">--</span>
-      <span class="value" id="series-value">--</span>
+    <div class="detail-meta">
+      <span id="series-interval"></span>
+      <span id="series-range"></span>
+      <span class="detail-value" id="series-value"></span>
     </div>
   </header>
-  <div class="chart-wrap">
-    <canvas id="history-chart"></canvas>
-    <div class="state" id="chart-state">Loading all available observations...</div>
+  <div class="detail-chart">
+    <canvas id="history-chart" role="img" aria-label="Full history chart"></canvas>
+    <div class="detail-state" id="chart-state">Loading all available observations…</div>
   </div>
 </main>
 <script src="js/config.js"></script>

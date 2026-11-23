@@ -1,7 +1,9 @@
+// Full-screen chart for one series (opened from a module's "Expand").
 function detailParams() {
   const params = new URLSearchParams(window.location.search);
+  const target = params.get('target');
   return {
-    source: params.get('source'),
+    source: params.get('source') || 'fred',
     id: params.get('id'),
     label: params.get('label') || params.get('id') || 'Economic chart',
     unit: params.get('unit') || '',
@@ -10,61 +12,39 @@ function detailParams() {
     freq: params.get('freq') || '',
     change: params.get('change') || '',
     sample: params.get('sample') || '',
-    color: params.get('color') || '#3b82f6'
+    reference: target != null ? { value: Number(target), label: params.get('targetLabel') || 'Target' } : null
   };
-}
-
-function detailDisplaySeries(obs, cfg) {
-  const sampled = cfg.sample === 'monthly' ? sampleMonthlyObservations(obs) : obs;
-  // Market panels and older links show raw levels.
-  if (cfg.source !== 'fred' || !['MoM', 'QoQ', 'YoY'].includes(cfg.interval)) {
-    return { obs: sampled, unit: cfg.unit, decimals: cfg.decimals };
-  }
-  return buildModeSeries(sampled, cfg, cfg.interval);
 }
 
 async function loadFullHistoryChart() {
   const cfg = detailParams();
   const state = document.getElementById('chart-state');
-  const title = document.getElementById('series-title');
-  const id = document.getElementById('series-id');
-  const interval = document.getElementById('series-interval');
-  const range = document.getElementById('series-range');
-  const value = document.getElementById('series-value');
-
-  title.textContent = cfg.label;
-  document.title = cfg.label + ' | MACRO';
-  id.textContent = (cfg.source === 'fred' ? 'FRED ' : 'MARKET ') + cfg.id;
-  interval.textContent = (['MoM', 'QoQ', 'YoY'].includes(cfg.interval) ? cfg.interval + ' change' : 'Level');
-  document.documentElement.style.setProperty('--accent', cfg.color);
+  document.getElementById('series-title').textContent = cfg.label;
+  document.title = cfg.label + ' · Macro';
+  document.getElementById('series-id').textContent =
+    (cfg.source === 'market' ? 'Yahoo Finance · ' : 'FRED · ') + cfg.id;
+  document.getElementById('series-interval').textContent =
+    (cfg.interval === 'Level' ? 'Level' : cfg.interval + ' change') +
+    ' · shaded: recessions' + (cfg.reference ? ' · dashed: ' + cfg.reference.label : '');
 
   try {
-    const raw = cfg.source === 'fred'
-      ? await fetchFREDHistory(cfg.id)
-      : await fetchMarketHistory(cfg.id);
-    const display = detailDisplaySeries(raw, cfg);
+    const raw = await fetchSeries(cfg);
+    const display = buildModeSeries(raw, cfg, cfg.interval);
     if (display.obs.length < 2) throw new Error('Not enough observations returned');
-
     const first = display.obs[0];
     const latest = display.obs[display.obs.length - 1];
-    range.textContent = first.date + ' to ' + latest.date + ' | ' +
-      display.obs.length.toLocaleString() + ' points';
-    value.textContent = latest.value.toLocaleString(undefined, {
-      maximumFractionDigits: display.decimals
-    }) + display.unit;
-
-    makeModalChart(
-      'history-chart',
-      display.obs.map(d => d.date),
-      display.obs.map(d => d.value),
-      cfg.color,
-      display.unit
-    );
-    modalChart.options.scales.x.ticks.maxTicksLimit = window.innerWidth < 700 ? 4 : 10;
-    modalChart.update('none');
-    state.style.display = 'none';
+    document.getElementById('series-range').textContent =
+      formatObsDate(first.date, 'long', cfg.freq === 'QoQ') + ' – ' +
+      formatObsDate(latest.date, 'long', cfg.freq === 'QoQ');
+    document.getElementById('series-value').textContent = formatDisplayValue(latest.value, display);
+    makeModuleChart('history-chart', display.obs, display, {
+      quarterly: cfg.freq === 'QoQ',
+      bars: false,
+      reference: cfg.reference,
+      maxLabels: 14
+    });
+    state.hidden = true;
   } catch (error) {
-    state.classList.add('error');
     state.textContent = 'Unable to load full history: ' + error.message;
   }
 }

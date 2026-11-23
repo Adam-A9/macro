@@ -35,22 +35,12 @@
 <!-- Source modules under test (load in dependency order) -->
 <script src="../js/config.js"></script>
 <script src="../js/api.js"></script>
-<!-- charts.js requires Chart.js CDN — skip for unit tests -->
+<!-- charts.js requires Chart.js; stub what ui.js needs -->
 <script>
-  // Stub Chart.js-dependent globals so ui.js can load
-  window.Chart = { defaults: { color: '', font: {} } };
-  window.charts    = {};
-  window.sparklines = {};
-  window.makeLineChart  = () => {};
-  window.makeSparkline  = () => {};
-  window.makeModalChart = () => {};
-  window.modalChart     = null;
-  window.NBER_RECESSIONS = [];
-  // Stub page-level globals (normally defined per-page inline script)
-  window.FRED_SERIES   = {};
-  window.MARKET        = {};
-  window.HIGHER_IS_GOOD = [];
-  window.DUAL_ROW       = [];
+  window.makeModuleChart = () => {};
+  window.applyChartDefaults = () => {};
+  // Page-level config (normally defined inline per page)
+  window.SERIES = {};
 </script>
 <script src="../js/ui.js"></script>
 <script src="../js/calendar.js"></script>
