@@ -215,7 +215,8 @@ def load_previous(source):
 def build(catalog, key, previous):
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
     prev_series = previous.get("series", {})
-    out = {"generated_at": now, "series": {}, "sectors": {}, "calendar": {}}
+    out = {"generated_at": now, "series": {}, "sectors": {}, "calendar": {},
+           "pages": catalog.get("pages", [])}
     fresh = 0
 
     for name, cfg in catalog["series"].items():

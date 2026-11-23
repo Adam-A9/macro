@@ -26,8 +26,11 @@
     <p>The economy's vital signs: growth, jobs, inflation, rates and financial conditions. Each chart shows the full history beside the recent trend.</p>
   </div>
   <div class="error-msg" id="errorMsg" role="status" hidden></div>
-  <section class="signals" id="signals" aria-label="Key signals"></section>
-<div class="modules" id="modules"><p class="empty">Loading data…</p></div>
+  <section class="glance" id="glance" aria-labelledby="glance-title">
+    <div class="glance-head"><h2 class="group-title" id="glance-title">At a glance</h2><span class="glance-hint">Click any tile for its full charts</span></div>
+    <div class="glance-grid" id="glanceBody"><p class="empty">Loading…</p></div>
+  </section>
+  <div class="modules" id="modules"><p class="empty">Loading data…</p></div>
 
   <section class="section">
     <h2 class="group-title">Economic Calendar</h2>
@@ -97,7 +100,6 @@ const LAYOUT = [
   }
 ];
 const HIDDEN = ["SahmRule"];
-const SIGNALS = ["recession", "growth", "inflation", "curve", "credit"];
 const SHOW_SECTORS = false;
 </script>
 </body>

@@ -63,7 +63,7 @@ describe('formatObsDate', () => {
     assert.equal(formatObsDate('2026-10-01', 'long'), 'Oct 2026');
     assert.equal(formatObsDate('2026-10-01', 'short'), "Oct '26");
     assert.equal(formatObsDate('2026-07-01', 'long', true), 'Q3 2026');
-    assert.equal(formatObsDate('2026-11-19', 'short'), '11/19');
+    assert.equal(formatObsDate('2026-11-19', 'short'), 'Nov 19');
   });
 });
 

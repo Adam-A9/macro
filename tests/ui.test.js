@@ -28,7 +28,7 @@ describe('signals', () => {
     seriesRawData.SahmRule = [{ date: '2026-09-01', value: 0.2 }, { date: '2026-10-01', value: 0.53 }];
     const r = SIGNAL_LIBRARY.recession.read();
     assert.equal(r.status, 'critical');
-    assert.equal(r.verdict, 'Triggered');
+    assert.equal(r.verdict, 'Recession signal');
   });
 
   it('flags an inverted yield curve', () => {
@@ -45,5 +45,96 @@ describe('signals', () => {
 
   it('returns null before data arrives', () => {
     assert.isNull(SIGNAL_LIBRARY.credit.read());
+  });
+});
+
+describe('glanceChange', () => {
+  const mk = (vals, mode, unit) => ({ mode, unit, decimals: 2, showSign: mode !== 'Level',
+    obs: vals.map((v, i) => ({ date: '2026-0' + (i + 1) + '-01', value: v })) });
+
+  it('shows percentage points for rates', () => {
+    const c = glanceChange(mk([4.2, 4.1], 'Level', '%'), { unit: '%' });
+    assert.closeTo(c.value, -0.1, 1e-9);
+    assert.equal(c.text, '−0.10 pp');
+    assert.equal(c.since, "Jan '26");
+  });
+
+  it('shows percent change for compounding levels', () => {
+    const c = glanceChange(mk([100, 104], 'Level', ''), { unit: '' });
+    assert.equal(c.text, '+4.0%');
+  });
+
+  it('shows the recent average for MoM views', () => {
+    const c = glanceChange(mk([60, 100, 150, 161], 'MoM', 'K'), { unit: 'K', change: 'diff' });
+    assert.isTrue(c.average);
+    assert.closeTo(c.value, 137, 1e-9);
+    assert.equal(c.since, '3-mo avg');
+  });
+});
+
+describe('gridColumns', () => {
+  it('picks the widest column count that fills every row', () => {
+    assert.equal(gridColumns(12, 6), 6);
+    assert.equal(gridColumns(10, 6), 5);
+    assert.equal(gridColumns(8, 6), 4);
+    assert.equal(gridColumns(12, 5), 4);
+  });
+
+  it('falls back to the fewest empty cells', () => {
+    assert.equal(gridColumns(7, 6), 4);   // 4+3: one gap
+    assert.equal(gridColumns(2, 1), 2);   // never fewer than 2
+  });
+});
+
+describe('status placement', () => {
+  afterEach(() => {
+    Object.keys(seriesRawData).forEach(k => delete seriesRawData[k]);
+    delete window.LAYOUT;
+  });
+
+  it('puts the Sahm verdict on Unemployment when the Sahm rule has no tile', () => {
+    window.LAYOUT = [{ title: 'Jobs', series: ['Unemployment', 'Payrolls'] }];
+    seriesRawData.SahmRule = [{ date: '2026-10-01', value: 0.1 }];
+    assert.equal(statusFor('Unemployment').verdict, 'No recession signal');
+    assert.isNull(statusFor('Payrolls'));
+  });
+
+  it('keeps it on the Sahm rule tile when that tile exists', () => {
+    window.LAYOUT = [{ title: 'Jobs', series: ['Unemployment', 'SahmRule'] }];
+    seriesRawData.SahmRule = [{ date: '2026-10-01', value: 0.1 }];
+    assert.isNull(statusFor('Unemployment'));
+    assert.equal(statusFor('SahmRule').status, 'good');
+  });
+});
+
+describe('stoplight', () => {
+  // Steady +/-0.1 moves give a small neutral band (a third of the typical move).
+  const series = (vals, mode) => ({ mode: mode || 'Level', unit: '%', decimals: 1,
+    obs: vals.map((v, i) => ({ date: '2025-' + String(i + 1).padStart(2, '0') + '-01', value: v })) });
+  const base = [4.0, 4.1, 4.0, 4.1, 4.0, 4.1, 4.0];
+
+  it('greens an improvement and reds a deterioration (lower is better)', () => {
+    assert.equal(stoplight(series(base.concat([3.8])), { good: 'down', unit: '%' }).level, 'good');
+    assert.equal(stoplight(series(base.concat([4.3])), { good: 'down', unit: '%' }).level, 'critical');
+  });
+
+  it('is yellow when little changed', () => {
+    assert.equal(stoplight(series(base.concat([4.01])), { good: 'down', unit: '%' }).level, 'warning');
+  });
+
+  it('judges change views by the reading itself', () => {
+    assert.equal(stoplight(series(base.concat([1.5]), 'YoY'), { good: 'up' }).level, 'good');
+    assert.equal(stoplight(series(base.concat([-1.5]), 'YoY'), { good: 'up' }).level, 'critical');
+  });
+
+  it('greens readings near a target and judges the rest by direction', () => {
+    assert.equal(stoplight(series([3, 3.1, 3, 3.1, 2.3], 'YoY'), { good: { target: 2 } }).level, 'good');
+    assert.equal(stoplight(series([3, 3.1, 3, 3.1, 3.6], 'YoY'), { good: { target: 2 } }).level, 'critical');
+    assert.equal(stoplight(series([3.6, 3.7, 3.6, 3.7, 3.0], 'YoY'), { good: { target: 2 } }).level, 'good');
+  });
+
+  it('lets a rule-based signal decide, and shows a ring with no direction', () => {
+    assert.equal(stoplight(series(base), { good: 'down' }, { status: 'critical', verdict: 'Recession signal', note: '' }).level, 'critical');
+    assert.equal(stoplight(series(base), {}).level, 'none');
   });
 });

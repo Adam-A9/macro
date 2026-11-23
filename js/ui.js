@@ -2,7 +2,6 @@
 // Each page defines:
 //   LAYOUT       = [{ title, series: [names...] }, ...]  (module order and groups)
 //   HIDDEN       = [names...]        (loaded for signals but not shown as modules)
-//   SIGNALS      = ['recession', ...] (see SIGNAL_LIBRARY)
 //   SHOW_SECTORS = true|false        (ranked sector returns)
 // Series settings live in config/series.json; data in data/macro.json.
 // SERIES is filled from the data file with just the series this page uses.
@@ -16,7 +15,6 @@ const moduleZoom = {};
 const ZOOM_RANGES = [1, 2, 3, 5, 10];
 const DEFAULT_ZOOM = { Level: 5, YoY: 5, MoM: 3, QoQ: 2 };
 
-function pageSignals() { return typeof SIGNALS !== 'undefined' ? SIGNALS : []; }
 function pageSectors() {
   const on = typeof SHOW_SECTORS !== 'undefined' && SHOW_SECTORS;
   return on && MACRO_DATA && MACRO_DATA.sectors ? MACRO_DATA.sectors.labels : null;
@@ -155,7 +153,6 @@ function syncButtons(name) {
 function updateCard(name, rawObs) {
   seriesRawData[name] = rawObs;
   renderModule(name);
-  renderSignals();
 }
 
 function renderModule(name) {
@@ -218,6 +215,7 @@ function renderModule(name) {
       tableObs.map(d => '<td>' + formatDisplayValue(d.value, display) + '</td>').join('') +
     '</tr></tbody></table>';
   wrap.scrollLeft = wrap.scrollWidth;   // latest readings first on narrow screens
+  updateGlanceRow(name);
 }
 
 function renderAllModules() {
@@ -227,7 +225,6 @@ function renderAllModules() {
 // ─── SIGNALS ─────────────────────────────────────────────
 // Rule-of-thumb readings of the economy's vital signs. Each returns
 // { value, status: 'good'|'warning'|'critical', verdict, note } or null.
-const STATUS_ICON = { good: '✓', warning: '!', critical: '✕' };
 
 function latestOf(name) {
   const obs = seriesRawData[name];
@@ -238,13 +235,14 @@ const SIGNAL_LIBRARY = {
   recession: {
     title: 'Recession signal',
     series: 'SahmRule',
+    tile: 'Unemployment',      // shown here when the Sahm rule has no tile of its own
     read() {
       const l = latestOf('SahmRule'); if (!l) return null;
       const v = l.value;
       return {
         value: v.toFixed(2) + ' pp',
         status: v >= 0.5 ? 'critical' : v >= 0.3 ? 'warning' : 'good',
-        verdict: v >= 0.5 ? 'Triggered' : v >= 0.3 ? 'Approaching' : 'Not triggered',
+        verdict: v >= 0.5 ? 'Recession signal' : v >= 0.3 ? 'Nearing trigger' : 'No recession signal',
         note: 'Sahm rule: 3-mo avg unemployment vs. its 12-mo low. Triggers at 0.50.',
         date: l.date
       };
@@ -315,26 +313,236 @@ const SIGNAL_LIBRARY = {
   }
 };
 
-function renderSignals() {
-  const host = document.getElementById('signals');
-  const ids = pageSignals();
-  if (!host || !ids.length) return;
-  host.innerHTML = ids.map(id => {
+// The rule-based reading (if any) that sets a tile's stoplight, e.g. Sahm rule.
+// A signal sits on its own series' tile, or on its fallback tile when its
+// series isn't one of this page's modules (Sahm rule → Unemployment).
+function onPage(name) {
+  return pageLayout().some(g => g.series.includes(name));
+}
+
+function statusFor(name) {
+  for (const id in SIGNAL_LIBRARY) {
     const sig = SIGNAL_LIBRARY[id];
-    const r = sig.read();
-    if (!r) {
-      return '<div class="signal"><div class="signal-title">' + sig.title + '</div>' +
-        '<div class="signal-value is-loading">Loading…</div></div>';
-    }
-    return '<div class="signal">' +
-      '<div class="signal-title">' + sig.title + '</div>' +
-      '<div class="signal-value">' + r.value + '</div>' +
-      '<div class="status status-' + r.status + '"><span class="status-icon" aria-hidden="true">' +
-        STATUS_ICON[r.status] + '</span>' + r.verdict + '</div>' +
-      '<p class="signal-note">' + r.note + ' <span class="signal-date">' +
-        formatObsDate(r.date, 'long', r.quarterly) + '</span></p>' +
-    '</div>';
-  }).join('');
+    const home = onPage(sig.series) ? sig.series : sig.tile;
+    if (home === name) return sig.read();
+  }
+  return null;
+}
+
+// ─── AT A GLANCE ─────────────────────────────────────────
+// Small multiples: one identical tile per module on an even grid. Each tile
+// shows name, date, latest value, a 2-year sparkline and either the change
+// since the prior reading and a stoplight dot. Selecting a tile jumps to its module.
+function sparkline(values) {
+  if (values.length < 2) return '';
+  const w = 200, h = 40, pad = 3;
+  const min = Math.min(...values), max = Math.max(...values);
+  const span = (max - min) || 1;
+  const y = v => pad + (1 - (v - min) / span) * (h - 2 * pad);
+  const pts = values.map((v, i) => [i / (values.length - 1) * w, y(v)]);
+  const zero = min < 0 && max > 0
+    ? '<line class="spark-zero" x1="0" x2="' + w + '" y1="' + y(0).toFixed(1) + '" y2="' + y(0).toFixed(1) + '"/>' : '';
+  const dot = (cls, pt) => '<span class="spark-dot ' + cls + '" style="top:' + (pt[1] / h * 100).toFixed(1) + '%"></span>';
+  return '<svg class="spark" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" aria-hidden="true">' +
+    zero + '<polyline points="' + pts.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ') + '"/></svg>' +
+    dot('start', pts[0]) + dot('end', pts[pts.length - 1]);
+}
+
+// ─── STOPLIGHT ───────────────────────────────────────────
+// Green = better than the prior reading or a good reading in general,
+// yellow = neutral, red = worse or a bad reading. "Better" comes from the
+// series' `good` setting ('up', 'down' or {target}); rule-based signals
+// (Sahm rule, yield curve, …) decide their tile directly.
+const STOPLIGHT_WORDS = { good: 'Good', warning: 'Neutral', critical: 'Weak' };
+
+// "Little changed" band: a third of the series' typical one-step move.
+function neutralBand(obs) {
+  const moves = [];
+  for (let i = Math.max(1, obs.length - 24); i < obs.length; i++) moves.push(Math.abs(obs[i].value - obs[i - 1].value));
+  moves.sort((a, b) => a - b);
+  const median = moves.length ? moves[Math.floor(moves.length / 2)] : 0;
+  return median / 3;
+}
+
+function stoplight(display, cfg, signal) {
+  if (signal) return { level: signal.status, why: signal.verdict + ' — ' + signal.note };
+  const good = cfg.good;
+  const obs = display.obs;
+  if (!good || obs.length < 2) return { level: 'none', why: 'No clear good or bad direction' };
+  const latest = obs[obs.length - 1].value, prior = obs[obs.length - 2].value;
+  const band = neutralBand(obs);
+  const verdict = (score, better, worse, same) =>
+    score > band ? { level: 'good', why: better } :
+    score < -band ? { level: 'critical', why: worse } : { level: 'warning', why: same };
+
+  if (good.target != null) {
+    // Distance from target only makes sense for rates of change and rates.
+    if (display.mode === 'Level' && cfg.unit !== '%') return { level: 'none', why: 'Switch to YoY to compare with the target' };
+    const dist = Math.abs(latest - good.target);
+    if (dist <= 0.5) return { level: 'good', why: 'Within 0.5 pp of the ' + good.target + '% target' };
+    return verdict(Math.abs(prior - good.target) - dist,
+      'Moving toward the ' + good.target + '% target', 'Moving away from the ' + good.target + '% target',
+      'Little changed, away from the ' + good.target + '% target');
+  }
+  const sign = good === 'down' ? -1 : 1;
+  if (display.mode !== 'Level') {
+    // A change view (MoM/QoQ/YoY): judge the reading itself — growth or decline.
+    return verdict(sign * latest, 'A healthy reading', 'A weak reading', 'Roughly flat');
+  }
+  return verdict(sign * (latest - prior), 'Better than the prior reading', 'Worse than the prior reading',
+    'Little changed from the prior reading');
+}
+
+// Context for the latest reading.
+//  MoM/QoQ views: the recent average (3 months / 4 quarters), since a
+//    change-of-a-change ("+105K vs Sep" for payrolls) is hard to read.
+//  Level/YoY views: change since the prior reading. Percent for prices and
+//    levels that compound; percentage points for rates and % changes.
+function glanceChange(display, cfg, quarterly) {
+  const obs = display.obs;
+  if (obs.length < 2) return null;
+  if (display.mode === 'MoM' || display.mode === 'QoQ') {
+    const n = display.mode === 'QoQ' ? 4 : 3;
+    const recent = obs.slice(-n);
+    const avg = recent.reduce((t, d) => t + d.value, 0) / recent.length;
+    return { value: avg, average: true,
+             text: formatDisplayValue(avg, Object.assign({}, display, { showSign: true })),
+             since: (display.mode === 'QoQ' ? '4-qtr' : '3-mo') + ' avg' };
+  }
+  const a = obs[obs.length - 2], b = obs[obs.length - 1];
+  let value, fmt;
+  if (display.mode === 'Level' && changeKind(cfg) === 'pct') {
+    value = (b.value / a.value - 1) * 100;
+    fmt = { unit: '%', decimals: 1, showSign: true };
+  } else {
+    value = b.value - a.value;
+    fmt = { unit: display.unit === '%' || display.unit === ' pp' ? ' pp' : display.unit,
+            decimals: Math.min(display.decimals, 2), showSign: true };
+  }
+  return { value, text: formatDisplayValue(value, fmt), since: formatObsDate(a.date, 'short', quarterly) };
+}
+
+function tileHtml(name) {
+  const cfg = SERIES[name];
+  return '<a class="tile" href="#card-' + name + '" data-series="' + name + '" id="glance-' + name + '">' +
+    '<span class="tile-top">' +
+      '<span class="tile-name" title="' + escapeHtml(cfg.label) + '">' + escapeHtml(cfg.short || cfg.label) + '</span>' +
+      '<span class="tile-date"></span>' +
+    '</span>' +
+    '<span class="tile-value is-loading">…</span>' +
+    '<span class="tile-spark"></span>' +
+    '<span class="tile-range"><span class="tile-from"></span><span class="tile-to"></span></span>' +
+    '<span class="tile-foot"><span class="tile-change"></span><span class="tile-dot"></span></span>' +
+  '</a>';
+}
+
+// Pick a column count that fills every row: the widest layout (up to
+// maxCols) whose count divides evenly, else the one leaving the fewest gaps.
+function gridColumns(n, maxCols) {
+  let best = 2, bestGap = Infinity;
+  for (let c = Math.max(2, Math.min(maxCols, n)); c >= 2; c--) {
+    const gap = (c - n % c) % c;
+    if (gap < bestGap) { best = c; bestGap = gap; }
+    if (gap === 0) break;
+  }
+  return best;
+}
+
+function layoutGlance() {
+  const host = document.getElementById('glanceBody');
+  if (!host) return;
+  const n = host.querySelectorAll('.tile').length;
+  const maxCols = Math.max(2, Math.floor((host.clientWidth + 12) / (204 + 12)));
+  host.style.setProperty('--cols', gridColumns(n, Math.min(maxCols, 6)));
+}
+
+function renderGlance() {
+  const host = document.getElementById('glanceBody');
+  if (!host) return;
+  const names = [];
+  pageLayout().forEach(g => g.series.forEach(n => { if (SERIES[n]) names.push(n); }));
+  host.innerHTML = names.map(tileHtml).join('');
+  host.querySelectorAll('.tile').forEach(tile => tile.addEventListener('click', e => {
+    e.preventDefault();
+    jumpToModule(tile.dataset.series);
+  }));
+  layoutGlance();
+  window.addEventListener('resize', layoutGlance);
+}
+
+function updateGlanceRow(name) {
+  const tile = document.getElementById('glance-' + name);
+  const cfg = SERIES[name], raw = seriesRawData[name];
+  if (!tile || !cfg || !raw) return;
+  const quarterly = cfg.freq === 'QoQ';
+  const display = buildModeSeries(raw, cfg, getMode(name));
+  const obs = display.obs;
+  if (!obs.length) return;
+  const latest = obs[obs.length - 1];
+  const change = glanceChange(display, cfg, quarterly);
+  const status = statusFor(name);
+
+  tile.querySelector('.tile-date').textContent = display.mode === 'Level' ? '' : display.mode;
+  const u = splitUnit(display.unit);
+  const head = formatDisplayValue(latest.value, Object.assign({}, display, { unit: u.pre === '$' ? '$' : '' }));
+  const v = tile.querySelector('.tile-value');
+  v.classList.remove('is-loading');
+  v.innerHTML = escapeHtml(head) + (u.post.trim() ? '<span class="tile-unit">' + escapeHtml(u.post.trim()) + '</span>' : '');
+
+  // Sparkline over the same 2-year window on every tile, so tiles compare
+  // like with like (small multiples share a scale of time).
+  const from = (parseInt(latest.date.slice(0, 4), 10) - 2) + latest.date.slice(4);
+  let spark = obs.filter(d => d.date >= from);
+  if (spark.length < 2) spark = obs.slice(-2);
+  tile.querySelector('.tile-spark').innerHTML = sparkline(spark.map(d => d.value));
+  tile.querySelector('.tile-from').textContent = formatObsDate(spark[0].date, 'short', quarterly);
+  tile.querySelector('.tile-to').textContent = formatObsDate(latest.date, 'short', quarterly);
+
+  // Footer: the change (or recent average), and the stoplight dot.
+  const arrow = !change || change.average ? '' : Math.abs(change.value) < 1e-9 ? '→ ' : change.value > 0 ? '▲ ' : '▼ ';
+  tile.querySelector('.tile-change').innerHTML = change
+    ? arrow + escapeHtml(change.text) + ' <span class="tile-since">' + (change.average ? '' : 'vs ') + escapeHtml(change.since) + '</span>'
+    : '';
+  const light = stoplight(display, cfg, status);
+  const dot = tile.querySelector('.tile-dot');
+  dot.className = 'tile-dot dot-' + light.level;
+  dot.title = light.why;
+
+  tile.setAttribute('aria-label', cfg.label + ': ' + formatDisplayValue(latest.value, display) +
+    (change ? ', ' + change.text + ' ' + (change.average ? '' : 'versus ') + change.since : '') +
+    '. ' + (light.level === 'none' ? '' : STOPLIGHT_WORDS[light.level] + ': ') + light.why + '. Show full charts.');
+}
+
+// Scroll to a module and briefly highlight it.
+function jumpToModule(name, instant) {
+  const card = document.getElementById('card-' + name);
+  if (!card) return;
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  card.scrollIntoView({ behavior: instant || reduce ? 'auto' : 'smooth', block: 'start' });
+  history.replaceState(null, '', '#card-' + name);
+  card.classList.remove('flash');
+  void card.offsetWidth;                // restart the animation
+  card.classList.add('flash');
+}
+
+// "Back to overview" button, shown once the overview is scrolled away.
+function initBackToTop() {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'to-top';
+  btn.textContent = '↑ At a glance';
+  btn.hidden = true;
+  btn.addEventListener('click', () => {
+    const g = document.getElementById('glance');
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    (g || document.body).scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' });
+    history.replaceState(null, '', location.pathname + location.search);
+  });
+  document.body.appendChild(btn);
+  const glance = document.getElementById('glance');
+  if (!glance || !('IntersectionObserver' in window)) return;
+  new IntersectionObserver(entries => { btn.hidden = entries[0].isIntersecting; })
+    .observe(glance);
 }
 
 // ─── SECTOR RETURNS ──────────────────────────────────────
@@ -408,6 +616,7 @@ async function fetchAll() {
     SERIES = {};
     pageSeriesNames().forEach(n => { if (data.series[n]) SERIES[n] = data.series[n]; });
     if (!modulesRendered) {
+      renderGlance();
       renderModules();
       initSectors();
       modulesRendered = true;
@@ -421,9 +630,11 @@ async function fetchAll() {
       if (s.obs.length >= 2) updateCard(name, s.obs);
       else markUnavailable(name);
     });
+    // Stoplights can depend on other series (Sahm rule → Unemployment),
+    // so refresh every tile once all data is in.
+    Object.keys(SERIES).forEach(updateGlanceRow);
     sectorReturns = (data.sectors && data.sectors.returns) || {};
     renderSectors();
-    renderSignals();
     _finishFetch(notes, data.generated_at);
   } catch (e) {
     if (!modulesRendered) {
@@ -466,10 +677,15 @@ function openSeriesChart(name) {
 // ─── PAGE INIT ───────────────────────────────────────────
 function initPage() {
   if (!document.getElementById('modules')) return;   // e.g. the test runner
-  renderSignals();
+  initBackToTop();
   document.getElementById('refreshBtn').addEventListener('click', fetchAll);
-  // The calendar reads FRED data from the same file, so it starts after the load.
-  fetchAll().then(() => { if (typeof fetchCalendar === 'function') fetchCalendar(); });
+  const target = location.hash.startsWith('#card-') ? location.hash.slice(6) : null;
+  fetchAll().then(() => {
+    // Arriving with a link to a module (#card-Name): go straight to it.
+    if (target) jumpToModule(target, true);
+    // The calendar reads FRED data from the same file, so it starts after the load.
+    if (typeof fetchCalendar === 'function') fetchCalendar();
+  });
 }
 
 window.addEventListener('DOMContentLoaded', initPage);

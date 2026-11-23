@@ -4,6 +4,28 @@ This dashboard answers one question per page: *where is the economy now, and how
 
 ## 1. Layout: overview first, then detail
 
+**Every page opens with an "At a glance" grid: one identical tile per metric.** Selecting a tile scrolls to that metric's module and briefly highlights it; a floating button returns to the grid. The format follows four principles:
+- **Small multiples.** Tufte describes small multiples as one design repeated within the viewer's eye span, each instance showing different data [15]. Every tile has the same structure:
+  - top line: name and date
+  - a large current value
+  - a 2-year sparkline, Tufte's "word-sized graphic" [16]
+  - a footer with the change since the prior reading and a stoplight dot
+
+  Because only the data differs, the eye compares values, not layouts.
+- **A modular grid.** Tiles sit on an even grid in the tradition of Müller-Brockmann's *Grid Systems in Graphic Design* [17]. The column count is chosen so every row fills: 6×2 for 12 metrics, 5×2 for 10, 4×2 for 8, and 2 columns on phones. Each page's metric count was set to make that possible. For example, the Sahm-rule verdict rides on the Unemployment tile on the Overview, since the rule is computed from unemployment.
+- **Grouping by proximity, not boxes.** Nielsen Norman Group finds proximity among the strongest grouping cues and warns that extra containers add clutter [18, 19]. So the grid has no outer frame; each tile's own edge is the only boundary.
+- **At-a-glance monitoring.** Few's dashboard principle is a current value plus a compact trend, with detail one step away [3]. The tiles are that first step; the modules are the detail.
+
+For MoM/QoQ views the tile footer shows the recent average (3 months or 4 quarters), because a change-of-a-change ("+105K vs Sep" for payrolls) is hard to read.
+
+**The stoplight dot** (bottom-right of each tile) gives a quick read:
+- **Green:** better than the prior reading, or a healthy reading (positive growth in a change view; within 0.5 pp of the 2% target for inflation).
+- **Yellow:** little changed, meaning within a third of the series' typical one-step move.
+- **Red:** worse, or a weak reading.
+- **Hollow ring:** the series has no agreed good-or-bad direction (Fed funds, Treasury yields, the dollar, gold, M2, home prices), so the site doesn't invent one.
+
+"Better" comes from each series' `good` setting in `config/series.json` (`up`, `down` or `{target}`). The five rule-based readings below decide their tile's dot directly, and hovering a dot shows the reason. Because the dot is color only, its reason is also in the tile's accessible label, and the change beside it shows the direction in text (WCAG 2.1 SC 1.4.1 [13]).
+
 **Each module shows the full history beside the recent window.** The left chart covers everything FRED or Yahoo has (CPI since 1947, unemployment since 1948). The right chart zooms into the last 1–10 years, and the stretch it covers is highlighted on the left chart. This is Shneiderman's information-seeking mantra, *"overview first, zoom and filter, then details on demand"* [1]: the overview is the left chart, the zoom is the right chart with its range buttons, and the details are the hover tooltip, the 12-reading table, and *About this measure*. Munzner calls this pattern *overview + detail* [2]. It answers "historical trend vs. current trend" without a mode switch.
 
 **The default zoom shortens as the comparison shortens.** Level and YoY open at 5 years, MoM at 3 and QoQ at 2. A month-over-month series is noisy, so a long window hides its current direction. Five years (rather than ten) also keeps the 2020 spike from flattening the recent trend.
@@ -14,11 +36,11 @@ This dashboard answers one question per page: *where is the economy now, and how
 
 ## 2. Content: only the measures that matter
 
-The overview's **signal strip** reduces the economy's state to five rule-based readings, each with a citable threshold:
+Five metrics have a **rule-based reading** with a citable threshold. It sets the stoplight dot on their tile (hover the dot for the rule):
 
-| Signal | Measure | Threshold | Source |
+| Tag on | Measure | Threshold | Source |
 |---|---|---|---|
-| Recession signal | Sahm rule (`SAHMREALTIME`) | ≥ 0.50 pp triggers | Sahm (2019) [9] |
+| Unemployment / Sahm rule | Sahm rule (`SAHMREALTIME`) | ≥ 0.50 pp triggers | Sahm (2019) [9] |
 | Real growth | Real GDP, annualized QoQ (`GDPC1`) | < 0 contracting | BEA convention |
 | Core inflation | Core PCE YoY (`PCEPILFE`) | Fed target 2% | FOMC (2012, rev. 2020) [10] |
 | Yield curve | 10Y – 2Y (`T10Y2Y`) | < 0 inverted | Estrella & Mishkin (1998) [11] |
@@ -48,7 +70,7 @@ What stays is the data line, hairline horizontal gridlines, a single stronger ze
 
 **Color is used sparingly and only where it means something** [3, 8]:
 - **One series color** (blue) for all data. Identity is carried by titles, not hue, so there is nothing to decode.
-- **Status colors** (green/amber/red) appear only on the signal strip, and always with an icon and a word ("✓ Not triggered"). Meaning is never carried by color alone (WCAG 2.1, SC 1.4.1 [13]).
+- **Status colors** (green/yellow/red) appear only on the overview's stoplight dots. Each dot's reason is in its tooltip and accessible label, and the change beside it carries the direction in text (WCAG 2.1, SC 1.4.1 [13]).
 - **No beat/miss coloring in the calendar.** A CPI "miss" is good news, so red/green there would mislead.
 - **Bars use one color for positive and negative values.** The bar's position relative to the zero line already shows the sign.
 
@@ -88,7 +110,7 @@ The browser never calls FRED or Yahoo. A GitHub Actions workflow (`.github/workf
 
 - **`config/series.json`** lists every series: FRED or Yahoo id, units, default view (`mode`) and optional `target` line. Add a series here and the next build fetches it.
 - **Each page's `LAYOUT`** (at the end of the HTML file) sets which of those series the page shows, in what order and in which groups.
-- **`SIGNAL_LIBRARY` in `js/ui.js`** defines the overview's signals.
+- **`SIGNAL_LIBRARY` in `js/ui.js`** defines the rule-based readings; each series' `good` setting drives its stoplight dot.
 - **`css/site.css`** holds all styling.
 
 ## Sources
@@ -107,3 +129,8 @@ The browser never calls FRED or Yahoo. A GitHub Actions workflow (`.github/workf
 12. Gilchrist, S., & Zakrajšek, E. (2012). Credit Spreads and Business Cycle Fluctuations. *American Economic Review*, 102(4), 1692–1720.
 13. W3C (2018). *Web Content Accessibility Guidelines (WCAG) 2.1.* SC 1.4.1 Use of Color; SC 1.4.3 Contrast (Minimum).
 14. Okabe, M., & Ito, K. (2008). *Color Universal Design (CUD): How to make figures and presentations that are friendly to colorblind people.* J*Fly.
+15. Tufte, E. R. (1990). *Envisioning Information.* Graphics Press. "Small Multiples," pp. 67–79.
+16. Tufte, E. R. (2006). *Beautiful Evidence.* Graphics Press. "Sparklines: Intense, Simple, Word-Sized Graphics," pp. 46–63.
+17. Müller-Brockmann, J. (1981). *Grid Systems in Graphic Design.* Niggli.
+18. Nielsen Norman Group. *Proximity Principle in Visual Design.* nngroup.com/articles/gestalt-proximity/
+19. Nielsen Norman Group. *The Principle of Common Region: Containers Create Groupings.* nngroup.com/articles/common-region/

@@ -26,11 +26,11 @@ function findPriorObservation(obs, date, yearsBack) {
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 // 'long':  "Oct 2026", "Q3 2026" (quarterly) or "Nov 19, 2026" (daily reading)
-// 'short': "Oct '26",  "Q3 '26"             or "11/19"
+// 'short': "Oct '26",  "Q3 '26"             or "Nov 19"
 function formatObsDate(date, style, quarterly) {
   const y = date.slice(0, 4), m = parseInt(date.slice(5, 7), 10), d = parseInt(date.slice(8, 10), 10);
   const yy = "'" + y.slice(2);
-  if (d !== 1) return style === 'short' ? m + '/' + d : MONTHS[m - 1] + ' ' + d + ', ' + y;
+  if (d !== 1) return style === 'short' ? MONTHS[m - 1] + ' ' + d : MONTHS[m - 1] + ' ' + d + ', ' + y;
   if (quarterly) return 'Q' + Math.ceil(m / 3) + ' ' + (style === 'short' ? yy : y);
   return MONTHS[m - 1] + ' ' + (style === 'short' ? yy : y);
 }
