@@ -106,3 +106,35 @@ describe('status placement', () => {
     assert.equal(statusFor('SahmRule').status, 'good');
   });
 });
+
+describe('stoplight', () => {
+  // Steady +/-0.1 moves give a small neutral band (a third of the typical move).
+  const series = (vals, mode) => ({ mode: mode || 'Level', unit: '%', decimals: 1,
+    obs: vals.map((v, i) => ({ date: '2025-' + String(i + 1).padStart(2, '0') + '-01', value: v })) });
+  const base = [4.0, 4.1, 4.0, 4.1, 4.0, 4.1, 4.0];
+
+  it('greens an improvement and reds a deterioration (lower is better)', () => {
+    assert.equal(stoplight(series(base.concat([3.8])), { good: 'down', unit: '%' }).level, 'good');
+    assert.equal(stoplight(series(base.concat([4.3])), { good: 'down', unit: '%' }).level, 'critical');
+  });
+
+  it('is yellow when little changed', () => {
+    assert.equal(stoplight(series(base.concat([4.01])), { good: 'down', unit: '%' }).level, 'warning');
+  });
+
+  it('judges change views by the reading itself', () => {
+    assert.equal(stoplight(series(base.concat([1.5]), 'YoY'), { good: 'up' }).level, 'good');
+    assert.equal(stoplight(series(base.concat([-1.5]), 'YoY'), { good: 'up' }).level, 'critical');
+  });
+
+  it('greens readings near a target and judges the rest by direction', () => {
+    assert.equal(stoplight(series([3, 3.1, 3, 3.1, 2.3], 'YoY'), { good: { target: 2 } }).level, 'good');
+    assert.equal(stoplight(series([3, 3.1, 3, 3.1, 3.6], 'YoY'), { good: { target: 2 } }).level, 'critical');
+    assert.equal(stoplight(series([3.6, 3.7, 3.6, 3.7, 3.0], 'YoY'), { good: { target: 2 } }).level, 'good');
+  });
+
+  it('lets a rule-based signal decide, and shows a ring with no direction', () => {
+    assert.equal(stoplight(series(base), { good: 'down' }, { status: 'critical', verdict: 'Recession signal', note: '' }).level, 'critical');
+    assert.equal(stoplight(series(base), {}).level, 'none');
+  });
+});

@@ -9,7 +9,7 @@ This dashboard answers one question per page: *where is the economy now, and how
   - top line: name and date
   - a large current value
   - a 2-year sparkline, Tufte's "word-sized graphic" [16]
-  - a footer with either the change since the prior reading or a status tag
+  - a footer with the change since the prior reading and a stoplight dot
 
   Because only the data differs, the eye compares values, not layouts.
 - **A modular grid.** Tiles sit on an even grid in the tradition of Müller-Brockmann's *Grid Systems in Graphic Design* [17]. The column count is chosen so every row fills: 6×2 for 12 metrics, 5×2 for 10, 4×2 for 8, and 2 columns on phones. Each page's metric count was set to make that possible. For example, the Sahm-rule verdict rides on the Unemployment tile on the Overview, since the rule is computed from unemployment.
@@ -17,6 +17,14 @@ This dashboard answers one question per page: *where is the economy now, and how
 - **At-a-glance monitoring.** Few's dashboard principle is a current value plus a compact trend, with detail one step away [3]. The tiles are that first step; the modules are the detail.
 
 For MoM/QoQ views the tile footer shows the recent average (3 months or 4 quarters), because a change-of-a-change ("+105K vs Sep" for payrolls) is hard to read.
+
+**The stoplight dot** (bottom-right of each tile) gives a quick read:
+- **Green:** better than the prior reading, or a healthy reading (positive growth in a change view; within 0.5 pp of the 2% target for inflation).
+- **Yellow:** little changed, meaning within a third of the series' typical one-step move.
+- **Red:** worse, or a weak reading.
+- **Hollow ring:** the series has no agreed good-or-bad direction (Fed funds, Treasury yields, the dollar, gold, M2, home prices), so the site doesn't invent one.
+
+"Better" comes from each series' `good` setting in `config/series.json` (`up`, `down` or `{target}`). The five rule-based readings below decide their tile's dot directly, and hovering a dot shows the reason. Because the dot is color only, its reason is also in the tile's accessible label, and the change beside it shows the direction in text (WCAG 2.1 SC 1.4.1 [13]).
 
 **Each module shows the full history beside the recent window.** The left chart covers everything FRED or Yahoo has (CPI since 1947, unemployment since 1948). The right chart zooms into the last 1–10 years, and the stretch it covers is highlighted on the left chart. This is Shneiderman's information-seeking mantra, *"overview first, zoom and filter, then details on demand"* [1]: the overview is the left chart, the zoom is the right chart with its range buttons, and the details are the hover tooltip, the 12-reading table, and *About this measure*. Munzner calls this pattern *overview + detail* [2]. It answers "historical trend vs. current trend" without a mode switch.
 
@@ -28,7 +36,7 @@ For MoM/QoQ views the tile footer shows the recent average (3 months or 4 quarte
 
 ## 2. Content: only the measures that matter
 
-Five metrics carry a **status tag**: a rule-based verdict with a citable threshold, shown on their tile in the overview (hover for the rule):
+Five metrics have a **rule-based reading** with a citable threshold. It sets the stoplight dot on their tile (hover the dot for the rule):
 
 | Tag on | Measure | Threshold | Source |
 |---|---|---|---|
@@ -62,7 +70,7 @@ What stays is the data line, hairline horizontal gridlines, a single stronger ze
 
 **Color is used sparingly and only where it means something** [3, 8]:
 - **One series color** (blue) for all data. Identity is carried by titles, not hue, so there is nothing to decode.
-- **Status colors** (green/amber/red) appear only on status tags, and always with an icon and a word ("✓ Not triggered"). Meaning is never carried by color alone (WCAG 2.1, SC 1.4.1 [13]).
+- **Status colors** (green/yellow/red) appear only on the overview's stoplight dots. Each dot's reason is in its tooltip and accessible label, and the change beside it carries the direction in text (WCAG 2.1, SC 1.4.1 [13]).
 - **No beat/miss coloring in the calendar.** A CPI "miss" is good news, so red/green there would mislead.
 - **Bars use one color for positive and negative values.** The bar's position relative to the zero line already shows the sign.
 
@@ -102,7 +110,7 @@ The browser never calls FRED or Yahoo. A GitHub Actions workflow (`.github/workf
 
 - **`config/series.json`** lists every series: FRED or Yahoo id, units, default view (`mode`) and optional `target` line. Add a series here and the next build fetches it.
 - **Each page's `LAYOUT`** (at the end of the HTML file) sets which of those series the page shows, in what order and in which groups.
-- **`SIGNAL_LIBRARY` in `js/ui.js`** defines the status tags.
+- **`SIGNAL_LIBRARY` in `js/ui.js`** defines the rule-based readings; each series' `good` setting drives its stoplight dot.
 - **`css/site.css`** holds all styling.
 
 ## Sources

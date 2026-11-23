@@ -225,7 +225,6 @@ function renderAllModules() {
 // ─── SIGNALS ─────────────────────────────────────────────
 // Rule-of-thumb readings of the economy's vital signs. Each returns
 // { value, status: 'good'|'warning'|'critical', verdict, note } or null.
-const STATUS_ICON = { good: '✓', warning: '!', critical: '✕' };
 
 function latestOf(name) {
   const obs = seriesRawData[name];
@@ -314,7 +313,7 @@ const SIGNAL_LIBRARY = {
   }
 };
 
-// The status tag (if any) for a series, e.g. Sahm rule → "Not triggered".
+// The rule-based reading (if any) that sets a tile's stoplight, e.g. Sahm rule.
 // A signal sits on its own series' tile, or on its fallback tile when its
 // series isn't one of this page's modules (Sahm rule → Unemployment).
 function onPage(name) {
@@ -330,17 +329,10 @@ function statusFor(name) {
   return null;
 }
 
-function statusTag(r) {
-  if (!r) return '';
-  return '<span class="status status-' + r.status + '" title="' + escapeHtml(r.note) + '">' +
-    '<span class="status-icon" aria-hidden="true">' + STATUS_ICON[r.status] + '</span>' +
-    escapeHtml(r.verdict) + '</span>';
-}
-
 // ─── AT A GLANCE ─────────────────────────────────────────
 // Small multiples: one identical tile per module on an even grid. Each tile
 // shows name, date, latest value, a 2-year sparkline and either the change
-// since the prior reading or a status tag. Selecting a tile jumps to its module.
+// since the prior reading and a stoplight dot. Selecting a tile jumps to its module.
 function sparkline(values) {
   if (values.length < 2) return '';
   const w = 200, h = 40, pad = 3;
@@ -348,12 +340,57 @@ function sparkline(values) {
   const span = (max - min) || 1;
   const y = v => pad + (1 - (v - min) / span) * (h - 2 * pad);
   const pts = values.map((v, i) => [i / (values.length - 1) * w, y(v)]);
-  const last = pts[pts.length - 1];
   const zero = min < 0 && max > 0
     ? '<line class="spark-zero" x1="0" x2="' + w + '" y1="' + y(0).toFixed(1) + '" y2="' + y(0).toFixed(1) + '"/>' : '';
+  const dot = (cls, pt) => '<span class="spark-dot ' + cls + '" style="top:' + (pt[1] / h * 100).toFixed(1) + '%"></span>';
   return '<svg class="spark" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" aria-hidden="true">' +
-    zero + '<polyline points="' + pts.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ') + '"/>' +
-    '</svg><span class="spark-dot" style="top:' + (last[1] / h * 100).toFixed(1) + '%"></span>';
+    zero + '<polyline points="' + pts.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ') + '"/></svg>' +
+    dot('start', pts[0]) + dot('end', pts[pts.length - 1]);
+}
+
+// ─── STOPLIGHT ───────────────────────────────────────────
+// Green = better than the prior reading or a good reading in general,
+// yellow = neutral, red = worse or a bad reading. "Better" comes from the
+// series' `good` setting ('up', 'down' or {target}); rule-based signals
+// (Sahm rule, yield curve, …) decide their tile directly.
+const STOPLIGHT_WORDS = { good: 'Good', warning: 'Neutral', critical: 'Weak' };
+
+// "Little changed" band: a third of the series' typical one-step move.
+function neutralBand(obs) {
+  const moves = [];
+  for (let i = Math.max(1, obs.length - 24); i < obs.length; i++) moves.push(Math.abs(obs[i].value - obs[i - 1].value));
+  moves.sort((a, b) => a - b);
+  const median = moves.length ? moves[Math.floor(moves.length / 2)] : 0;
+  return median / 3;
+}
+
+function stoplight(display, cfg, signal) {
+  if (signal) return { level: signal.status, why: signal.verdict + ' — ' + signal.note };
+  const good = cfg.good;
+  const obs = display.obs;
+  if (!good || obs.length < 2) return { level: 'none', why: 'No clear good or bad direction' };
+  const latest = obs[obs.length - 1].value, prior = obs[obs.length - 2].value;
+  const band = neutralBand(obs);
+  const verdict = (score, better, worse, same) =>
+    score > band ? { level: 'good', why: better } :
+    score < -band ? { level: 'critical', why: worse } : { level: 'warning', why: same };
+
+  if (good.target != null) {
+    // Distance from target only makes sense for rates of change and rates.
+    if (display.mode === 'Level' && cfg.unit !== '%') return { level: 'none', why: 'Switch to YoY to compare with the target' };
+    const dist = Math.abs(latest - good.target);
+    if (dist <= 0.5) return { level: 'good', why: 'Within 0.5 pp of the ' + good.target + '% target' };
+    return verdict(Math.abs(prior - good.target) - dist,
+      'Moving toward the ' + good.target + '% target', 'Moving away from the ' + good.target + '% target',
+      'Little changed, away from the ' + good.target + '% target');
+  }
+  const sign = good === 'down' ? -1 : 1;
+  if (display.mode !== 'Level') {
+    // A change view (MoM/QoQ/YoY): judge the reading itself — growth or decline.
+    return verdict(sign * latest, 'A healthy reading', 'A weak reading', 'Roughly flat');
+  }
+  return verdict(sign * (latest - prior), 'Better than the prior reading', 'Worse than the prior reading',
+    'Little changed from the prior reading');
 }
 
 // Context for the latest reading.
@@ -394,7 +431,8 @@ function tileHtml(name) {
     '</span>' +
     '<span class="tile-value is-loading">…</span>' +
     '<span class="tile-spark"></span>' +
-    '<span class="tile-foot"></span>' +
+    '<span class="tile-range"><span class="tile-from"></span><span class="tile-to"></span></span>' +
+    '<span class="tile-foot"><span class="tile-change"></span><span class="tile-dot"></span></span>' +
   '</a>';
 }
 
@@ -444,27 +482,35 @@ function updateGlanceRow(name) {
   const change = glanceChange(display, cfg, quarterly);
   const status = statusFor(name);
 
-  tile.querySelector('.tile-date').textContent =
-    (display.mode !== 'Level' ? display.mode + ' · ' : '') + formatObsDate(latest.date, 'short', quarterly);
+  tile.querySelector('.tile-date').textContent = display.mode === 'Level' ? '' : display.mode;
   const u = splitUnit(display.unit);
   const head = formatDisplayValue(latest.value, Object.assign({}, display, { unit: u.pre === '$' ? '$' : '' }));
   const v = tile.querySelector('.tile-value');
   v.classList.remove('is-loading');
   v.innerHTML = escapeHtml(head) + (u.post.trim() ? '<span class="tile-unit">' + escapeHtml(u.post.trim()) + '</span>' : '');
-  tile.querySelector('.tile-spark').innerHTML = sparkline(obs.slice(-24).map(d => d.value));
 
-  // Footer: status tag when the metric has one, otherwise the change.
-  let foot = '';
-  if (status) foot = statusTag(status);
-  else if (change) {
-    const arrow = change.average ? '' : Math.abs(change.value) < 1e-9 ? '→ ' : change.value > 0 ? '▲ ' : '▼ ';
-    foot = '<span class="tile-change">' + arrow + escapeHtml(change.text) +
-      ' <span class="tile-since">' + (change.average ? '' : 'vs ') + escapeHtml(change.since) + '</span></span>';
-  }
-  tile.querySelector('.tile-foot').innerHTML = foot;
+  // Sparkline over the same 2-year window on every tile, so tiles compare
+  // like with like (small multiples share a scale of time).
+  const from = (parseInt(latest.date.slice(0, 4), 10) - 2) + latest.date.slice(4);
+  let spark = obs.filter(d => d.date >= from);
+  if (spark.length < 2) spark = obs.slice(-2);
+  tile.querySelector('.tile-spark').innerHTML = sparkline(spark.map(d => d.value));
+  tile.querySelector('.tile-from').textContent = formatObsDate(spark[0].date, 'short', quarterly);
+  tile.querySelector('.tile-to').textContent = formatObsDate(latest.date, 'short', quarterly);
+
+  // Footer: the change (or recent average), and the stoplight dot.
+  const arrow = !change || change.average ? '' : Math.abs(change.value) < 1e-9 ? '→ ' : change.value > 0 ? '▲ ' : '▼ ';
+  tile.querySelector('.tile-change').innerHTML = change
+    ? arrow + escapeHtml(change.text) + ' <span class="tile-since">' + (change.average ? '' : 'vs ') + escapeHtml(change.since) + '</span>'
+    : '';
+  const light = stoplight(display, cfg, status);
+  const dot = tile.querySelector('.tile-dot');
+  dot.className = 'tile-dot dot-' + light.level;
+  dot.title = light.why;
+
   tile.setAttribute('aria-label', cfg.label + ': ' + formatDisplayValue(latest.value, display) +
-    (status ? ', ' + status.verdict : change ? ', ' + change.text + ' ' + (change.average ? '' : 'versus ') + change.since : '') +
-    '. Show charts.');
+    (change ? ', ' + change.text + ' ' + (change.average ? '' : 'versus ') + change.since : '') +
+    '. ' + (light.level === 'none' ? '' : STOPLIGHT_WORDS[light.level] + ': ') + light.why + '. Show full charts.');
 }
 
 // Scroll to a module and briefly highlight it.
@@ -584,7 +630,7 @@ async function fetchAll() {
       if (s.obs.length >= 2) updateCard(name, s.obs);
       else markUnavailable(name);
     });
-    // Status tags can depend on other series (Sahm rule → Unemployment),
+    // Stoplights can depend on other series (Sahm rule → Unemployment),
     // so refresh every tile once all data is in.
     Object.keys(SERIES).forEach(updateGlanceRow);
     sectorReturns = (data.sectors && data.sectors.returns) || {};
