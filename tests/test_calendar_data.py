@@ -121,6 +121,21 @@ class Fomc(unittest.TestCase):
         self.assertEqual((row["status"], row["prior_text"], row["actual_text"]), ("upcoming", "3.75–4.00%", None))
 
 
+class NextFomc(unittest.TestCase):
+    def test_next_meeting_even_beyond_the_window_with_current_range(self):
+        fred = cd.Fred(FakeFred(latest={"DFEDTARU": [("2026-11-23", 4.0)], "DFEDTARL": [("2026-11-23", 3.75)]}))
+        nxt = cd.next_fomc(fred, ["2026-10-28", "2026-12-09", "2027-01-27"], datetime(2026, 12, 9, 15, 0))
+        self.assertEqual(nxt["date"], "2027-01-27")          # Dec 9 decision already announced at 2 pm
+        self.assertEqual(nxt["current"], "3.75–4.00%")
+
+    def test_decision_day_before_2pm_is_still_next(self):
+        fred = cd.Fred(FakeFred(latest={"DFEDTARU": [("2026-12-09", 4.0)], "DFEDTARL": [("2026-12-09", 3.75)]}))
+        self.assertEqual(cd.next_fomc(fred, ["2026-12-09"], datetime(2026, 12, 9, 10, 0))["date"], "2026-12-09")
+
+    def test_none_when_schedule_runs_out(self):
+        self.assertIsNone(cd.next_fomc(cd.Fred(FakeFred()), ["2026-01-28"], NOW))
+
+
 class Rows(unittest.TestCase):
     def jobs(self, **kw):
         spec = SPEC["Employment Situation"]

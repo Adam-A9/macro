@@ -26,6 +26,7 @@
     <p>Interest rates, credit, stocks, the dollar and commodities, plus how each stock-market sector is performing.</p>
   </div>
   <div class="error-msg" id="errorMsg" role="status" hidden></div>
+
   <section class="glance" id="glance" aria-labelledby="glance-title">
     <div class="glance-head"><h2 class="group-title" id="glance-title">At a glance</h2><span class="glance-hint">Click any tile for its full charts</span></div>
     <div class="glance-grid" id="glanceBody"><p class="empty">Loading…</p></div>
@@ -65,15 +66,15 @@ const LAYOUT = [
       "FedFunds",
       "Yield2Y",
       "Yield10Y",
-      "Yield30Y",
+      "RealYield10Y",
       "Spread"
     ]
   },
   {
-    "title": "Credit",
+    "title": "Credit & Financial Conditions",
     "series": [
       "CreditSpread",
-      "CCDelinquency"
+      "FinConditions"
     ]
   },
   {

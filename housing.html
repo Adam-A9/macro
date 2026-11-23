@@ -26,6 +26,7 @@
     <p>Financing costs, prices and construction activity. Housing is among the most rate-sensitive parts of the economy.</p>
   </div>
   <div class="error-msg" id="errorMsg" role="status" hidden></div>
+
   <section class="glance" id="glance" aria-labelledby="glance-title">
     <div class="glance-head"><h2 class="group-title" id="glance-title">At a glance</h2><span class="glance-hint">Click any tile for its full charts</span></div>
     <div class="glance-grid" id="glanceBody"><p class="empty">Loading…</p></div>
@@ -67,8 +68,15 @@ const LAYOUT = [
     "series": [
       "Permits",
       "Starts",
-      "NewHomeSales",
-      "MonthsSupply"
+      "NewHomeSales"
+    ]
+  },
+  {
+    "title": "Supply & New-Home Prices",
+    "series": [
+      "Listings",
+      "MonthsSupply",
+      "NewHomePrice"
     ]
   },
   {
