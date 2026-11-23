@@ -134,6 +134,15 @@ function makeModuleChart(canvasId, obs, display, opts = {}) {
       responsive: true,
       maintainAspectRatio: false,
       animation: { duration: 300 },
+      // Optional click-to-pick (full-history chart): reports the date under the pointer.
+      onClick: opts.onPick ? (evt, els, chart) => {
+        const i = Math.round(chart.scales.x.getValueForPixel(evt.x));
+        const label = labels[Math.max(0, Math.min(labels.length - 1, i))];
+        // Defer: the pick re-renders (destroys) this chart, which must not
+        // happen while Chart.js is still dispatching the click.
+        if (label) setTimeout(() => opts.onPick(label), 0);
+      } : undefined,
+      onHover: opts.onPick ? (evt, els, chart) => { chart.canvas.style.cursor = 'pointer'; } : undefined,
       interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: { display: false },

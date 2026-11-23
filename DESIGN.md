@@ -30,6 +30,8 @@ For MoM/QoQ views the tile footer shows the recent average (3 months or 4 quarte
 
 **Each module shows the full history beside the recent window.** The left chart covers everything FRED or Yahoo has (CPI since 1947, unemployment since 1948). The right chart zooms into the last 1–10 years, and the stretch it covers is highlighted on the left chart. This is Shneiderman's information-seeking mantra, *"overview first, zoom and filter, then details on demand"* [1]: the overview is the left chart, the zoom is the right chart with its range buttons, and the details are the hover tooltip, the 12-reading table, and *About this measure*. Munzner calls this pattern *overview + detail* [2]. It answers "historical trend vs. current trend" without a mode switch.
 
+**Clicking the full-history chart moves the zoom there.** The right chart re-centers on the clicked date and keeps its window length (a 5-year view stays 5 years). It shifts at either end so it never runs past the data. The highlight band on the left follows, the right chart's title shows the exact dates, and "Back to latest" restores the default. This is Shneiderman's "zoom and filter" step [1], driven directly from the overview.
+
 **The default zoom shortens as the comparison shortens.** Level and YoY open at 5 years, MoM at 3 and QoQ at 2. A month-over-month series is noisy, so a long window hides its current direction. Five years (rather than ten) also keeps the 2020 spike from flattening the recent trend.
 
 **One module type everywhere.** FRED series, stocks, commodities and the dollar all use the same component, controls and layout. Few's first rule for dashboards is that consistency lets a reader learn the display once [3].
