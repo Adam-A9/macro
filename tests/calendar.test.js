@@ -151,7 +151,7 @@ describe('renderNextUpHtml', () => {
   const rows = c => {
     const div = document.createElement('div');
     div.innerHTML = renderNextUpHtml(c || cal, ET);
-    return [...div.querySelectorAll('.next-row')];
+    return [...div.querySelectorAll('.next-row:not(.next-head)')];
   };
 
   it('lists the five soonest unreleased releases as one-line rows, soonest first', () => {
@@ -165,7 +165,7 @@ describe('renderNextUpHtml', () => {
     assert.equal(fed.querySelector('.next-name').textContent, 'Fed rate decision');
     assert.include(fed.querySelector('.next-when').textContent, 'Wed, Jan 27 · 2:00 pm');
     assert.include(fed.textContent, 'in 65 days');
-    assert.include(fed.querySelector('.next-value').textContent, '3.75–4.00%');
+    assert.include(fed.querySelector('.next-prev').textContent, '3.75–4.00%');
   });
 
   it('puts a near Fed decision in date order among the releases', () => {
@@ -176,10 +176,10 @@ describe('renderNextUpHtml', () => {
 
   it('shows period, previous value, awaiting data, and links to the calendar', () => {
     const r = rows();
-    assert.include(r[0].textContent, 'Awaiting data');
+    assert.equal(r[0].querySelector('.next-actual').textContent, 'Awaiting');
     assert.include(r[1].querySelector('.next-when').textContent, 'Tomorrow · 9:00 am');
     assert.equal(r[1].querySelector('.next-sub').textContent, 'Sep 2026 · y/y');
-    assert.include(r[1].querySelector('.next-value').textContent, '+2.1%');
+    assert.include(r[1].querySelector('.next-prev').textContent, '+2.1%');
     r.forEach(x => assert.equal(x.getAttribute('href'), '#calendar'));
   });
 });
@@ -223,17 +223,28 @@ describe('renderRecentHtml', () => {
   const rows = () => {
     const div = document.createElement('div');
     div.innerHTML = renderRecentHtml(cal, ET);
-    return [...div.querySelectorAll('.next-row')];
+    return [...div.querySelectorAll('.next-row:not(.next-head)')];
   };
 
   it('lists released rows newest first, skipping upcoming ones', () => {
     assert.deepEqual(rows().map(r => r.querySelector('.next-name').textContent), ['Initial jobless claims', 'Retail sales']);
   });
 
-  it('shows the colored actual and the previous value', () => {
-    const claims = rows()[0].querySelector('.next-value');
-    assert.equal(claims.querySelector('b').className, 'tone-bad');
-    assert.include(claims.textContent, '203K');
-    assert.include(claims.textContent, 'prev 202K');
+  it('shows previous and actual in their own columns, with a colored arrow', () => {
+    const claims = rows()[0];
+    assert.equal(claims.querySelector('.next-prev').textContent, '202K');
+    assert.equal(claims.querySelector('.next-actual').textContent, '203K');
+    const arrow = claims.querySelector('.next-arrow span');
+    assert.equal(arrow.textContent, '▲');
+    assert.equal(arrow.className, 'arrow-bad');          // claims rising is bad
+  });
+
+  it('has one header row with Previous and Actual', () => {
+    const div = document.createElement('div');
+    div.innerHTML = renderRecentHtml(cal, ET);
+    const heads = div.querySelectorAll('.next-head');
+    assert.equal(heads.length, 1);
+    assert.include(heads[0].textContent, 'Previous');
+    assert.include(heads[0].textContent, 'Actual');
   });
 });
