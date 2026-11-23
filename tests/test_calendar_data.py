@@ -147,6 +147,7 @@ class Rows(unittest.TestCase):
             vintage_dates={"PAYEMS": ["2026-10-02", "2026-11-06"]},
             vintages={("PAYEMS", "2026-11-06"): [("2026-10-01", 159293), ("2026-09-01", 159128), ("2026-08-01", 159068)]})
         self.assertEqual((r["status"], r["period"], r["actual"], r["prior"]), ("released", "Oct 2026", 165, 60))
+        self.assertEqual(r["good"], "up")            # colors the actual on the site
 
     def test_vintage_posted_a_day_late_still_counts(self):
         r = self.jobs(

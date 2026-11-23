@@ -4,7 +4,7 @@ This dashboard answers one question per page: *where is the economy now, and how
 
 ## 1. Layout: overview first, then detail
 
-**The Overview opens with "Next up":** a single panel of one-line rows (when · release and period · previous value) for the five soonest releases, plus the next Fed decision with the current target range. The Fed row always appears, even when the meeting is beyond the calendar's window, and all rows sit in date order. Each row links to the full calendar at the bottom of the page. On phones the time moves under the name so nothing is cut off.
+**The Overview opens with "Releases":** two panels side by side. Past week (left) lists the six most recent releases with the actual colored green or red. Next up (right) is a single panel of one-line rows (when · release and period · previous value) for the five soonest releases, plus the next Fed decision with the current target range. The Fed row always appears, even when the meeting is beyond the calendar's window, and all rows sit in date order. Each row links to the full calendar at the bottom of the page. On phones the time moves under the name so nothing is cut off.
 
 **Every page opens with an "At a glance" grid: one identical tile per metric.** Selecting a tile scrolls to that metric's module and briefly highlights it; a floating button returns to the grid. The format follows four principles:
 - **Small multiples.** Tufte describes small multiples as one design repeated within the viewer's eye span, each instance showing different data [15]. Every tile has the same structure:
@@ -146,9 +146,14 @@ The full calendar (at the bottom of the Overview) is built by `python/calendar_d
   - ISM PMIs and the Conference Board's consumer confidence (not on FRED)
 
 **Layout**
-- **Two tabs:** Upcoming and Past week.
+- **Past week and upcoming side by side:** past week on the left, upcoming on the right, no tabs. On narrow screens the halves stack.
 - **Upcoming** shows the next two weeks plus later high-impact releases; minor releases beyond two weeks sit behind a "show all" button.
-- **Rows are grouped under day headings.** High-impact releases are in bold. Color isn't used, because beating or missing a number isn't inherently good or bad: a CPI miss is good news.
+- **Rows are grouped under day headings,** and high-impact releases are in bold.
+- **Past actuals are colored by the same rule as the overview tiles:**
+  - green when better than the previous reading, red when worse
+  - "better" follows each row's direction: unemployment and claims down, payrolls up, and monthly inflation toward about 0.2% a month, the pace consistent with 2% a year
+  - rows without a clear direction (Case-Shiller, import prices) stay uncolored
+  - this replaces the old beat/miss coloring, which treated every "beat" as good
 
 ## Data pipeline
 

@@ -4,7 +4,6 @@
 // schedule and first-published values, and the Federal Reserve's FOMC calendar.
 // There is no consensus-estimate column: no free source permits automated use.
 
-let calendarTab = 'upcoming';
 let calendarExpanded = false;
 const UPCOMING_DAYS = 14;        // shown before "Show 2 more weeks"
 
@@ -56,12 +55,27 @@ function calendarValue(ev, which) {
   return formatDisplayValue(v, { unit: ev.unit, decimals: ev.decimals, showSign: ev.sign && v !== 0 });
 }
 
+// Was the actual good or bad? Compared with the previous reading, using the
+// row's `good` direction: 'up', 'down' or {target} (closer is better).
+// Same rule as the overview tiles' arrows.
+function calendarTone(ev) {
+  if (ev.actual == null || ev.prior == null || !ev.good) return 'neutral';
+  const better = ev.good.target != null
+    ? Math.abs(ev.prior - ev.good.target) - Math.abs(ev.actual - ev.good.target)
+    : (ev.good === 'down' ? -1 : 1) * (ev.actual - ev.prior);
+  return Math.abs(better) < 1e-9 ? 'neutral' : better > 0 ? 'good' : 'bad';
+}
+
+const TONE_WORDS = { good: 'better than the previous reading', bad: 'worse than the previous reading',
+                     neutral: 'unchanged, or no clear good/bad direction' };
+
 function calendarRowHtml(ev, et) {
   const status = calendarStatus(ev, et);
   const prior = calendarValue(ev, 'prior');
   const actual = calendarValue(ev, 'actual');
+  const tone = calendarTone(ev);
   const actualCell = status === 'released' && actual != null
-    ? '<span class="cal-value cal-actual">' + escapeHtml(actual) + '</span>'
+    ? '<span class="cal-value cal-actual tone-' + tone + '" title="' + TONE_WORDS[tone] + '">' + escapeHtml(actual) + '</span>'
     : status === 'pending'
       ? '<span class="cal-status" title="Released; FRED usually posts it within hours">Awaiting data</span>'
       : status === 'upcoming' ? '' : '<span class="cal-dash">–</span>';
@@ -112,32 +126,25 @@ function renderCalendarHtml(events, tab, et, expanded) {
     '</div>').join('') + more;
 }
 
+// Both halves at once: past week on the left, upcoming on the right.
 function renderCalendar() {
   renderNextUp();
-  const host = document.getElementById('calendarBody');
+  const past = document.getElementById('calendarPast');
+  const upcoming = document.getElementById('calendarUpcoming');
   const cal = (typeof MACRO_DATA !== 'undefined' && MACRO_DATA && MACRO_DATA.calendar) || null;
-  if (!host) return;
+  if (!past || !upcoming) return;
   if (!cal || !Array.isArray(cal.events)) {
-    host.innerHTML = '<p class="empty">The calendar is unavailable right now.</p>';
+    past.innerHTML = upcoming.innerHTML = '<p class="empty">The calendar is unavailable right now.</p>';
     return;
   }
   const et = easternNow();
-  host.innerHTML = renderCalendarHtml(cal.events, calendarTab, et, calendarExpanded);
-  const more = host.querySelector('[data-more]');
+  past.innerHTML = renderCalendarHtml(cal.events, 'past', et, false);
+  upcoming.innerHTML = renderCalendarHtml(cal.events, 'upcoming', et, calendarExpanded);
+  const more = upcoming.querySelector('[data-more]');
   if (more) more.addEventListener('click', () => { calendarExpanded = true; renderCalendar(); });
-  document.querySelectorAll('#calendarTabs [data-tab]').forEach(b =>
-    b.setAttribute('aria-pressed', b.dataset.tab === calendarTab));
 }
 
 function fetchCalendar() {
-  const tabs = document.getElementById('calendarTabs');
-  if (tabs && !tabs.dataset.bound) {
-    tabs.dataset.bound = '1';
-    tabs.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => {
-      calendarTab = b.dataset.tab;
-      renderCalendar();
-    }));
-  }
   renderCalendar();
 }
 
@@ -191,10 +198,32 @@ function renderNextUpHtml(cal, et) {
   return items.map(nextUpRow).join('');
 }
 
+// The most recent releases (newest first), with the actual colored by
+// whether it was good or bad, and the previous reading beside it.
+function renderRecentHtml(cal, et) {
+  if (!cal || !Array.isArray(cal.events)) return '';
+  return cal.events
+    .filter(ev => calendarStatus(ev, et) === 'released')
+    .sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time))
+    .slice(0, NEXT_UP_COUNT + 1)
+    .map(ev => {
+      const actual = calendarValue(ev, 'actual');
+      const prior = calendarValue(ev, 'prior');
+      const tone = calendarTone(ev);
+      return nextUpRow({
+        strong: ev.impact === 'high', when: whenLabel(ev.date, ev.time, et), name: ev.label,
+        sub: [ev.period, ev.note].filter(Boolean).join(' · '),
+        value: '<b class="tone-' + tone + '" title="' + TONE_WORDS[tone] + '">' + escapeHtml(actual || '–') + '</b>' +
+               ' <span class="next-label">prev ' + escapeHtml(prior || '–') + '</span>'
+      });
+    }).join('');
+}
+
 function renderNextUp() {
   const host = document.getElementById('nextUp');
+  const recent = document.getElementById('nextPast');
   const cal = (typeof MACRO_DATA !== 'undefined' && MACRO_DATA && MACRO_DATA.calendar) || null;
-  if (!host) return;
-  const html = renderNextUpHtml(cal, easternNow());
-  host.innerHTML = html || '<p class="empty">No upcoming releases found.</p>';
+  const et = easternNow();
+  if (host) host.innerHTML = renderNextUpHtml(cal, et) || '<p class="empty">No upcoming releases found.</p>';
+  if (recent) recent.innerHTML = renderRecentHtml(cal, et) || '<p class="empty">No releases in the past week.</p>';
 }

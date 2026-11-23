@@ -202,16 +202,27 @@ a { color: inherit; }
 .arrow-bad     { color: var(--critical-ink); }
 .arrow-neutral { color: var(--ink-3); }
 
+/* ─── SPLIT: past week (left) | upcoming (right) ─────────── */
+.split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; }
+.split-title {
+  font-size: 12px; font-weight: 600; color: var(--ink-2);
+  margin: 0 0 8px; text-transform: uppercase; letter-spacing: 0.05em;
+}
+/* Actual vs previous reading: green better, red worse (same rule as the tile arrows). */
+.tone-good { color: var(--good-ink); }
+.tone-bad  { color: var(--critical-ink); }
+.tone-neutral { color: var(--ink); }
+
 /* ─── NEXT UP (Overview) ──────────────────────────────────
    One line per release in a single panel: when · what · previous. */
 .nextup-section { margin-bottom: 40px; }
 .nextup {
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 4px 20px;
+  padding: 4px 16px;
 }
 .next-row {
   display: grid;
-  grid-template-columns: 170px minmax(0, 1fr) 150px;
+  grid-template-columns: 150px minmax(0, 1fr) auto;
   align-items: baseline;
   gap: 16px;
   padding: 10px 0;
@@ -226,6 +237,7 @@ a { color: inherit; }
 .next-strong .next-name { font-weight: 650; }
 .next-sub { color: var(--ink-3); margin-left: 10px; }
 .next-value { text-align: right; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.next-value b { font-weight: 650; }
 .next-label { color: var(--ink-3); font-size: 11px; margin-right: 2px; }
 
 /* Module reached from the overview */
@@ -409,7 +421,8 @@ a { color: inherit; }
 .calendar-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 8px; }
 .calendar-intro { color: var(--ink-2); font-size: 13px; max-width: 70ch; }
 .calendar-intro b { color: var(--ink); }
-.cal-day { margin-top: 16px; }
+.cal-day { margin-top: 12px; }
+.split .cal-day:first-of-type { margin-top: 4px; }
 .cal-day-title {
   font-size: 12px;
   font-weight: 600;
@@ -419,9 +432,9 @@ a { color: inherit; }
 }
 .cal-row, .cal-head {
   display: grid;
-  grid-template-columns: 72px minmax(0, 1fr) 120px 120px;
+  grid-template-columns: 64px minmax(0, 1fr) 84px 84px;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   padding: 9px 0;
   border-bottom: 1px solid var(--border);
   font-size: 13px;
@@ -438,6 +451,8 @@ a { color: inherit; }
 .cal-more { display: block; margin: 14px auto 0; font-size: 13px; color: var(--ink-2); }
 .cal-value { color: var(--ink-2); white-space: nowrap; }
 .cal-actual { color: var(--ink); font-weight: 650; }
+.cal-actual.tone-good { color: var(--good-ink); }
+.cal-actual.tone-bad  { color: var(--critical-ink); }
 .cal-dash { color: var(--ink-3); }
 .cal-status { color: var(--ink-3); font-size: 12px; font-style: italic; white-space: nowrap; }
 .calendar-foot { color: var(--ink-3); font-size: 11px; margin-top: 16px; line-height: 1.5; }
@@ -458,6 +473,9 @@ a { color: inherit; }
 .site-footer a { color: var(--ink-2); }
 
 /* ─── RESPONSIVE ───────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .split { grid-template-columns: 1fr; gap: 20px; }
+}
 @media (max-width: 1000px) {
   .module-charts { grid-template-columns: 1fr; gap: 20px; }
 }
