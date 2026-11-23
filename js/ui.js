@@ -1,10 +1,12 @@
 // ─── PAGE MODEL ──────────────────────────────────────────
 // Each page defines:
-//   SERIES  = { name: { source: 'fred'|'market', id, label, unit, decimals,
-//                       freq, sample, mode, change, target, hidden, desc } }
-//   LAYOUT  = [{ title, series: [names...] }, ...]   (module order and groups)
-//   SIGNALS = ['recession', 'curve', ...]            (optional, see SIGNAL_LIBRARY)
-//   SECTORS = { symbol: label }                      (optional, ranked returns)
+//   LAYOUT       = [{ title, series: [names...] }, ...]  (module order and groups)
+//   HIDDEN       = [names...]        (loaded for signals but not shown as modules)
+//   SIGNALS      = ['recession', ...] (see SIGNAL_LIBRARY)
+//   SHOW_SECTORS = true|false        (ranked sector returns)
+// Series settings live in config/series.json; data in data/macro.json.
+// SERIES is filled from the data file with just the series this page uses.
+let SERIES = {};
 
 const moduleModes = {};
 const moduleZoom = {};
@@ -15,7 +17,17 @@ const ZOOM_RANGES = [1, 2, 3, 5, 10];
 const DEFAULT_ZOOM = { Level: 5, YoY: 5, MoM: 3, QoQ: 2 };
 
 function pageSignals() { return typeof SIGNALS !== 'undefined' ? SIGNALS : []; }
-function pageSectors() { return typeof SECTORS !== 'undefined' ? SECTORS : null; }
+function pageSectors() {
+  const on = typeof SHOW_SECTORS !== 'undefined' && SHOW_SECTORS;
+  return on && MACRO_DATA && MACRO_DATA.sectors ? MACRO_DATA.sectors.labels : null;
+}
+
+function pageSeriesNames() {
+  const names = [];
+  pageLayout().forEach(g => g.series.forEach(n => names.push(n)));
+  (typeof HIDDEN !== 'undefined' ? HIDDEN : []).forEach(n => names.push(n));
+  return names;
+}
 
 function pageLayout() {
   if (typeof LAYOUT !== 'undefined' && LAYOUT.length) return LAYOUT;
@@ -327,7 +339,7 @@ function renderSignals() {
 
 // ─── SECTOR RETURNS ──────────────────────────────────────
 const SECTOR_PERIODS = ['1M', '3M', 'YTD', '1Y'];
-const sectorReturns = {};
+let sectorReturns = {};
 let sectorPeriod = storageGet('macro.sectorPeriod') || 'YTD';
 
 function renderSectors() {
@@ -378,53 +390,64 @@ function initSectors() {
   renderSectors();
 }
 
-// ─── FETCH ───────────────────────────────────────────────
+// ─── LOAD ────────────────────────────────────────────────
+// One request: data/macro.json holds every series, sector returns and the
+// calendar's FRED data. The file is rebuilt hourly; re-checked every 10 min.
+let modulesRendered = false;
+
 async function fetchAll() {
   const btn   = document.getElementById('refreshBtn');
   const errEl = document.getElementById('errorMsg');
   btn.disabled = true;
   btn.textContent = 'Loading…';
   errEl.hidden = true;
-  const errors = [];
+  const notes = [];
 
-  const names = Object.keys(SERIES);
-  for (let i = 0; i < names.length; i++) {
-    if (i > 0) await sleep(SERIES[names[i]].source === 'market' ? 400 : 200);
-    const name = names[i];
-    try {
-      updateCard(name, await fetchSeries(SERIES[name]));
-    } catch (e) {
-      errors.push(SERIES[name].label + ': ' + e.message);
-      const el = document.getElementById('val-' + name);
-      if (el) { el.textContent = 'Unavailable'; el.classList.add('is-loading'); }
+  try {
+    const data = await loadMacroData();
+    SERIES = {};
+    pageSeriesNames().forEach(n => { if (data.series[n]) SERIES[n] = data.series[n]; });
+    if (!modulesRendered) {
+      renderModules();
+      initSectors();
+      modulesRendered = true;
     }
-  }
-
-  const sectors = pageSectors();
-  if (sectors) {
-    for (const sym of Object.keys(sectors)) {
-      try {
-        await sleep(400);
-        sectorReturns[sym] = trailingReturns(await fetchMarketRange(sym, '2y', '1d'));
-        renderSectors();
-      } catch (e) {
-        errors.push(sectors[sym] + ': ' + e.message);
+    Object.keys(SERIES).forEach(name => {
+      const s = SERIES[name];
+      if (s.stale) {
+        notes.push(s.label + ' could not be refreshed' +
+          (s.updated_at ? '; showing data from ' + new Date(s.updated_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : ''));
       }
+      if (s.obs.length >= 2) updateCard(name, s.obs);
+      else markUnavailable(name);
+    });
+    sectorReturns = (data.sectors && data.sectors.returns) || {};
+    renderSectors();
+    renderSignals();
+    _finishFetch(notes, data.generated_at);
+  } catch (e) {
+    if (!modulesRendered) {
+      document.getElementById('modules').innerHTML = '<p class="empty">Data is unavailable right now.</p>';
     }
+    notes.push('Could not load data: ' + e.message);
+    _finishFetch(notes, null);
   }
-
-  _finishFetch(errors);
 }
 
-function _finishFetch(errors) {
+function markUnavailable(name) {
+  const el = document.getElementById('val-' + name);
+  if (el) { el.textContent = 'Unavailable'; el.classList.add('is-loading'); }
+}
+
+function _finishFetch(notes, generatedAt) {
   const btn   = document.getElementById('refreshBtn');
   const errEl = document.getElementById('errorMsg');
-  const ts = new Date().toLocaleString('en-US', {
-    month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
-  });
-  document.getElementById('last-updated').textContent = 'Updated ' + ts;
-  if (errors.length) {
-    errEl.textContent = 'Some data could not be loaded: ' + errors.join(' · ');
+  if (generatedAt) {
+    document.getElementById('last-updated').textContent = 'Data as of ' +
+      new Date(generatedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  }
+  if (notes.length) {
+    errEl.textContent = notes.join(' · ');
     errEl.hidden = false;
   }
   btn.disabled = false;
@@ -435,35 +458,18 @@ function _finishFetch(errors) {
 
 // ─── FULL-SCREEN CHART ───────────────────────────────────
 function openSeriesChart(name) {
-  const cfg = SERIES[name];
-  if (!cfg) return;
-  const query = new URLSearchParams({
-    source: cfg.source || 'fred',
-    id: cfg.alts ? cfg.alts[0] : cfg.id,
-    label: cfg.label,
-    unit: cfg.unit,
-    decimals: cfg.decimals,
-    interval: getMode(name),
-    freq: cfg.freq || '',
-    change: changeKind(cfg),
-    sample: cfg.sample || ''
-  });
-  if (cfg.target && cfg.target[getMode(name)] != null) {
-    query.set('target', cfg.target[getMode(name)]);
-    query.set('targetLabel', cfg.target.label || 'Target');
-  }
+  if (!SERIES[name]) return;
+  const query = new URLSearchParams({ series: name, view: getMode(name) });
   window.open('chart.html?' + query.toString(), '_blank', 'noopener');
 }
 
 // ─── PAGE INIT ───────────────────────────────────────────
 function initPage() {
   if (!document.getElementById('modules')) return;   // e.g. the test runner
-  renderModules();
   renderSignals();
-  initSectors();
   document.getElementById('refreshBtn').addEventListener('click', fetchAll);
-  fetchAll();
-  if (typeof fetchCalendar === 'function') fetchCalendar();
+  // The calendar reads FRED data from the same file, so it starts after the load.
+  fetchAll().then(() => { if (typeof fetchCalendar === 'function') fetchCalendar(); });
 }
 
 window.addEventListener('DOMContentLoaded', initPage);

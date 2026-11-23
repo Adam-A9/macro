@@ -21,27 +21,6 @@ describe('formatDisplayValue', () => {
   });
 });
 
-describe('trailingReturns', () => {
-  const daily = [
-    { date: '2025-11-20', value: 100 },
-    { date: '2025-12-31', value: 110 },
-    { date: '2026-08-20', value: 120 },
-    { date: '2026-10-20', value: 125 },
-    { date: '2026-11-20', value: 132 }
-  ];
-  const r = trailingReturns(daily);
-
-  it('measures from the close on or before each start date', () => {
-    assert.closeTo(r['1M'], (132 / 125 - 1) * 100, 1e-9);
-    assert.closeTo(r['3M'], (132 / 120 - 1) * 100, 1e-9);
-    assert.closeTo(r['1Y'], 32, 1e-9);
-  });
-
-  it('measures YTD from the last close of the prior year', () => {
-    assert.closeTo(r['YTD'], 20, 1e-9);
-  });
-});
-
 describe('signals', () => {
   afterEach(() => { Object.keys(seriesRawData).forEach(k => delete seriesRawData[k]); });
 

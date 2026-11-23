@@ -263,28 +263,15 @@ function getCalendarObservationValues(sid, pairs, releaseDate, today) {
   return { prior: priorReported, actual: latestReported };
 }
 
+// Observations come prebuilt in data/macro.json (calendar.observations),
+// fetched server-side by python/build_data.py.
+function calendarData() {
+  return (typeof MACRO_DATA !== 'undefined' && MACRO_DATA && MACRO_DATA.calendar) || {};
+}
+
 async function fetchCalendarObservations(seriesId) {
-  var observationStart = new Date(Date.now() - 730 * 86400000).toISOString().slice(0, 10);
-  var url = 'https://api.stlouisfed.org/fred/series/observations' +
-    '?series_id=' + seriesId +
-    '&api_key=' + FRED_API_KEY +
-    '&file_type=json&sort_order=asc' +
-    '&observation_start=' + observationStart;
-  var json = null;
-  for (var attempt = 0; attempt < 3; attempt++) {
-    try {
-      json = await fetchWithProxy(url);
-      break;
-    } catch (e) {
-      if (attempt === 2) throw e;
-      await sleep(750 * (attempt + 1));
-    }
-  }
-  if (!json.observations) return [];
-  return json.observations
-    .filter(function(o) { return o.value !== '.' && o.value !== ''; })
-    .map(function(o) { return { date: o.date, value: parseFloat(o.value) }; })
-    .filter(function(o) { return !isNaN(o.value); });
+  var pairs = (calendarData().observations || {})[seriesId] || [];
+  return pairs.map(function(p) { return { date: p[0], value: p[1] }; });
 }
 
 async function enrichCalendarValues(events) {
@@ -297,7 +284,6 @@ async function enrichCalendarValues(events) {
     try {
       var obs = await fetchCalendarObservations(sid);
       if (obs.length > 0) obsBySeries[sid] = obs;
-      if (i < seriesIds.length - 1) await sleep(400);
     } catch (e) {
       console.warn('Calendar: FRED enrichment failed for ' + sid + ':', e.message);
     }
@@ -362,15 +348,7 @@ async function fetchFromSupabase(pastDate, futureDate) {
 
 // ─── FRED FALLBACK ───────────────────────────────────────────
 async function fetchFromFRED(pastDate, futureDate) {
-  var url = 'https://api.stlouisfed.org/fred/releases/dates' +
-    '?api_key=' + FRED_API_KEY +
-    '&file_type=json' +
-    '&realtime_start=' + pastDate +
-    '&realtime_end='   + futureDate +
-    '&include_release_dates_with_no_data=false';
-
-  var json = await fetchWithProxy(url);
-
+  var json = calendarData();
   if (!json.release_dates || !Array.isArray(json.release_dates)) return [];
 
   return json.release_dates

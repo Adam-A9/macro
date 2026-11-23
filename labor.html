@@ -26,12 +26,12 @@
     <p>Jobs, slack and wages, plus the early-warning indicators that tend to turn first.</p>
   </div>
   <div class="error-msg" id="errorMsg" role="status" hidden></div>
-  <div class="modules" id="modules"></div>
+  <div class="modules" id="modules"><p class="empty">Loading data…</p></div>
 
 </main>
 
 <footer class="site-footer">
-  <span>Data: Federal Reserve Bank of St. Louis (FRED), Yahoo Finance. Shaded bands mark NBER recessions.</span>
+  <span>Data: Federal Reserve Bank of St. Louis (FRED), Yahoo Finance, refreshed hourly. Shaded bands mark NBER recessions.</span>
   <span>Design notes: <a href="https://github.com/Adam-A9/macro/blob/main/DESIGN.md">DESIGN.md</a></span>
 </footer>
 
@@ -41,7 +41,9 @@
 <script src="js/ui.js"></script>
 <script>
 // ─── PAGE CONFIG ─────────────────────────────────────────
-// Edit LAYOUT to reorder or regroup modules; SERIES holds each series' settings.
+// LAYOUT sets which modules this page shows, in order and in groups.
+// Each name refers to an entry in config/series.json (units, default view,
+// target line, description). Data comes from data/macro.json, rebuilt hourly.
 const LAYOUT = [
   {
     "title": "Employment",
@@ -74,117 +76,9 @@ const LAYOUT = [
     ]
   }
 ];
-
-const SERIES = {
-  "Payrolls": {
-    "source": "fred",
-    "id": "PAYEMS",
-    "label": "Nonfarm Payrolls",
-    "unit": "K",
-    "decimals": 0,
-    "freq": "MoM",
-    "change": "diff",
-    "mode": "MoM",
-    "desc": "Nonfarm payrolls measures the monthly change in total employed persons across all industries except farming — the headline jobs number released the first Friday of every month. It is arguably the most market-moving regular data release in the world. Expectations are set by ADP payrolls and jobless claims, and surprises routinely move equity markets, bond yields, and the dollar significantly within seconds of the 8:30 AM release. Above 200,000 is strong. Consecutive months below 100,000 raise recession concerns. The number is typically revised substantially in the following two months, meaning the initial print can be misleading."
-  },
-  "Unemployment": {
-    "source": "fred",
-    "id": "UNRATE",
-    "label": "Unemployment Rate",
-    "unit": "%",
-    "decimals": 1,
-    "freq": "MoM",
-    "mode": "Level",
-    "desc": "The unemployment rate measures the share of people in the labor force who are actively looking for a job but cannot find one. Released every first Friday of the month by the Bureau of Labor Statistics — it is one of the most market-moving data points on the calendar. A reading below 4% is considered a strong, healthy labor market. Above 5-6% signals stress. The Fed is mandated to keep unemployment low alongside controlling inflation, so this number directly shapes rate decisions. Sustained rises here are often a recession warning."
-  },
-  "PrimeEPOP": {
-    "source": "fred",
-    "id": "LNS12300060",
-    "label": "Prime-Age Employment Rate (25–54)",
-    "unit": "%",
-    "decimals": 1,
-    "freq": "MoM",
-    "mode": "Level",
-    "desc": "The prime-age employment-to-population ratio is the share of Americans aged 25 to 54 who have a job. Many economists prefer it to the unemployment rate because it is not distorted by people giving up on job searches or by an aging population retiring. Higher is a stronger labor market."
-  },
-  "U6": {
-    "source": "fred",
-    "id": "U6RATE",
-    "label": "Underemployment (U-6)",
-    "unit": "%",
-    "decimals": 1,
-    "freq": "MoM",
-    "mode": "Level",
-    "desc": "The U-6 rate is the broadest official measure of labor underutilization. In addition to the standard unemployed (U-3), it includes marginally attached workers — people who want jobs and have looked recently but not in the past four weeks — plus part-time workers who want full-time work. This fuller picture reveals the true slack in the labor market. U-6 typically runs 1.7-2x the headline U-3 rate. When the gap between U-6 and U-3 is unusually wide, it signals many workers are stuck in part-time or gig work despite wanting full-time employment, indicating hidden labor market weakness."
-  },
-  "SahmRule": {
-    "source": "fred",
-    "id": "SAHMREALTIME",
-    "label": "Sahm Rule Recession Indicator",
-    "unit": " pp",
-    "decimals": 2,
-    "freq": "MoM",
-    "mode": "Level",
-    "change": "diff",
-    "target": {
-      "Level": 0.5,
-      "label": "Trigger 0.50"
-    },
-    "desc": "The Sahm rule, developed by economist Claudia Sahm, compares the three-month average of the unemployment rate with its lowest three-month average over the prior 12 months. When the gap reaches 0.50 percentage points, the economy has historically already been in the early months of a recession. This is the real-time version, built from data as first published."
-  },
-  "JoblessClaims": {
-    "source": "fred",
-    "id": "ICSA",
-    "label": "Initial Jobless Claims",
-    "unit": "",
-    "decimals": 0,
-    "freq": "MoM",
-    "sample": "monthly",
-    "mode": "Level",
-    "desc": "Initial jobless claims counts the number of people filing for unemployment insurance for the first time in a given week, released every Thursday morning. Because it is weekly, it is the most timely labor market data available — stress in the job market shows up here weeks before the monthly unemployment rate captures it. A healthy economy typically sees claims below 250,000 per week. A sustained move above 300,000-350,000 is a warning sign. Sharp spikes — like those seen in March 2020 when claims hit 6 million in a single week — are among the first hard data signals of economic collapse."
-  },
-  "ContClaims": {
-    "source": "fred",
-    "id": "CCSA",
-    "label": "Continuing Claims",
-    "unit": "",
-    "decimals": 0,
-    "freq": "MoM",
-    "sample": "monthly",
-    "mode": "Level",
-    "desc": "Continuing claims measures the total number of people currently receiving unemployment benefits — not new filers, but everyone still on the rolls. While initial claims show the rate of job losses, continuing claims shows how long people stay unemployed, reflecting how hard it is to find a new job. Rising continuing claims while initial claims are stable suggests the labor market is absorbing new workers but those already unemployed are struggling — often an early signal of softening labor demand before it shows up in the headline unemployment rate."
-  },
-  "JOLTS": {
-    "source": "fred",
-    "id": "JTSJOL",
-    "label": "Job Openings (JOLTS)",
-    "unit": "K",
-    "decimals": 0,
-    "freq": "MoM",
-    "mode": "Level",
-    "desc": "The JOLTS survey counts unfilled job positions at month end. The Fed watches the openings-to-unemployed ratio extremely closely — when there are two openings for every unemployed person, employers compete for workers by raising wages, feeding services inflation. This was the situation in 2021-2022 when openings hit a record 12 million against 6 million unemployed. Former Chair Yellen and Chair Powell both cited this ratio as a key indicator of labor market imbalance requiring rate increases. A declining JOLTS figure signals that labor demand is cooling and wage pressure may be easing."
-  },
-  "QuitRate": {
-    "source": "fred",
-    "id": "JTSQUR",
-    "label": "Quits Rate",
-    "unit": "%",
-    "decimals": 1,
-    "freq": "MoM",
-    "mode": "Level",
-    "desc": "The quit rate from the JOLTS survey measures the percentage of employed workers who voluntarily left their jobs during the month — sometimes called the take-this-job-and-shove-it index. A high quit rate signals extreme worker confidence: people only voluntarily quit when certain they can find something better, usually at higher pay. The record quit rates of 2021-2022 were a leading indicator of the wage inflation that followed as employers competed to replace departed workers with higher salaries. When the quit rate falls, workers are becoming cautious — often a leading signal of softening labor demand before unemployment rises."
-  },
-  "AHE": {
-    "source": "fred",
-    "id": "CES0500000003",
-    "label": "Average Hourly Earnings",
-    "unit": "$",
-    "decimals": 2,
-    "freq": "MoM",
-    "mode": "YoY",
-    "desc": "Average hourly earnings measures the pace of nominal wage growth across all private sector employees. Rising wages are good for workers but create a dilemma for the Fed — if wages grow faster than productivity, businesses pass higher labor costs on as price increases, fueling a wage-price spiral. The Fed targets wage growth around 3-3.5% annually as consistent with 2% inflation. When AHE runs at 5-6%, it signals labor market tightness generating inflationary pressure in services that persists even after goods inflation normalizes — and services inflation is far harder to kill."
-  }
-};
+const HIDDEN = [];
+const SIGNALS = [];
+const SHOW_SECTORS = false;
 </script>
 </body>
 </html>
