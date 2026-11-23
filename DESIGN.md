@@ -4,29 +4,28 @@ This dashboard answers one question per page: *where is the economy now, and how
 
 ## 1. Layout: overview first, then detail
 
-**The Overview opens with "Next up":** a single panel of one-line rows (when · release and period · previous value) for the five soonest releases, plus the next Fed decision with the current target range. The Fed row always appears, even when the meeting is beyond the calendar's window, and all rows sit in date order. Each row links to the full calendar at the bottom of the page. On phones the time moves under the name so nothing is cut off.
+**The Overview opens with "Releases":** two panels side by side. Past week (left) lists the six most recent releases with the actual colored green or red. Next up (right) is a single panel of one-line rows (when · release and period · previous value) for the five soonest releases, plus the next Fed decision with the current target range. The Fed row always appears, even when the meeting is beyond the calendar's window, and all rows sit in date order. Each row links to the full calendar at the bottom of the page. On phones the time moves under the name so nothing is cut off.
 
 **Every page opens with an "At a glance" grid: one identical tile per metric.** Selecting a tile scrolls to that metric's module and briefly highlights it; a floating button returns to the grid. The format follows four principles:
 - **Small multiples.** Tufte describes small multiples as one design repeated within the viewer's eye span, each instance showing different data [15]. Every tile has the same structure:
   - top line: name and date
   - a large current value
   - a 2-year sparkline, Tufte's "word-sized graphic" [16]
-  - a footer with the change since the prior reading and a stoplight dot
+  - a footer with the previous reading and a colored arrow
 
   Because only the data differs, the eye compares values, not layouts.
 - **A modular grid.** Tiles sit on an even grid in the tradition of Müller-Brockmann's *Grid Systems in Graphic Design* [17]. The column count is chosen so every row fills: 6×2 for 12 metrics, 5×2 for 10, 4×2 for 8, and 2 columns on phones. Each page's metric count was set to make that possible. For example, the Sahm-rule verdict rides on the Unemployment tile on the Overview, since the rule is computed from unemployment.
 - **Grouping by proximity, not boxes.** Nielsen Norman Group finds proximity among the strongest grouping cues and warns that extra containers add clutter [18, 19]. So the grid has no outer frame; each tile's own edge is the only boundary.
 - **At-a-glance monitoring.** Few's dashboard principle is a current value plus a compact trend, with detail one step away [3]. The tiles are that first step; the modules are the detail.
 
-For MoM/QoQ views the tile footer shows the recent average (3 months or 4 quarters), because a change-of-a-change ("+105K vs Sep" for payrolls) is hard to read.
-
-**The stoplight dot** (bottom-right of each tile) gives a quick read:
-- **Green:** better than the prior reading, or a healthy reading (positive growth in a change view; within 0.5 pp of the 2% target for inflation).
-- **Yellow:** little changed, meaning within a third of the series' typical one-step move.
-- **Red:** worse, or a weak reading.
-- **Hollow ring:** the series has no agreed good-or-bad direction (Fed funds, Treasury yields, the dollar, gold, M2, home prices), so the site doesn't invent one.
-
-"Better" comes from each series' `good` setting in `config/series.json` (`up`, `down` or `{target}`). The five rule-based readings below decide their tile's dot directly, and hovering a dot shows the reason. Because the dot is color only, its reason is also in the tile's accessible label, and the change beside it shows the direction in text (WCAG 2.1 SC 1.4.1 [13]).
+**Each tile compares its latest reading with the previous one.**
+- **The footer shows the previous reading** in the same measure as the big number, e.g. `Prev (Sep '26) +3.72%` under a 12-month change of +4.08%.
+- **The arrow shows which way it moved,** colored by whether that's good for the series:
+  - green when the move is good (unemployment ▼, payrolls ▲, inflation toward 2%)
+  - red when it's bad
+  - gray when unchanged, or when the series has no agreed direction (Fed funds, Treasury yields, the dollar, gold, home prices)
+- **"Better" comes from each series' `good` setting** in `config/series.json` (`up`, `down` or `{target}`). Hover the arrow for the verdict in words; it's also in the tile's accessible label.
+- **The view label is in words:** "12-mo change", "1-mo change", "qtr change", or nothing for a plain level.
 
 **Each module shows the full history beside the recent window.** The left chart covers everything FRED or Yahoo has (CPI since 1947, unemployment since 1948). The right chart zooms into the last 1–10 years, and the stretch it covers is highlighted on the left chart. This is Shneiderman's information-seeking mantra, *"overview first, zoom and filter, then details on demand"* [1]: the overview is the left chart, the zoom is the right chart with its range buttons, and the details are the hover tooltip, the 12-reading table, and *About this measure*. Munzner calls this pattern *overview + detail* [2]. It answers "historical trend vs. current trend" without a mode switch.
 
@@ -40,7 +39,7 @@ For MoM/QoQ views the tile footer shows the recent average (3 months or 4 quarte
 
 ## 2. Content: only the measures that matter
 
-Five metrics have a **rule-based reading** with a citable threshold. It sets the stoplight dot on their tile (hover the dot for the rule):
+Five rule-based thresholds frame how to read key series (each is drawn on its module's chart as a reference line where applicable):
 
 | Tag on | Measure | Threshold | Source |
 |---|---|---|---|
@@ -99,7 +98,7 @@ What stays is the data line, hairline horizontal gridlines, a single stronger ze
 
 **Color is used sparingly and only where it means something** [3, 8]:
 - **One series color** (blue) for all data. Identity is carried by titles, not hue, so there is nothing to decode.
-- **Status colors** (green/yellow/red) appear only on the overview's stoplight dots. Each dot's reason is in its tooltip and accessible label, and the change beside it carries the direction in text (WCAG 2.1, SC 1.4.1 [13]).
+- **Green and red** appear only on the overview's arrows. The arrow's shape carries the direction, and the verdict is in its tooltip and the tile's accessible label, so color is never the only cue (WCAG 2.1, SC 1.4.1 [13]).
 - **No beat/miss coloring in the calendar.** A CPI "miss" is good news, so red/green there would mislead.
 - **Bars use one color for positive and negative values.** The bar's position relative to the zero line already shows the sign.
 
@@ -147,9 +146,14 @@ The full calendar (at the bottom of the Overview) is built by `python/calendar_d
   - ISM PMIs and the Conference Board's consumer confidence (not on FRED)
 
 **Layout**
-- **Two tabs:** Upcoming and Past week.
+- **Past week and upcoming side by side:** past week on the left, upcoming on the right, no tabs. On narrow screens the halves stack.
 - **Upcoming** shows the next two weeks plus later high-impact releases; minor releases beyond two weeks sit behind a "show all" button.
-- **Rows are grouped under day headings.** High-impact releases are in bold. Color isn't used, because beating or missing a number isn't inherently good or bad: a CPI miss is good news.
+- **Rows are grouped under day headings,** and high-impact releases are in bold.
+- **Past actuals are colored by the same rule as the overview tiles:**
+  - green when better than the previous reading, red when worse
+  - "better" follows each row's direction: unemployment and claims down, payrolls up, and monthly inflation toward about 0.2% a month, the pace consistent with 2% a year
+  - rows without a clear direction (Case-Shiller, import prices) stay uncolored
+  - this replaces the old beat/miss coloring, which treated every "beat" as good
 
 ## Data pipeline
 
@@ -168,7 +172,7 @@ The browser never calls FRED or Yahoo. A GitHub Actions workflow (`.github/workf
 
 - **`config/series.json`** lists every series: FRED or Yahoo id, units, default view (`mode`) and optional `target` line. Add a series here and the next build fetches it.
 - **Each page's `LAYOUT`** (at the end of the HTML file) sets which of those series the page shows, in what order and in which groups.
-- **`SIGNAL_LIBRARY` in `js/ui.js`** defines the rule-based readings; each series' `good` setting drives its stoplight dot.
+- **Each series' `good` setting** in `config/series.json` decides when its arrow is green or red.
 - **`css/site.css`** holds all styling.
 
 ## Sources

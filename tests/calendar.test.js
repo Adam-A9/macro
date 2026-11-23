@@ -183,3 +183,57 @@ describe('renderNextUpHtml', () => {
     r.forEach(x => assert.equal(x.getAttribute('href'), '#calendar'));
   });
 });
+
+describe('calendarTone', () => {
+  it('lower is better for unemployment and claims', () => {
+    assert.equal(calendarTone(ev({ good: 'down', prior: 4.2, actual: 4.1 })), 'good');
+    assert.equal(calendarTone(ev({ good: 'down', prior: 191, actual: 203 })), 'bad');
+  });
+
+  it('higher is better for payrolls and retail sales', () => {
+    assert.equal(calendarTone(ev({ good: 'up', prior: 60, actual: 165 })), 'good');
+    assert.equal(calendarTone(ev({ good: 'up', prior: 0.8, actual: 0.2 })), 'bad');
+  });
+
+  it('monthly inflation is better closer to 0.2% a month', () => {
+    assert.equal(calendarTone(ev({ good: { target: 0.2 }, prior: 0.4, actual: 0.3 })), 'good');
+    assert.equal(calendarTone(ev({ good: { target: 0.2 }, prior: 0.2, actual: 0.5 })), 'bad');
+  });
+
+  it('neutral with no direction, no actual, or no change', () => {
+    assert.equal(calendarTone(ev({ good: null, prior: 1, actual: 2 })), 'neutral');
+    assert.equal(calendarTone(ev({ good: 'up', prior: 1, actual: null })), 'neutral');
+    assert.equal(calendarTone(ev({ good: 'up', prior: 1.1, actual: 1.1 })), 'neutral');
+  });
+
+  it('colors the actual in the full calendar', () => {
+    const html = renderCalendarHtml([ev({ date: '2026-11-17', label: 'Retail sales', status: 'released',
+      good: 'up', prior: 0.8, actual: 0.2, sign: true })], 'past', ET, false);
+    assert.include(html, 'cal-actual tone-bad');
+  });
+});
+
+describe('renderRecentHtml', () => {
+  const cal = { events: [
+    ev({ date: '2026-11-17', time: '08:30', label: 'Retail sales', status: 'released', good: 'up', prior: 0.8, actual: 0.2, sign: true }),
+    ev({ date: '2026-11-19', time: '08:30', label: 'Initial jobless claims', status: 'released', good: 'down',
+         unit: 'K', decimals: 0, prior: 202, actual: 203 }),
+    ev({ date: '2026-11-25', label: 'Real GDP, second estimate' })
+  ] };
+  const rows = () => {
+    const div = document.createElement('div');
+    div.innerHTML = renderRecentHtml(cal, ET);
+    return [...div.querySelectorAll('.next-row')];
+  };
+
+  it('lists released rows newest first, skipping upcoming ones', () => {
+    assert.deepEqual(rows().map(r => r.querySelector('.next-name').textContent), ['Initial jobless claims', 'Retail sales']);
+  });
+
+  it('shows the colored actual and the previous value', () => {
+    const claims = rows()[0].querySelector('.next-value');
+    assert.equal(claims.querySelector('b').className, 'tone-bad');
+    assert.include(claims.textContent, '203K');
+    assert.include(claims.textContent, 'prev 202K');
+  });
+});

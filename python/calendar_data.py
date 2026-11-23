@@ -31,6 +31,9 @@ VINTAGE_LOOKBACK = 120 # days of vintage history kept per series (covers GDP's t
 #              level = the value itself
 #              yoy   = % change vs a year earlier
 #   scale multiplies the raw FRED value into the display unit.
+#   good  = which way is better ('up', 'down', or {"target": x}: closer is
+#           better; 0.2% a month is the pace consistent with 2% a year).
+#           Colors the actual on the site. Omitted = no clear direction.
 #   lag   = months between the reference period and the release month, used
 #           to label upcoming releases (e.g. CPI out in December covers November).
 # Not included: Existing Home Sales and U. Michigan sentiment (licensed data that
@@ -38,50 +41,50 @@ VINTAGE_LOOKBACK = 120 # days of vintage history kept per series (covers GDP's t
 # (not on FRED).
 RELEASES = [
     {"id": 10, "lag": 1, "name": "Consumer Price Index", "agency": "BLS", "time": "08:30", "impact": "high", "rows": [
-        {"series": "CPIAUCSL", "label": "CPI", "transform": "pct", "unit": "%", "decimals": 1, "note": "m/m"},
-        {"series": "CPILFESL", "label": "Core CPI", "transform": "pct", "unit": "%", "decimals": 1, "note": "m/m"}]},
+        {"series": "CPIAUCSL", "good": {"target": 0.2}, "label": "CPI", "transform": "pct", "unit": "%", "decimals": 1, "note": "m/m"},
+        {"series": "CPILFESL", "good": {"target": 0.2}, "label": "Core CPI", "transform": "pct", "unit": "%", "decimals": 1, "note": "m/m"}]},
     {"id": 46, "lag": 1, "name": "Producer Price Index", "agency": "BLS", "time": "08:30", "impact": "medium", "rows": [
-        {"series": "PPIFIS", "label": "PPI (final demand)", "transform": "pct", "unit": "%", "decimals": 1, "note": "m/m"}]},
+        {"series": "PPIFIS", "good": {"target": 0.2}, "label": "PPI (final demand)", "transform": "pct", "unit": "%", "decimals": 1, "note": "m/m"}]},
     {"id": 50, "lag": 1, "name": "Employment Situation", "agency": "BLS", "time": "08:30", "impact": "high", "rows": [
-        {"series": "PAYEMS", "label": "Nonfarm payrolls", "transform": "diff", "unit": "K", "decimals": 0, "note": "change"},
-        {"series": "UNRATE", "label": "Unemployment rate", "transform": "level", "unit": "%", "decimals": 1},
-        {"series": "CES0500000003", "label": "Average hourly earnings", "transform": "pct", "unit": "%", "decimals": 1, "note": "m/m"}]},
+        {"series": "PAYEMS", "good": "up", "label": "Nonfarm payrolls", "transform": "diff", "unit": "K", "decimals": 0, "note": "change"},
+        {"series": "UNRATE", "good": "down", "label": "Unemployment rate", "transform": "level", "unit": "%", "decimals": 1},
+        {"series": "CES0500000003", "good": "up", "label": "Average hourly earnings", "transform": "pct", "unit": "%", "decimals": 1, "note": "m/m"}]},
     {"id": 180, "name": "Weekly Jobless Claims", "agency": "DOL", "time": "08:30", "impact": "medium", "freq": "W", "rows": [
-        {"series": "ICSA", "label": "Initial jobless claims", "transform": "level", "scale": 0.001, "unit": "K", "decimals": 0}]},
+        {"series": "ICSA", "good": "down", "label": "Initial jobless claims", "transform": "level", "scale": 0.001, "unit": "K", "decimals": 0}]},
     {"id": 192, "lag": 2, "name": "Job Openings (JOLTS)", "agency": "BLS", "time": "10:00", "impact": "medium", "rows": [
-        {"series": "JTSJOL", "label": "Job openings", "transform": "level", "scale": 0.001, "unit": "M", "decimals": 2}]},
+        {"series": "JTSJOL", "good": "up", "label": "Job openings", "transform": "level", "scale": 0.001, "unit": "M", "decimals": 2}]},
     {"id": 53, "name": "Gross Domestic Product", "agency": "BEA", "time": "08:30", "impact": "high", "freq": "Q", "rows": [
-        {"series": "A191RL1Q225SBEA", "label": "Real GDP", "transform": "level", "unit": "%", "decimals": 1,
+        {"series": "A191RL1Q225SBEA", "good": "up", "label": "Real GDP", "transform": "level", "unit": "%", "decimals": 1,
          "note": "q/q annualized", "estimates": True}]},
     {"id": 54, "lag": 1, "name": "Personal Income & Outlays", "agency": "BEA", "time": "08:30", "impact": "high", "rows": [
-        {"series": "PCEPILFE", "label": "Core PCE prices", "transform": "pct", "unit": "%", "decimals": 1, "note": "m/m"},
-        {"series": "PCEPI", "label": "PCE prices", "transform": "pct", "unit": "%", "decimals": 1, "note": "m/m"}]},
+        {"series": "PCEPILFE", "good": {"target": 0.2}, "label": "Core PCE prices", "transform": "pct", "unit": "%", "decimals": 1, "note": "m/m"},
+        {"series": "PCEPI", "good": {"target": 0.2}, "label": "PCE prices", "transform": "pct", "unit": "%", "decimals": 1, "note": "m/m"}]},
     {"id": 9, "lag": 1, "name": "Retail Sales", "agency": "Census", "time": "08:30", "impact": "high", "rows": [
-        {"series": "RSAFS", "label": "Retail sales", "transform": "pct", "unit": "%", "decimals": 1, "note": "m/m"}]},
+        {"series": "RSAFS", "good": "up", "label": "Retail sales", "transform": "pct", "unit": "%", "decimals": 1, "note": "m/m"}]},
     {"id": 27, "lag": 1, "name": "Housing Starts", "agency": "Census", "time": "08:30", "impact": "medium", "rows": [
-        {"series": "HOUST", "label": "Housing starts", "transform": "level", "scale": 0.001, "unit": "M", "decimals": 2, "note": "annual rate"},
-        {"series": "PERMIT", "label": "Building permits", "transform": "level", "scale": 0.001, "unit": "M", "decimals": 2, "note": "annual rate"}]},
+        {"series": "HOUST", "good": "up", "label": "Housing starts", "transform": "level", "scale": 0.001, "unit": "M", "decimals": 2, "note": "annual rate"},
+        {"series": "PERMIT", "good": "up", "label": "Building permits", "transform": "level", "scale": 0.001, "unit": "M", "decimals": 2, "note": "annual rate"}]},
     {"id": 97, "lag": 1, "name": "New Home Sales", "agency": "Census", "time": "10:00", "impact": "low", "rows": [
-        {"series": "HSN1F", "label": "New home sales", "transform": "level", "unit": "K", "decimals": 0, "note": "annual rate"}]},
+        {"series": "HSN1F", "good": "up", "label": "New home sales", "transform": "level", "unit": "K", "decimals": 0, "note": "annual rate"}]},
     # Release 95 carries two reports: the advance durable-goods report late in
     # the month and the full factory-orders report early in the next month.
     {"id": 95, "lag": 1, "name": "Durable Goods Orders", "agency": "Census", "time": "08:30", "impact": "medium",
      "day_from": 15, "rows": [
-        {"series": "DGORDER", "label": "Durable goods orders", "transform": "pct", "unit": "%", "decimals": 1, "note": "m/m"}]},
+        {"series": "DGORDER", "good": "up", "label": "Durable goods orders", "transform": "pct", "unit": "%", "decimals": 1, "note": "m/m"}]},
     {"id": 95, "lag": 2, "name": "Factory Orders", "agency": "Census", "time": "10:00", "impact": "low",
      "day_until": 14, "rows": [
-        {"series": "AMTMNO", "label": "Factory orders", "transform": "pct", "unit": "%", "decimals": 1, "note": "m/m"}]},
+        {"series": "AMTMNO", "good": "up", "label": "Factory orders", "transform": "pct", "unit": "%", "decimals": 1, "note": "m/m"}]},
     {"id": 13, "lag": 1, "name": "Industrial Production", "agency": "Federal Reserve", "time": "09:15", "impact": "low", "rows": [
-        {"series": "INDPRO", "label": "Industrial production", "transform": "pct", "unit": "%", "decimals": 1, "note": "m/m"},
-        {"series": "TCU", "label": "Capacity utilization", "transform": "level", "unit": "%", "decimals": 1}]},
+        {"series": "INDPRO", "good": "up", "label": "Industrial production", "transform": "pct", "unit": "%", "decimals": 1, "note": "m/m"},
+        {"series": "TCU", "good": "up", "label": "Capacity utilization", "transform": "level", "unit": "%", "decimals": 1}]},
     {"id": 51, "lag": 2, "name": "International Trade", "agency": "Census / BEA", "time": "08:30", "impact": "medium", "rows": [
-        {"series": "BOPGSTB", "label": "Trade balance", "transform": "level", "scale": 0.001, "unit": "B$", "decimals": 1}]},
+        {"series": "BOPGSTB", "good": "up", "label": "Trade balance", "transform": "level", "scale": 0.001, "unit": "B$", "decimals": 1}]},
     {"id": 229, "lag": 2, "name": "Construction Spending", "agency": "Census", "time": "10:00", "impact": "low", "rows": [
-        {"series": "TTLCONS", "label": "Construction spending", "transform": "pct", "unit": "%", "decimals": 1, "note": "m/m"}]},
+        {"series": "TTLCONS", "good": "up", "label": "Construction spending", "transform": "pct", "unit": "%", "decimals": 1, "note": "m/m"}]},
     {"id": 188, "lag": 1, "name": "Import Prices", "agency": "BLS", "time": "08:30", "impact": "low", "rows": [
         {"series": "IR", "label": "Import prices", "transform": "pct", "unit": "%", "decimals": 1, "note": "m/m"}]},
     {"id": 11, "lag": 1, "name": "Employment Cost Index", "agency": "BLS", "time": "08:30", "impact": "medium", "freq": "Q", "rows": [
-        {"series": "ECIALLCIV", "label": "Employment cost index", "transform": "pct", "unit": "%", "decimals": 1, "note": "q/q"}]},
+        {"series": "ECIALLCIV", "good": "up", "label": "Employment cost index", "transform": "pct", "unit": "%", "decimals": 1, "note": "q/q"}]},
     {"id": 199, "lag": 2, "name": "Case-Shiller Home Prices", "agency": "S&P", "time": "09:00", "impact": "low", "rows": [
         {"series": "CSUSHPINSA", "label": "Case-Shiller home prices", "transform": "yoy", "unit": "%", "decimals": 1, "note": "y/y"}]},
 ]
@@ -255,7 +258,7 @@ def release_row(fred, spec, row, d, today, now_et):
     base = {
         "date": d, "time": spec["time"], "release": spec["name"], "agency": spec["agency"],
         "impact": spec["impact"], "label": row["label"], "note": row.get("note", ""),
-        "series": sid, "unit": row["unit"], "decimals": row["decimals"],
+        "series": sid, "unit": row["unit"], "decimals": row["decimals"], "good": row.get("good"),
         "sign": kind in ("pct", "diff", "yoy") or row["unit"] == "B$",
     }
     release_day = date.fromisoformat(d)

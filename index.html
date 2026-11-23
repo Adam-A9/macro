@@ -28,8 +28,11 @@
   <div class="error-msg" id="errorMsg" role="status" hidden></div>
 
   <section class="section nextup-section" aria-labelledby="nextup-title">
-    <div class="glance-head"><h2 class="group-title" id="nextup-title">Next up</h2><a class="glance-hint" href="#calendar">Full calendar ↓</a></div>
-    <div class="nextup" id="nextUp"><p class="empty">Loading…</p></div>
+    <div class="glance-head"><h2 class="group-title" id="nextup-title">Releases</h2><a class="glance-hint" href="#calendar">Full calendar ↓</a></div>
+    <div class="split">
+      <div><h3 class="split-title">Past week</h3><div class="nextup" id="nextPast"><p class="empty">Loading…</p></div></div>
+      <div><h3 class="split-title">Next up</h3><div class="nextup" id="nextUp"><p class="empty">Loading…</p></div></div>
+    </div>
   </section>
   <section class="glance" id="glance" aria-labelledby="glance-title">
     <div class="glance-head"><h2 class="group-title" id="glance-title">At a glance</h2><span class="glance-hint">Click any tile for its full charts</span></div>
@@ -41,24 +44,19 @@
     <h2 class="group-title" id="calendar-title">Economic Calendar</h2>
     <div class="calendar">
       <div class="calendar-header">
-        <p class="calendar-intro">US data releases and Fed decisions. Times are Eastern;
-          values are as first published. <b>Bold</b> marks market-moving releases.</p>
-        <div class="segmented" id="calendarTabs" role="group" aria-label="Calendar view">
-          <button type="button" data-tab="upcoming" aria-pressed="true">Upcoming</button>
-          <button type="button" data-tab="past" aria-pressed="false">Past week</button>
-        </div>
+        <p class="calendar-intro">US data releases and Fed decisions. Times are Eastern; values are as first published.
+          <b>Bold</b> marks market-moving releases. Actuals are <span class="tone-good">green</span> when better than the
+          previous reading and <span class="tone-bad">red</span> when worse.</p>
       </div>
-      <div class="calendar-body" id="calendarBody" role="table" aria-label="Economic calendar"><p class="empty">Loading calendar…</p></div>
-      <p class="calendar-foot">Sources: FRED release calendar and first-release values (Federal Reserve Bank of St. Louis);
-        FOMC meeting schedule from federalreserve.gov. Consensus forecasts aren't shown: no free source allows automated use.</p>
+      <div class="split">
+        <div><h3 class="split-title">Past week</h3>
+          <div class="calendar-body" id="calendarPast" role="table" aria-label="Releases in the past week"><p class="empty">Loading…</p></div></div>
+        <div><h3 class="split-title">Upcoming</h3>
+          <div class="calendar-body" id="calendarUpcoming" role="table" aria-label="Upcoming releases"><p class="empty">Loading…</p></div></div>
+      </div>
     </div>
   </section>
 </main>
-
-<footer class="site-footer">
-  <span>Data: Federal Reserve Bank of St. Louis (FRED), Yahoo Finance, refreshed hourly. Shaded bands mark NBER recessions.</span>
-  <span>Design notes: <a href="https://github.com/Adam-A9/macro/blob/main/DESIGN.md">DESIGN.md</a></span>
-</footer>
 
 <script src="js/config.js?v=dev"></script>
 <script src="js/api.js?v=dev"></script>
@@ -109,7 +107,7 @@ const LAYOUT = [
     ]
   }
 ];
-const HIDDEN = ["SahmRule"];
+const HIDDEN = [];
 const SHOW_SECTORS = false;
 </script>
 </body>
