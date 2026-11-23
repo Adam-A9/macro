@@ -63,7 +63,8 @@
       "freq": "MoM",
       "change": "diff",
       "mode": "MoM",
-      "desc": "Nonfarm payrolls measures the monthly change in total employed persons across all industries except farming — the headline jobs number released the first Friday of every month. It is arguably the most market-moving regular data release in the world. Expectations are set by ADP payrolls and jobless claims, and surprises routinely move equity markets, bond yields, and the dollar significantly within seconds of the 8:30 AM release. Above 200,000 is strong. Consecutive months below 100,000 raise recession concerns. The number is typically revised substantially in the following two months, meaning the initial print can be misleading."
+      "desc": "Nonfarm payrolls measures the monthly change in total employed persons across all industries except farming — the headline jobs number released the first Friday of every month. It is arguably the most market-moving regular data release in the world. Expectations are set by ADP payrolls and jobless claims, and surprises routinely move equity markets, bond yields, and the dollar significantly within seconds of the 8:30 AM release. Above 200,000 is strong. Consecutive months below 100,000 raise recession concerns. The number is typically revised substantially in the following two months, meaning the initial print can be misleading.",
+      "short": "Payrolls"
     },
     "JoblessClaims": {
       "source": "fred",
@@ -149,7 +150,8 @@
         "YoY": 2,
         "label": "Fed 2% target"
       },
-      "desc": "Core PCE excluding food and energy is the single most important inflation number for Federal Reserve rate decisions — their 2% target refers specifically to this series. When Fed Chair Powell says inflation is moving toward target, this is the number being referenced. It is the cleanest read on underlying demand-driven inflation. Wall Street analysts forecast this number more closely than any other inflation metric because it directly determines when the Fed will cut or raise rates. Even a 0.1% surprise can move markets significantly."
+      "desc": "Core PCE excluding food and energy is the single most important inflation number for Federal Reserve rate decisions — their 2% target refers specifically to this series. When Fed Chair Powell says inflation is moving toward target, this is the number being referenced. It is the cleanest read on underlying demand-driven inflation. Wall Street analysts forecast this number more closely than any other inflation metric because it directly determines when the Fed will cut or raise rates. Even a 0.1% surprise can move markets significantly.",
+      "short": "Core PCE"
     },
     "PCE": {
       "source": "fred",
@@ -279,6 +281,18 @@
       "mode": "Level",
       "desc": "The 2-year Treasury yield is the most policy-sensitive point on the yield curve, moving fastest in response to changing Fed rate expectations. When markets expect rate cuts, the 2Y falls sharply as traders buy short-duration bonds. When inflation surprises force the Fed to hike, the 2Y spikes. The spread between the 2Y and the current Fed Funds rate tells you whether markets think the Fed is ahead of or behind the curve. A 2Y significantly below Fed Funds means markets expect imminent cuts; a 2Y above Fed Funds means they expect more hikes — a real-time vote on Fed policy credibility.",
       "short": "2Y Treasury"
+    },
+    "Yield30Y": {
+      "source": "fred",
+      "id": "DGS30",
+      "label": "30-Year Treasury Yield",
+      "unit": "%",
+      "decimals": 2,
+      "freq": "MoM",
+      "sample": "monthly",
+      "mode": "Level",
+      "desc": "The 30-year Treasury yield represents very long-term growth and inflation expectations — a three-decade bet on the US economy. It is the benchmark rate for long-term mortgages and pension fund liabilities. A key relationship to watch is whether the 30Y rises while the Fed is cutting rates: if long yields go up as the Fed cuts short rates, it signals the bond market does not believe inflation is beaten and is demanding more compensation for holding long duration. This bear steepening — short rates falling while long rates rise — has historically been associated with stagflationary environments.",
+      "short": "30Y Treasury"
     },
     "Yield10Y": {
       "source": "fred",
@@ -533,8 +547,7 @@
           "series": [
             "Unemployment",
             "Payrolls",
-            "JoblessClaims",
-            "SahmRule"
+            "JoblessClaims"
           ]
         },
         {
@@ -677,6 +690,7 @@
             "FedFunds",
             "Yield2Y",
             "Yield10Y",
+            "Yield30Y",
             "Spread"
           ]
         },

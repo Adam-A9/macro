@@ -236,13 +236,14 @@ const SIGNAL_LIBRARY = {
   recession: {
     title: 'Recession signal',
     series: 'SahmRule',
+    tile: 'Unemployment',      // shown here when the Sahm rule has no tile of its own
     read() {
       const l = latestOf('SahmRule'); if (!l) return null;
       const v = l.value;
       return {
         value: v.toFixed(2) + ' pp',
         status: v >= 0.5 ? 'critical' : v >= 0.3 ? 'warning' : 'good',
-        verdict: v >= 0.5 ? 'Triggered' : v >= 0.3 ? 'Approaching' : 'Not triggered',
+        verdict: v >= 0.5 ? 'Recession signal' : v >= 0.3 ? 'Nearing trigger' : 'No recession signal',
         note: 'Sahm rule: 3-mo avg unemployment vs. its 12-mo low. Triggers at 0.50.',
         date: l.date
       };
@@ -314,10 +315,17 @@ const SIGNAL_LIBRARY = {
 };
 
 // The status tag (if any) for a series, e.g. Sahm rule → "Not triggered".
+// A signal sits on its own series' tile, or on its fallback tile when its
+// series isn't one of this page's modules (Sahm rule → Unemployment).
+function onPage(name) {
+  return pageLayout().some(g => g.series.includes(name));
+}
+
 function statusFor(name) {
   for (const id in SIGNAL_LIBRARY) {
     const sig = SIGNAL_LIBRARY[id];
-    if (sig.series === name) return sig.read();
+    const home = onPage(sig.series) ? sig.series : sig.tile;
+    if (home === name) return sig.read();
   }
   return null;
 }
@@ -330,24 +338,22 @@ function statusTag(r) {
 }
 
 // ─── AT A GLANCE ─────────────────────────────────────────
-// One compact row per module: trend, latest value, change since the prior
-// reading, date and status. Clicking a row jumps to the module.
+// Small multiples: one identical tile per module on an even grid. Each tile
+// shows name, date, latest value, a 2-year sparkline and either the change
+// since the prior reading or a status tag. Selecting a tile jumps to its module.
 function sparkline(values) {
   if (values.length < 2) return '';
-  const w = 84, h = 26, pad = 2;
+  const w = 200, h = 40, pad = 3;
   const min = Math.min(...values), max = Math.max(...values);
   const span = (max - min) || 1;
-  const pts = values.map((v, i) => [
-    pad + i / (values.length - 1) * (w - 2 * pad),
-    pad + (1 - (v - min) / span) * (h - 2 * pad)
-  ]);
+  const y = v => pad + (1 - (v - min) / span) * (h - 2 * pad);
+  const pts = values.map((v, i) => [i / (values.length - 1) * w, y(v)]);
   const last = pts[pts.length - 1];
   const zero = min < 0 && max > 0
-    ? '<line class="spark-zero" x1="0" x2="' + w + '" y1="' + (pad + (max / span) * (h - 2 * pad)).toFixed(1) +
-      '" y2="' + (pad + (max / span) * (h - 2 * pad)).toFixed(1) + '"/>' : '';
-  return '<svg class="spark" viewBox="0 0 ' + w + ' ' + h + '" width="' + w + '" height="' + h + '" aria-hidden="true">' +
+    ? '<line class="spark-zero" x1="0" x2="' + w + '" y1="' + y(0).toFixed(1) + '" y2="' + y(0).toFixed(1) + '"/>' : '';
+  return '<svg class="spark" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" aria-hidden="true">' +
     zero + '<polyline points="' + pts.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ') + '"/>' +
-    '<circle cx="' + last[0].toFixed(1) + '" cy="' + last[1].toFixed(1) + '" r="2.2"/></svg>';
+    '</svg><span class="spark-dot" style="top:' + (last[1] / h * 100).toFixed(1) + '%"></span>';
 }
 
 // Context for the latest reading.
@@ -379,59 +385,86 @@ function glanceChange(display, cfg, quarterly) {
   return { value, text: formatDisplayValue(value, fmt), since: formatObsDate(a.date, 'short', quarterly) };
 }
 
-function glanceRowHtml(name) {
+function tileHtml(name) {
   const cfg = SERIES[name];
-  return '<a class="glance-row" href="#card-' + name + '" data-series="' + name + '" id="glance-' + name + '">' +
-    '<span class="glance-name" title="' + escapeHtml(cfg.label) + '">' + escapeHtml(cfg.short || cfg.label) + '</span>' +
-    '<span class="glance-spark"></span>' +
-    '<span class="glance-value is-loading">…</span>' +
-    '<span class="glance-change"></span>' +
-    '<span class="glance-meta"></span>' +
+  return '<a class="tile" href="#card-' + name + '" data-series="' + name + '" id="glance-' + name + '">' +
+    '<span class="tile-top">' +
+      '<span class="tile-name" title="' + escapeHtml(cfg.label) + '">' + escapeHtml(cfg.short || cfg.label) + '</span>' +
+      '<span class="tile-date"></span>' +
+    '</span>' +
+    '<span class="tile-value is-loading">…</span>' +
+    '<span class="tile-spark"></span>' +
+    '<span class="tile-foot"></span>' +
   '</a>';
+}
+
+// Pick a column count that fills every row: the widest layout (up to
+// maxCols) whose count divides evenly, else the one leaving the fewest gaps.
+function gridColumns(n, maxCols) {
+  let best = 2, bestGap = Infinity;
+  for (let c = Math.max(2, Math.min(maxCols, n)); c >= 2; c--) {
+    const gap = (c - n % c) % c;
+    if (gap < bestGap) { best = c; bestGap = gap; }
+    if (gap === 0) break;
+  }
+  return best;
+}
+
+function layoutGlance() {
+  const host = document.getElementById('glanceBody');
+  if (!host) return;
+  const n = host.querySelectorAll('.tile').length;
+  const maxCols = Math.max(2, Math.floor((host.clientWidth + 12) / (204 + 12)));
+  host.style.setProperty('--cols', gridColumns(n, Math.min(maxCols, 6)));
 }
 
 function renderGlance() {
   const host = document.getElementById('glanceBody');
   if (!host) return;
-  host.innerHTML = pageLayout().map(group => {
-    const rows = group.series.filter(n => SERIES[n]);
-    if (!rows.length) return '';
-    return '<div class="glance-group">' +
-      (group.title ? '<h3 class="glance-group-title">' + escapeHtml(group.title) + '</h3>' : '') +
-      rows.map(glanceRowHtml).join('') +
-    '</div>';
-  }).join('');
-  host.querySelectorAll('.glance-row').forEach(row => row.addEventListener('click', e => {
+  const names = [];
+  pageLayout().forEach(g => g.series.forEach(n => { if (SERIES[n]) names.push(n); }));
+  host.innerHTML = names.map(tileHtml).join('');
+  host.querySelectorAll('.tile').forEach(tile => tile.addEventListener('click', e => {
     e.preventDefault();
-    jumpToModule(row.dataset.series);
+    jumpToModule(tile.dataset.series);
   }));
+  layoutGlance();
+  window.addEventListener('resize', layoutGlance);
 }
 
 function updateGlanceRow(name) {
-  const row = document.getElementById('glance-' + name);
+  const tile = document.getElementById('glance-' + name);
   const cfg = SERIES[name], raw = seriesRawData[name];
-  if (!row || !cfg || !raw) return;
+  if (!tile || !cfg || !raw) return;
   const quarterly = cfg.freq === 'QoQ';
   const display = buildModeSeries(raw, cfg, getMode(name));
   const obs = display.obs;
   if (!obs.length) return;
   const latest = obs[obs.length - 1];
   const change = glanceChange(display, cfg, quarterly);
-  const arrow = !change || change.average ? '' : Math.abs(change.value) < 1e-9 ? '→' : change.value > 0 ? '▲' : '▼';
+  const status = statusFor(name);
 
-  row.querySelector('.glance-spark').innerHTML = sparkline(obs.slice(-24).map(d => d.value));
-  const v = row.querySelector('.glance-value');
+  tile.querySelector('.tile-date').textContent =
+    (display.mode !== 'Level' ? display.mode + ' · ' : '') + formatObsDate(latest.date, 'short', quarterly);
+  const u = splitUnit(display.unit);
+  const head = formatDisplayValue(latest.value, Object.assign({}, display, { unit: u.pre === '$' ? '$' : '' }));
+  const v = tile.querySelector('.tile-value');
   v.classList.remove('is-loading');
-  v.innerHTML = escapeHtml(formatDisplayValue(latest.value, display)) +
-    (display.mode !== 'Level' ? ' <span class="glance-mode">' + display.mode + '</span>' : '');
-  row.querySelector('.glance-change').innerHTML = change
-    ? '<span class="glance-arrow" aria-hidden="true">' + arrow + '</span>' + escapeHtml(change.text) +
-      ' <span class="glance-since">' + (change.average ? '' : 'vs ') + escapeHtml(change.since) + '</span>' : '';
-  row.querySelector('.glance-meta').innerHTML =
-    statusTag(statusFor(name)) ||
-    '<span class="glance-date">' + escapeHtml(formatObsDate(latest.date, 'short', quarterly)) + '</span>';
-  row.setAttribute('aria-label', cfg.label + ': ' + formatDisplayValue(latest.value, display) +
-    (change ? ', ' + change.text + ' versus ' + change.since : ''));
+  v.innerHTML = escapeHtml(head) + (u.post.trim() ? '<span class="tile-unit">' + escapeHtml(u.post.trim()) + '</span>' : '');
+  tile.querySelector('.tile-spark').innerHTML = sparkline(obs.slice(-24).map(d => d.value));
+
+  // Footer: status tag when the metric has one, otherwise the change.
+  let foot = '';
+  if (status) foot = statusTag(status);
+  else if (change) {
+    const arrow = change.average ? '' : Math.abs(change.value) < 1e-9 ? '→ ' : change.value > 0 ? '▲ ' : '▼ ';
+    foot = '<span class="tile-change">' + arrow + escapeHtml(change.text) +
+      ' <span class="tile-since">' + (change.average ? '' : 'vs ') + escapeHtml(change.since) + '</span></span>';
+  }
+  tile.querySelector('.tile-foot').innerHTML = foot;
+  tile.setAttribute('aria-label', cfg.label + ': ' + formatDisplayValue(latest.value, display) +
+    (status ? ', ' + status.verdict : change ? ', ' + change.text + ' ' + (change.average ? '' : 'versus ') + change.since : '') +
+    '. Show charts.');
 }
 
 // Scroll to a module and briefly highlight it.
@@ -464,114 +497,6 @@ function initBackToTop() {
   if (!glance || !('IntersectionObserver' in window)) return;
   new IntersectionObserver(entries => { btn.hidden = entries[0].isIntersecting; })
     .observe(glance);
-}
-
-// ─── SEARCH ──────────────────────────────────────────────
-// Searches every series on every page. Same-page results scroll to the
-// module; others open that page at the module (page.html#card-Name).
-let searchIndex = [];
-let searchActive = -1;
-
-function currentPageFile() {
-  return location.pathname.split('/').pop() || 'index.html';
-}
-
-function buildSearchIndex(data) {
-  searchIndex = [];
-  (data.pages || []).forEach(page => page.groups.forEach(group => group.series.forEach(name => {
-    const cfg = data.series[name];
-    if (!cfg) return;
-    searchIndex.push({
-      name, page: page.file, pageTitle: page.title, group: group.title, label: cfg.label,
-      hay: [cfg.label, cfg.short || '', cfg.id, group.title, page.title, cfg.source === 'market' ? 'market stock price' : 'fred']
-        .join(' ').toLowerCase()
-    });
-  })));
-}
-
-function searchMatches(query) {
-  const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
-  if (!terms.length) return [];
-  const here = currentPageFile();
-  const seen = new Set();
-  return searchIndex
-    .filter(it => terms.every(t => it.hay.includes(t)))
-    // Prefer this page; otherwise a metric's dedicated section over the Overview.
-    .map(it => ({ it, score: (it.page === here ? 0 : it.page === 'index.html' ? 12 : 10) +
-                             (it.label.toLowerCase().startsWith(terms[0]) ? 0 : 5) }))
-    .sort((a, b) => a.score - b.score)
-    .map(x => x.it)
-    // A series on several pages: prefer this page, else its first page.
-    .filter(it => { if (seen.has(it.name)) return false; seen.add(it.name); return true; })
-    .slice(0, 8);
-}
-
-function renderSearchResults() {
-  const input = document.getElementById('searchInput');
-  const box = document.getElementById('searchResults');
-  const results = searchMatches(input.value);
-  searchActive = results.length ? 0 : -1;
-  if (!input.value.trim()) { closeSearch(); return; }
-  box.innerHTML = results.length ? results.map((r, i) =>
-    '<a class="search-result" role="option" id="sr-' + i + '" data-index="' + i + '" href="' +
-      (r.page === currentPageFile() ? '' : r.page) + '#card-' + r.name + '">' +
-      '<span class="search-label">' + escapeHtml(r.label) + '</span>' +
-      '<span class="search-where">' + escapeHtml(r.page === currentPageFile() ? r.group : r.pageTitle + ' · ' + r.group) + '</span>' +
-    '</a>').join('') : '<div class="search-empty">No matching metrics</div>';
-  box.hidden = false;
-  input.setAttribute('aria-expanded', 'true');
-  box._results = results;
-  highlightSearch();
-  box.querySelectorAll('.search-result').forEach(a => a.addEventListener('click', e => {
-    e.preventDefault();
-    goToResult(results[parseInt(a.dataset.index, 10)]);
-  }));
-}
-
-function highlightSearch() {
-  const box = document.getElementById('searchResults');
-  box.querySelectorAll('.search-result').forEach((a, i) => a.setAttribute('aria-selected', i === searchActive));
-  const input = document.getElementById('searchInput');
-  if (searchActive >= 0) input.setAttribute('aria-activedescendant', 'sr-' + searchActive);
-  else input.removeAttribute('aria-activedescendant');
-}
-
-function closeSearch() {
-  const box = document.getElementById('searchResults');
-  const input = document.getElementById('searchInput');
-  if (!box) return;
-  box.hidden = true;
-  input.setAttribute('aria-expanded', 'false');
-  searchActive = -1;
-}
-
-function goToResult(r) {
-  if (!r) return;
-  const input = document.getElementById('searchInput');
-  closeSearch();
-  input.value = '';
-  input.blur();
-  if (r.page === currentPageFile()) jumpToModule(r.name);
-  else location.href = r.page + '#card-' + r.name;
-}
-
-function initSearch() {
-  const input = document.getElementById('searchInput');
-  const box = document.getElementById('searchResults');
-  if (!input) return;
-  input.addEventListener('input', renderSearchResults);
-  input.addEventListener('keydown', e => {
-    const n = (box._results || []).length;
-    if (e.key === 'ArrowDown' && n) { e.preventDefault(); searchActive = (searchActive + 1) % n; highlightSearch(); }
-    else if (e.key === 'ArrowUp' && n) { e.preventDefault(); searchActive = (searchActive - 1 + n) % n; highlightSearch(); }
-    else if (e.key === 'Enter') { e.preventDefault(); goToResult((box._results || [])[Math.max(searchActive, 0)]); }
-    else if (e.key === 'Escape') { input.value = ''; closeSearch(); input.blur(); }
-  });
-  document.addEventListener('keydown', e => {
-    const typing = /input|textarea|select/i.test(document.activeElement.tagName);
-    if (e.key === '/' && !typing && !e.metaKey && !e.ctrlKey) { e.preventDefault(); input.focus(); }
-  });
-  document.addEventListener('click', e => { if (!e.target.closest('.search')) closeSearch(); });
 }
 
 // ─── SECTOR RETURNS ──────────────────────────────────────
@@ -644,7 +569,6 @@ async function fetchAll() {
     const data = await loadMacroData();
     SERIES = {};
     pageSeriesNames().forEach(n => { if (data.series[n]) SERIES[n] = data.series[n]; });
-    buildSearchIndex(data);
     if (!modulesRendered) {
       renderGlance();
       renderModules();
@@ -660,6 +584,9 @@ async function fetchAll() {
       if (s.obs.length >= 2) updateCard(name, s.obs);
       else markUnavailable(name);
     });
+    // Status tags can depend on other series (Sahm rule → Unemployment),
+    // so refresh every tile once all data is in.
+    Object.keys(SERIES).forEach(updateGlanceRow);
     sectorReturns = (data.sectors && data.sectors.returns) || {};
     renderSectors();
     _finishFetch(notes, data.generated_at);
@@ -704,12 +631,11 @@ function openSeriesChart(name) {
 // ─── PAGE INIT ───────────────────────────────────────────
 function initPage() {
   if (!document.getElementById('modules')) return;   // e.g. the test runner
-  initSearch();
   initBackToTop();
   document.getElementById('refreshBtn').addEventListener('click', fetchAll);
   const target = location.hash.startsWith('#card-') ? location.hash.slice(6) : null;
   fetchAll().then(() => {
-    // Arriving from search on another page: go straight to the module.
+    // Arriving with a link to a module (#card-Name): go straight to it.
     if (target) jumpToModule(target, true);
     // The calendar reads FRED data from the same file, so it starts after the load.
     if (typeof fetchCalendar === 'function') fetchCalendar();

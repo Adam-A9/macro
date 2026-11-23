@@ -28,7 +28,7 @@ describe('signals', () => {
     seriesRawData.SahmRule = [{ date: '2026-09-01', value: 0.2 }, { date: '2026-10-01', value: 0.53 }];
     const r = SIGNAL_LIBRARY.recession.read();
     assert.equal(r.status, 'critical');
-    assert.equal(r.verdict, 'Triggered');
+    assert.equal(r.verdict, 'Recession signal');
   });
 
   it('flags an inverted yield curve', () => {
@@ -72,41 +72,37 @@ describe('glanceChange', () => {
   });
 });
 
-describe('search', () => {
-  before(() => buildSearchIndex({
-    pages: [
-      { file: 'index.html', title: 'Overview', groups: [{ title: 'Inflation', series: ['CorePCE'] }] },
-      { file: 'inflation.html', title: 'Inflation', groups: [{ title: 'Consumer Prices', series: ['CorePCE', 'CPI'] }] },
-      { file: 'housing.html', title: 'Housing', groups: [{ title: 'Financing', series: ['Mortgage30'] }] }
-    ],
-    series: {
-      CorePCE: { label: 'Core PCE Prices', id: 'PCEPILFE' },
-      CPI: { label: 'Consumer Price Index (CPI)', short: 'CPI', id: 'CPIAUCSL' },
-      Mortgage30: { label: '30-Year Mortgage Rate', id: 'MORTGAGE30US' }
-    }
-  }));
-
-  it('matches every word against name, id, group and page', () => {
-    assert.deepEqual(searchMatches('mortgage rate').map(r => r.name), ['Mortgage30']);
-    assert.deepEqual(searchMatches('pcepilfe').map(r => r.name), ['CorePCE']);
-    assert.deepEqual(searchMatches('nothing here'), []);
+describe('gridColumns', () => {
+  it('picks the widest column count that fills every row', () => {
+    assert.equal(gridColumns(12, 6), 6);
+    assert.equal(gridColumns(10, 6), 5);
+    assert.equal(gridColumns(8, 6), 4);
+    assert.equal(gridColumns(12, 5), 4);
   });
 
-  it('lists each series once, preferring its section page over the Overview', () => {
-    // Simulate being on the Housing page (the test runner is itself index.html).
-    const real = window.currentPageFile;
-    window.currentPageFile = () => 'housing.html';
-    try {
-      const r = searchMatches('core pce');
-      assert.equal(r.length, 1);
-      assert.equal(r[0].page, 'inflation.html');
-    } finally { window.currentPageFile = real; }
+  it('falls back to the fewest empty cells', () => {
+    assert.equal(gridColumns(7, 6), 4);   // 4+3: one gap
+    assert.equal(gridColumns(2, 1), 2);   // never fewer than 2
+  });
+});
+
+describe('status placement', () => {
+  afterEach(() => {
+    Object.keys(seriesRawData).forEach(k => delete seriesRawData[k]);
+    delete window.LAYOUT;
   });
 
-  it('prefers the current page when the series is on it', () => {
-    const real = window.currentPageFile;
-    window.currentPageFile = () => 'index.html';
-    try { assert.equal(searchMatches('core pce')[0].page, 'index.html'); }
-    finally { window.currentPageFile = real; }
+  it('puts the Sahm verdict on Unemployment when the Sahm rule has no tile', () => {
+    window.LAYOUT = [{ title: 'Jobs', series: ['Unemployment', 'Payrolls'] }];
+    seriesRawData.SahmRule = [{ date: '2026-10-01', value: 0.1 }];
+    assert.equal(statusFor('Unemployment').verdict, 'No recession signal');
+    assert.isNull(statusFor('Payrolls'));
+  });
+
+  it('keeps it on the Sahm rule tile when that tile exists', () => {
+    window.LAYOUT = [{ title: 'Jobs', series: ['Unemployment', 'SahmRule'] }];
+    seriesRawData.SahmRule = [{ date: '2026-10-01', value: 0.1 }];
+    assert.isNull(statusFor('Unemployment'));
+    assert.equal(statusFor('SahmRule').status, 'good');
   });
 });

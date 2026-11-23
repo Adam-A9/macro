@@ -4,16 +4,19 @@ This dashboard answers one question per page: *where is the economy now, and how
 
 ## 1. Layout: overview first, then detail
 
-**Every page opens with an "At a glance" panel.** It has one compact row per metric on the page, grouped like the modules below it. Each row shows:
-- a 2-year sparkline (Tufte's "word-sized graphic" [5])
-- the latest value
-- context: the change since the prior reading, or the recent average for MoM/QoQ views, since a change-of-a-change is hard to read
-- a status tag or the as-of date
+**Every page opens with an "At a glance" grid: one identical tile per metric.** Selecting a tile scrolls to that metric's module and briefly highlights it; a floating button returns to the grid. The format follows four principles:
+- **Small multiples.** Tufte describes small multiples as one design repeated within the viewer's eye span, each instance showing different data [15]. Every tile has the same structure:
+  - top line: name and date
+  - a large current value
+  - a 2-year sparkline, Tufte's "word-sized graphic" [16]
+  - a footer with either the change since the prior reading or a status tag
 
-Clicking a row scrolls to that metric's module and highlights it; a floating button returns to the panel. This applies Shneiderman's mantra [1] at the page level: the panel is the overview, the modules are the details.
+  Because only the data differs, the eye compares values, not layouts.
+- **A modular grid.** Tiles sit on an even grid in the tradition of Müller-Brockmann's *Grid Systems in Graphic Design* [17]. The column count is chosen so every row fills: 6×2 for 12 metrics, 5×2 for 10, 4×2 for 8, and 2 columns on phones. Each page's metric count was set to make that possible. For example, the Sahm-rule verdict rides on the Unemployment tile on the Overview, since the rule is computed from unemployment.
+- **Grouping by proximity, not boxes.** Nielsen Norman Group finds proximity among the strongest grouping cues and warns that extra containers add clutter [18, 19]. So the grid has no outer frame; each tile's own edge is the only boundary.
+- **At-a-glance monitoring.** Few's dashboard principle is a current value plus a compact trend, with detail one step away [3]. The tiles are that first step; the modules are the detail.
 
-**Search finds any metric on any page.** Press `/` or tap the header box. A match on the current page scrolls to its module; a match elsewhere opens that page at the module, preferring the metric's own section over the Overview.
-
+For MoM/QoQ views the tile footer shows the recent average (3 months or 4 quarters), because a change-of-a-change ("+105K vs Sep" for payrolls) is hard to read.
 
 **Each module shows the full history beside the recent window.** The left chart covers everything FRED or Yahoo has (CPI since 1947, unemployment since 1948). The right chart zooms into the last 1–10 years, and the stretch it covers is highlighted on the left chart. This is Shneiderman's information-seeking mantra, *"overview first, zoom and filter, then details on demand"* [1]: the overview is the left chart, the zoom is the right chart with its range buttons, and the details are the hover tooltip, the 12-reading table, and *About this measure*. Munzner calls this pattern *overview + detail* [2]. It answers "historical trend vs. current trend" without a mode switch.
 
@@ -25,11 +28,11 @@ Clicking a row scrolls to that metric's module and highlights it; a floating but
 
 ## 2. Content: only the measures that matter
 
-Five metrics carry a **status tag**: a rule-based verdict with a citable threshold, shown on their row in the overview (hover for the rule):
+Five metrics carry a **status tag**: a rule-based verdict with a citable threshold, shown on their tile in the overview (hover for the rule):
 
 | Tag on | Measure | Threshold | Source |
 |---|---|---|---|
-| Recession signal | Sahm rule (`SAHMREALTIME`) | ≥ 0.50 pp triggers | Sahm (2019) [9] |
+| Unemployment / Sahm rule | Sahm rule (`SAHMREALTIME`) | ≥ 0.50 pp triggers | Sahm (2019) [9] |
 | Real growth | Real GDP, annualized QoQ (`GDPC1`) | < 0 contracting | BEA convention |
 | Core inflation | Core PCE YoY (`PCEPILFE`) | Fed target 2% | FOMC (2012, rev. 2020) [10] |
 | Yield curve | 10Y – 2Y (`T10Y2Y`) | < 0 inverted | Estrella & Mishkin (1998) [11] |
@@ -118,3 +121,8 @@ The browser never calls FRED or Yahoo. A GitHub Actions workflow (`.github/workf
 12. Gilchrist, S., & Zakrajšek, E. (2012). Credit Spreads and Business Cycle Fluctuations. *American Economic Review*, 102(4), 1692–1720.
 13. W3C (2018). *Web Content Accessibility Guidelines (WCAG) 2.1.* SC 1.4.1 Use of Color; SC 1.4.3 Contrast (Minimum).
 14. Okabe, M., & Ito, K. (2008). *Color Universal Design (CUD): How to make figures and presentations that are friendly to colorblind people.* J*Fly.
+15. Tufte, E. R. (1990). *Envisioning Information.* Graphics Press. "Small Multiples," pp. 67–79.
+16. Tufte, E. R. (2006). *Beautiful Evidence.* Graphics Press. "Sparklines: Intense, Simple, Word-Sized Graphics," pp. 46–63.
+17. Müller-Brockmann, J. (1981). *Grid Systems in Graphic Design.* Niggli.
+18. Nielsen Norman Group. *Proximity Principle in Visual Design.* nngroup.com/articles/gestalt-proximity/
+19. Nielsen Norman Group. *The Principle of Common Region: Containers Create Groupings.* nngroup.com/articles/common-region/
