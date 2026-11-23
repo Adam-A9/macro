@@ -2,1483 +2,37 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjEyIiBmaWxsPSIjMDgwYzEwIi8+PHBvbHlsaW5lIHBvaW50cz0iMCw2MCAyMCw2MCAzNSw2MCA0NSwxNSA1NSw4NSA2NSw2MCA4MCw2MCAxMDAsNjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwZDRmZiIgc3Ryb2tlLXdpZHRoPSI3IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L3N2Zz4=">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MACRO — Economic Overview Dashboard</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<title>Inflation · Macro</title>
+<meta name="description" content="How fast prices are rising, where the pressure comes from, and what markets expect next. The Fed targets 2% on core PCE.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231a1a19'/%3E%3Cpolyline points='5,21 11,15 16,18 27,8' fill='none' stroke='%233987e5' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/site.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<style>
-  :root {
-    --bg: #080c10;
-    --surface: #0d1117;
-    --surface2: #131a22;
-    --border: #1e2d3d;
-    --border2: #243447;
-    --accent: #00d4ff;
-    --accent2: #00ff9d;
-    --warn: #ff6b35;
-    --red: #ff3b5c;
-    --green: #00ff9d;
-    --gold: #ffd700;
-    --text: #e8edf2;
-    --muted: #d8eaf5;
-    --muted2: #c8dff0;
-    --grid: rgba(0,212,255,0.04);
-  }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Space Mono', monospace;
-    font-size: 12px;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background:
-      repeating-linear-gradient(0deg, transparent, transparent 39px, var(--grid) 39px, var(--grid) 40px),
-      repeating-linear-gradient(90deg, transparent, transparent 39px, var(--grid) 39px, var(--grid) 40px);
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  /* HEADER */
-  .header {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    background: rgba(8,12,16,0.95);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border);
-    padding: 0 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 52px;
-  }
-
-  .logo {
-    font-family: 'DM Mono', monospace;
-    font-weight: 800;
-    font-size: 18px;
-    letter-spacing: 0.3em;
-    color: var(--accent);
-    text-transform: uppercase;
-  }
-  .logo span { color: var(--muted); font-weight: 400; }
-
-  .header-right {
-    display: flex;
-    align-items: center;
-    gap: 24px;
-  }
-
-  .live-badge {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--accent2);
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-  }
-  .live-dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--accent2);
-    animation: pulse 2s infinite;
-  }
-  @keyframes pulse {
-    0%,100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0,255,157,0.4); }
-    50% { opacity: 0.6; box-shadow: 0 0 0 4px rgba(0,255,157,0); }
-  }
-
-  #last-updated {
-    color: var(--muted);
-    font-size: 10px;
-    letter-spacing: 0.05em;
-  }
-
-  .refresh-btn {
-    background: transparent;
-    border: 1px solid var(--border2);
-    color: var(--accent);
-    font-family: 'Space Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    padding: 6px 12px;
-    cursor: pointer;
-    text-transform: uppercase;
-    transition: all 0.2s;
-  }
-  .refresh-btn:hover { background: var(--accent); color: var(--bg); border-color: var(--accent); }
-  .refresh-btn.loading { opacity: 0.5; cursor: not-allowed; }
-
-  /* MAIN LAYOUT */
-  .main {
-    position: relative;
-    z-index: 1;
-    padding: 20px 24px;
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    grid-template-rows: auto auto auto auto;
-    gap: 12px;
-  }
-
-
-  /* KPI CARDS */
-  .kpi-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    padding: 16px;
-    position: relative;
-    overflow: hidden;
-    transition: border-color 0.2s;
-    animation: fadeIn 0.5s ease forwards;
-    opacity: 0;
-  }
-  .kpi-card:hover { border-color: var(--border2); }
-  .kpi-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 3px;
-  }
-
-  @keyframes fadeIn {
-    to { opacity: 1; transform: translateY(0); }
-    from { opacity: 0; transform: translateY(8px); }
-  }
-
-  .kpi-tooltip {
-    position: absolute;
-    inset: 0;
-    background: rgba(13,17,23,0.97);
-    border: 1px solid var(--accent);
-    color: var(--text);
-    font-family: 'Space Mono', monospace;
-    font-size: 11px;
-    line-height: 1.7;
-    padding: 14px;
-    z-index: 200;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.2s;
-    white-space: normal;
-    display: flex;
-    align-items: center;
-  }
-  .kpi-card.show-tip .kpi-tooltip {
-    opacity: 1;
-  }
-  .kpi-info {
-    cursor: help;
-    color: var(--accent);
-    font-size: 9px;
-    border: 1px solid var(--accent);
-    border-radius: 50%;
-    width: 13px;
-    height: 13px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    margin-left: 4px;
-    flex-shrink: 0;
-    opacity: 0.7;
-  }
-  .kpi-label {
-    color: var(--muted);
-    font-size: 9px;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .kpi-series-id {
-    display: none;
-  }
-  .kpi-value {
-    font-family: 'DM Mono', monospace;
-    font-weight: 700;
-    font-size: 28px;
-    letter-spacing: -0.02em;
-    color: var(--text);
-    margin-bottom: 4px;
-    line-height: 1;
-  }
-  .kpi-value.loading-text { font-size: 16px; color: var(--muted); animation: blink 1.2s infinite; }
-  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
-
-  .kpi-unit { font-size: 13px; color: var(--muted); font-weight: 400; margin-left: 3px; }
-  .kpi-change {
-    display: none;
-  }
-  .kpi-change.pos { color: var(--green); }
-  .kpi-change.neg { color: var(--red); }
-  .kpi-change.neutral { color: var(--muted); }
-  .kpi-date { color: var(--muted2); font-size: 9px; margin-top: 6px; }
-  .revision-tag {
-    display: inline-block;
-    margin-top: 5px;
-    font-size: 9px;
-    letter-spacing: 0.05em;
-    padding: 2px 6px;
-    border: 1px solid var(--border2);
-    font-family: 'Space Mono', monospace;
-  }
-  .revision-tag.up { color: #00ff9d; border-color: #00ff9d33; }
-  .revision-tag.down { color: #ff3b5c; border-color: #ff3b5c33; }
-  .revision-tag.flat { color: var(--muted); }
-
-  .sparkline-wrap {
-    margin-top: 10px;
-    height: 52px;
-  }
-  .mini-table-wrap {
-    margin-top: 8px;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-  .mini-table-wrap::-webkit-scrollbar { display: none; }
-  .mini-table {
-    border-collapse: collapse;
-    white-space: nowrap;
-    width: 100%;
-    font-size: 10px;
-    font-family: 'Space Mono', monospace;
-  }
-  .mini-table th {
-    color: #e8edf2;
-    font-weight: 400;
-    padding: 4px 6px;
-    border: 1px solid var(--border);
-    background: var(--surface2);
-    letter-spacing: 0.05em;
-    text-align: center;
-  }
-  .mini-table td {
-    color: #ffffff;
-    padding: 4px 6px;
-    border: 1px solid var(--border);
-    text-align: center;
-    letter-spacing: 0.03em;
-  }
-
-  /* CHART PANELS */
-  .chart-panel {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    padding: 16px;
-    animation: fadeIn 0.6s ease forwards;
-    opacity: 0;
-  }
-  .panel-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 14px;
-  }
-  .panel-title {
-    font-family: 'DM Mono', monospace;
-    font-weight: 700;
-    font-size: 13px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--text);
-  }
-  .panel-sub {
-    color: var(--muted);
-    font-size: 9px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    margin-top: 2px;
-  }
-  .panel-badge {
-    font-size: 9px;
-    letter-spacing: 0.1em;
-    padding: 2px 6px;
-    border: 1px solid var(--border2);
-    color: var(--accent);
-    text-transform: uppercase;
-  }
-
-  .chart-container { position: relative; }
-
-
-  /* FOOTER */
-  .footer {
-    position: relative;
-    z-index: 1;
-    border-top: 1px solid var(--border);
-    padding: 12px 24px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    color: var(--muted2);
-    font-size: 10px;
-    letter-spacing: 0.05em;
-  }
-
-  /* ERROR */
-  .error-msg {
-    background: rgba(255,59,92,0.08);
-    border: 1px solid rgba(255,59,92,0.3);
-    color: var(--red);
-    padding: 8px 12px;
-    font-size: 11px;
-    grid-column: 1/-1;
-    display: none;
-  }
-
-  /* SECTION LABEL */
-  .section-label {
-    grid-column: 1/-1;
-    color: var(--muted);
-    font-size: 9px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    padding: 4px 0 0;
-    border-top: 1px solid var(--border);
-    margin-top: 4px;
-  }
-
-  canvas { display: block; }
-
-  /* Staggered animation delays */
-  .kpi-card:nth-child(1) { animation-delay: 0.05s; }
-  .kpi-card:nth-child(2) { animation-delay: 0.10s; }
-  .kpi-card:nth-child(3) { animation-delay: 0.15s; }
-  .kpi-card:nth-child(4) { animation-delay: 0.20s; }
-  .kpi-card:nth-child(5) { animation-delay: 0.25s; }
-  .kpi-card:nth-child(6) { animation-delay: 0.30s; }
-  .kpi-card:nth-child(7) { animation-delay: 0.35s; }
-  .kpi-card:nth-child(8) { animation-delay: 0.40s; }
-
-  /* ── TABLET RESPONSIVE ─────────────────────────────────── */
-  @media (max-width: 1200px) {
-    .main {
-      grid-template-columns: 1fr 1fr;
-    }
-  }
-
-  /* ── MOBILE RESPONSIVE ────────────────────────────────── */
-  @media (max-width: 768px) {
-
-    /* Header */
-    .header {
-      padding: 0 12px;
-      height: auto;
-      min-height: 52px;
-      flex-wrap: wrap;
-      gap: 8px;
-      padding-top: 8px;
-      padding-bottom: 8px;
-    }
-    .logo { font-size: 14px; }
-    .header-right { gap: 12px; flex-wrap: wrap; }
-    #last-updated { display: none; }
-
-    /* Main grid → single column */
-    .main {
-      grid-template-columns: 1fr;
-      padding: 12px;
-      gap: 10px;
-    }
-
-    /* KPI cards — full width, more compact */
-    .kpi-card {
-      padding: 12px;
-    }
-    .kpi-value { font-size: 22px !important; }
-    .sparkline-wrap { height: 44px; }
-    .mini-table { font-size: 9px; }
-    .mini-table th, .mini-table td { padding: 2px 4px; }
-
-    /* Section labels */
-    .section-label { grid-column: 1 / -1; }
-
-    /* Market + FRED charts → single column */
-    div[style*="grid-template-columns:1fr 1fr"] {
-      grid-template-columns: 1fr !important;
-    }
-
-    /* Chart panels */
-    .chart-panel { padding: 12px; }
-    .panel-title { font-size: 11px; }
-
-    /* Tooltip overlay — slightly smaller text on mobile */
-    .kpi-tooltip { font-size: 10px; padding: 10px; }
-
-    /* Footer */
-    .footer {
-      flex-direction: column;
-      gap: 4px;
-      text-align: center;
-      padding: 10px 12px;
-    }
-
-    /* Error msg */
-    .error-msg { font-size: 10px; }
-
-    /* Refresh button */
-    .refresh-btn { padding: 5px 10px; font-size: 9px; }
-  }
-
-  @media (max-width: 480px) {
-    .logo span { display: none; }
-    .kpi-value { font-size: 20px !important; }
-    .live-badge span:last-child { display: none; }
-  }
-
-  /* ── ECONOMIC CALENDAR ─────────────────────────────────── */
-  .calendar-section {
-    position: relative;
-    z-index: 1;
-    padding: 0 24px 20px;
-  }
-  .calendar-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 12px;
-  }
-  .calendar-title {
-    color: var(--accent);
-    font-size: 9px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-  }
-  .calendar-range {
-    color: var(--muted);
-    font-size: 9px;
-  }
-  .calendar-grid {
-    display: grid;
-    grid-template-columns: 80px 52px 1fr 70px 70px 70px;
-    border: 1px solid var(--border);
-  }
-  .cal-date {
-    background: var(--surface);
-    padding: 8px 10px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-  }
-  .cal-date-day { color: var(--text); font-size: 10px; font-weight: bold; }
-  .cal-date-time { color: var(--muted); font-size: 9px; }
-  .cal-event {
-    padding: 8px 12px;
-    border-bottom: 1px solid var(--border);
-    border-left: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .cal-bar {
-    width: 3px;
-    height: 28px;
-    border-radius: 2px;
-    flex-shrink: 0;
-  }
-  .cal-name { color: var(--text); font-size: 11px; }
-  .cal-sub { color: var(--muted); font-size: 9px; margin-top: 1px; }
-  .cal-days {
-    padding: 8px 6px;
-    border-bottom: 1px solid var(--border);
-    border-left: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
-  .cal-days-num {
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    font-weight: 500;
-    line-height: 1;
-  }
-  .cal-days-label {
-    color: var(--muted);
-    font-size: 8px;
-    letter-spacing: 0.05em;
-    margin-top: 2px;
-  }
-  .cal-col-prev, .cal-col-est, .cal-col-act {
-    padding: 8px 8px;
-    border-bottom: 1px solid var(--border);
-    border-left: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-  }
-  .cal-hdr {
-    border-bottom: 1px solid var(--border);
-  }
-  .cal-hdr-label {
-    padding: 4px 8px;
-    border-left: 1px solid var(--border);
-    font-size: 8px;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    color: var(--muted);
-    text-align: right;
-    text-transform: uppercase;
-  }
-  .cal-est-dash {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    color: var(--muted);
-  }
-  .cal-est-group {
-    display: grid;
-    grid-template-columns: auto auto;
-    gap: 0 5px;
-    align-items: baseline;
-    justify-items: end;
-  }
-  .cal-est-label {
-    color: var(--muted);
-    font-size: 8px;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    justify-self: start;
-  }
-  .cal-est-val {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    color: var(--text);
-  }
-  .cal-est-prior { color: var(--muted); }
-  .cal-beat { color: var(--green); }
-  .cal-miss { color: var(--red); }
-  .cal-inline { color: var(--text); }
-  .cal-fomc { background: #131a22; }
-  .cal-impact {
-    background: rgba(255,59,92,0.08);
-    border: 1px solid rgba(255,59,92,0.25);
-    color: var(--red);
-    font-size: 9px;
-    padding: 2px 6px;
-    letter-spacing: 0.05em;
-    white-space: nowrap;
-  }
-  .cal-grid-last .cal-date,
-  .cal-grid-last .cal-event,
-  .cal-grid-last .cal-col-prev,
-  .cal-grid-last .cal-col-est,
-  .cal-grid-last .cal-col-act { border-bottom: none; }
-  .cal-legend {
-    display: flex;
-    gap: 16px;
-    margin-top: 10px;
-    flex-wrap: wrap;
-  }
-  .cal-legend-item {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    color: var(--muted);
-    font-size: 9px;
-  }
-  .cal-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-  .cal-empty {
-    grid-column: 1/-1;
-    padding: 20px;
-    text-align: center;
-    color: var(--muted);
-    font-size: 11px;
-  }
-  @media (max-width: 768px) {
-    .calendar-section { padding: 0 12px 16px; }
-    .calendar-grid { grid-template-columns: 65px 1fr; }
-    .cal-col-prev, .cal-col-est, .cal-col-act, .cal-hdr-label { display: none; }
-    .cal-days { display: none; }
-  }
-
-  /* ── NAV BAR ─────────────────────────────────────────────── */
-  .nav-bar {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 0 24px;
-    display: flex;
-    gap: 0;
-    position: sticky;
-    top: 52px;
-    z-index: 99;
-  }
-  .nav-link {
-    color: var(--muted);
-    text-decoration: none;
-    font-family: 'Space Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    padding: 10px 16px;
-    border-bottom: 2px solid transparent;
-    transition: all 0.15s;
-    white-space: nowrap;
-  }
-  .nav-link:hover { color: var(--text); }
-  .nav-link.active { color: var(--accent); border-bottom-color: var(--accent); }
-  @media (max-width: 768px) {
-    .nav-bar { overflow-x: auto; top: auto; }
-    .nav-link { padding: 8px 12px; font-size: 9px; }
-  }
-</style>
 </head>
-<style>
-  :root {
-    --bg: #080c10;
-    --surface: #0d1117;
-    --surface2: #131a22;
-    --border: #1e2d3d;
-    --border2: #243447;
-    --accent: #00d4ff;
-    --accent2: #00ff9d;
-    --warn: #ff6b35;
-    --red: #ff3b5c;
-    --green: #00ff9d;
-    --gold: #ffd700;
-    --text: #e8edf2;
-    --muted: #d8eaf5;
-    --muted2: #c8dff0;
-    --grid: rgba(0,212,255,0.04);
-  }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Space Mono', monospace;
-    font-size: 12px;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background:
-      repeating-linear-gradient(0deg, transparent, transparent 39px, var(--grid) 39px, var(--grid) 40px),
-      repeating-linear-gradient(90deg, transparent, transparent 39px, var(--grid) 39px, var(--grid) 40px);
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  /* HEADER */
-  .header {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    background: rgba(8,12,16,0.95);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border);
-    padding: 0 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 52px;
-  }
-
-  .logo {
-    font-family: 'DM Mono', monospace;
-    font-weight: 800;
-    font-size: 18px;
-    letter-spacing: 0.3em;
-    color: var(--accent);
-    text-transform: uppercase;
-  }
-  .logo span { color: var(--muted); font-weight: 400; }
-
-  .header-right {
-    display: flex;
-    align-items: center;
-    gap: 24px;
-  }
-
-  .live-badge {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--accent2);
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-  }
-  .live-dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--accent2);
-    animation: pulse 2s infinite;
-  }
-  @keyframes pulse {
-    0%,100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0,255,157,0.4); }
-    50% { opacity: 0.6; box-shadow: 0 0 0 4px rgba(0,255,157,0); }
-  }
-
-  #last-updated {
-    color: var(--muted);
-    font-size: 10px;
-    letter-spacing: 0.05em;
-  }
-
-  .refresh-btn {
-    background: transparent;
-    border: 1px solid var(--border2);
-    color: var(--accent);
-    font-family: 'Space Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    padding: 6px 12px;
-    cursor: pointer;
-    text-transform: uppercase;
-    transition: all 0.2s;
-  }
-  .refresh-btn:hover { background: var(--accent); color: var(--bg); border-color: var(--accent); }
-  .refresh-btn.loading { opacity: 0.5; cursor: not-allowed; }
-
-  /* MAIN LAYOUT */
-  .main {
-    position: relative;
-    z-index: 1;
-    padding: 20px 24px;
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    grid-template-rows: auto auto auto auto;
-    gap: 12px;
-  }
-
-
-  /* KPI CARDS */
-  .kpi-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    padding: 16px;
-    position: relative;
-    overflow: hidden;
-    transition: border-color 0.2s;
-    animation: fadeIn 0.5s ease forwards;
-    opacity: 0;
-  }
-  .kpi-card:hover { border-color: var(--border2); }
-  .kpi-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 3px;
-  }
-
-  @keyframes fadeIn {
-    to { opacity: 1; transform: translateY(0); }
-    from { opacity: 0; transform: translateY(8px); }
-  }
-
-  .kpi-tooltip {
-    position: absolute;
-    inset: 0;
-    background: rgba(13,17,23,0.97);
-    border: 1px solid var(--accent);
-    color: var(--text);
-    font-family: 'Space Mono', monospace;
-    font-size: 11px;
-    line-height: 1.7;
-    padding: 14px;
-    z-index: 200;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.2s;
-    white-space: normal;
-    display: flex;
-    align-items: center;
-  }
-  .kpi-card.show-tip .kpi-tooltip {
-    opacity: 1;
-  }
-  .kpi-info {
-    cursor: help;
-    color: var(--accent);
-    font-size: 9px;
-    border: 1px solid var(--accent);
-    border-radius: 50%;
-    width: 13px;
-    height: 13px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    margin-left: 4px;
-    flex-shrink: 0;
-    opacity: 0.7;
-  }
-  .kpi-label {
-    color: var(--muted);
-    font-size: 9px;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .kpi-series-id {
-    display: none;
-  }
-  .kpi-value {
-    font-family: 'DM Mono', monospace;
-    font-weight: 700;
-    font-size: 28px;
-    letter-spacing: -0.02em;
-    color: var(--text);
-    margin-bottom: 4px;
-    line-height: 1;
-  }
-  .kpi-value.loading-text { font-size: 16px; color: var(--muted); animation: blink 1.2s infinite; }
-  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
-
-  .kpi-unit { font-size: 13px; color: var(--muted); font-weight: 400; margin-left: 3px; }
-  .kpi-change {
-    display: none;
-  }
-  .kpi-change.pos { color: var(--green); }
-  .kpi-change.neg { color: var(--red); }
-  .kpi-change.neutral { color: var(--muted); }
-  .kpi-date { color: var(--muted2); font-size: 9px; margin-top: 6px; }
-  .revision-tag {
-    display: inline-block;
-    margin-top: 5px;
-    font-size: 9px;
-    letter-spacing: 0.05em;
-    padding: 2px 6px;
-    border: 1px solid var(--border2);
-    font-family: 'Space Mono', monospace;
-  }
-  .revision-tag.up { color: #00ff9d; border-color: #00ff9d33; }
-  .revision-tag.down { color: #ff3b5c; border-color: #ff3b5c33; }
-  .revision-tag.flat { color: var(--muted); }
-
-  .sparkline-wrap {
-    margin-top: 10px;
-    height: 52px;
-  }
-  .mini-table-wrap {
-    margin-top: 8px;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-  .mini-table-wrap::-webkit-scrollbar { display: none; }
-  .mini-table {
-    border-collapse: collapse;
-    white-space: nowrap;
-    width: 100%;
-    font-size: 10px;
-    font-family: 'Space Mono', monospace;
-  }
-  .mini-table th {
-    color: #e8edf2;
-    font-weight: 400;
-    padding: 4px 6px;
-    border: 1px solid var(--border);
-    background: var(--surface2);
-    letter-spacing: 0.05em;
-    text-align: center;
-  }
-  .mini-table td {
-    color: #ffffff;
-    padding: 4px 6px;
-    border: 1px solid var(--border);
-    text-align: center;
-    letter-spacing: 0.03em;
-  }
-
-  /* CHART PANELS */
-  .chart-panel {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    padding: 16px;
-    animation: fadeIn 0.6s ease forwards;
-    opacity: 0;
-  }
-  .panel-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 14px;
-  }
-  .panel-title {
-    font-family: 'DM Mono', monospace;
-    font-weight: 700;
-    font-size: 13px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--text);
-  }
-  .panel-sub {
-    color: var(--muted);
-    font-size: 9px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    margin-top: 2px;
-  }
-  .panel-badge {
-    font-size: 9px;
-    letter-spacing: 0.1em;
-    padding: 2px 6px;
-    border: 1px solid var(--border2);
-    color: var(--accent);
-    text-transform: uppercase;
-  }
-
-  .chart-container { position: relative; }
-
-
-  /* FOOTER */
-  .footer {
-    position: relative;
-    z-index: 1;
-    border-top: 1px solid var(--border);
-    padding: 12px 24px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    color: var(--muted2);
-    font-size: 10px;
-    letter-spacing: 0.05em;
-  }
-
-  /* ERROR */
-  .error-msg {
-    background: rgba(255,59,92,0.08);
-    border: 1px solid rgba(255,59,92,0.3);
-    color: var(--red);
-    padding: 8px 12px;
-    font-size: 11px;
-    grid-column: 1/-1;
-    display: none;
-  }
-
-  /* SECTION LABEL */
-  .section-label {
-    grid-column: 1/-1;
-    color: var(--muted);
-    font-size: 9px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    padding: 4px 0 0;
-    border-top: 1px solid var(--border);
-    margin-top: 4px;
-  }
-
-
-  /* ── KPI EXPAND MODAL ───────────────────────────────────── */
-  .modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.7);
-    backdrop-filter: blur(4px);
-    z-index: 1000;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.25s;
-  }
-  .modal-overlay.active {
-    opacity: 1;
-    pointer-events: auto;
-  }
-  .kpi-modal {
-    position: fixed;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%) scale(0.95);
-    background: var(--surface);
-    border: 1px solid var(--border2);
-    z-index: 1001;
-    width: 90vw;
-    max-width: 860px;
-    max-height: 90vh;
-    overflow-y: auto;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.25s, transform 0.25s;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border2) transparent;
-  }
-  .kpi-modal.active {
-    opacity: 1;
-    pointer-events: auto;
-    transform: translate(-50%, -50%) scale(1);
-  }
-  .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    padding: 20px 24px 0;
-  }
-  .modal-title {
-    font-family: 'DM Mono', monospace;
-    font-weight: 700;
-    font-size: 18px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--text);
-  }
-  .modal-meta {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    margin-top: 4px;
-  }
-  .modal-value {
-    font-family: 'DM Mono', monospace;
-    font-weight: 700;
-    font-size: 32px;
-    color: var(--text);
-    padding: 8px 24px 0;
-    line-height: 1;
-  }
-  .modal-change-row {
-    padding: 4px 24px 16px;
-  }
-  .modal-close {
-    background: transparent;
-    border: 1px solid var(--border2);
-    color: var(--muted);
-    font-family: 'Space Mono', monospace;
-    font-size: 18px;
-    width: 36px; height: 36px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.15s;
-    flex-shrink: 0;
-  }
-  .modal-close:hover {
-    color: var(--text);
-    border-color: var(--accent);
-  }
-  .modal-chart-wrap {
-    padding: 0 24px;
-    height: 340px;
-    position: relative;
-  }
-  .modal-table-wrap {
-    padding: 16px 24px;
-  }
-  .modal-table-wrap .mini-table {
-    font-size: 12px;
-  }
-  .modal-table-wrap .mini-table th,
-  .modal-table-wrap .mini-table td {
-    padding: 6px 10px;
-  }
-  .modal-recession-legend {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 0 24px 8px;
-    color: var(--muted);
-    font-size: 9px;
-    letter-spacing: 0.08em;
-  }
-  .modal-recession-swatch {
-    width: 20px;
-    height: 10px;
-    background: rgba(255,59,92,0.18);
-    border: 1px solid rgba(255,59,92,0.35);
-  }
-  .modal-desc {
-    padding: 0 24px 20px;
-    color: var(--muted2);
-    font-size: 11px;
-    line-height: 1.7;
-    border-top: 1px solid var(--border);
-    margin-top: 4px;
-    padding-top: 14px;
-  }
-
-  @media (max-width: 768px) {
-    .kpi-modal {
-      width: 96vw;
-      max-height: 94vh;
-    }
-    .modal-title { font-size: 14px; }
-    .modal-value { font-size: 24px; }
-    .modal-chart-wrap { height: 240px; padding: 0 12px; }
-    .modal-header { padding: 14px 12px 0; }
-    .modal-value { padding: 6px 12px 0; }
-    .modal-change-row { padding: 4px 12px 12px; }
-    .modal-table-wrap { padding: 12px; }
-    .modal-table-wrap .mini-table { font-size: 10px; }
-    .modal-table-wrap .mini-table th,
-    .modal-table-wrap .mini-table td { padding: 4px 6px; }
-    .modal-recession-legend { padding: 0 12px 6px; }
-    .modal-desc { padding: 0 12px 16px; padding-top: 12px; }
-  }
-
-  canvas { display: block; }
-
-  /* Staggered animation delays */
-  .kpi-card:nth-child(1) { animation-delay: 0.05s; }
-  .kpi-card:nth-child(2) { animation-delay: 0.10s; }
-  .kpi-card:nth-child(3) { animation-delay: 0.15s; }
-  .kpi-card:nth-child(4) { animation-delay: 0.20s; }
-  .kpi-card:nth-child(5) { animation-delay: 0.25s; }
-  .kpi-card:nth-child(6) { animation-delay: 0.30s; }
-  .kpi-card:nth-child(7) { animation-delay: 0.35s; }
-  .kpi-card:nth-child(8) { animation-delay: 0.40s; }
-
-  /* ── TABLET RESPONSIVE ─────────────────────────────────── */
-  @media (max-width: 1200px) {
-    .main {
-      grid-template-columns: 1fr 1fr;
-    }
-  }
-
-  /* ── MOBILE RESPONSIVE ────────────────────────────────── */
-  @media (max-width: 768px) {
-
-    /* Header */
-    .header {
-      padding: 0 12px;
-      height: auto;
-      min-height: 48px;
-      flex-wrap: wrap;
-      gap: 6px;
-      padding-top: 8px;
-      padding-bottom: 8px;
-    }
-    .logo { font-size: 14px; }
-    .header-right { gap: 10px; flex-wrap: wrap; }
-    #last-updated { display: none; }
-
-    /* Main grid → single column stacked cards */
-    .main {
-      grid-template-columns: 1fr;
-      padding: 10px;
-      gap: 8px;
-    }
-
-    /* KPI cards — full width, compact but readable */
-    .kpi-card {
-      padding: 14px 12px;
-    }
-    .kpi-label { font-size: 9px; margin-bottom: 6px; }
-    .kpi-value { font-size: 24px !important; }
-    .kpi-change { font-size: 11px; }
-    .kpi-date { font-size: 9px; }
-    .sparkline-wrap { height: 48px; margin-top: 8px; }
-    .mini-table { font-size: 9px; }
-    .mini-table th, .mini-table td { padding: 3px 4px; }
-    .mini-table-wrap { margin-top: 6px; }
-
-    /* Section labels */
-    .section-label { grid-column: 1 / -1; font-size: 9px; margin-top: 2px; }
-
-    /* Market + FRED charts → single column */
-    div[style*="grid-template-columns:1fr 1fr"] {
-      grid-template-columns: 1fr !important;
-    }
-
-    /* Chart panels */
-    .chart-panel { padding: 12px; }
-    .panel-title { font-size: 11px; }
-    .panel-sub { font-size: 8px; }
-    .chart-container { height: 130px !important; }
-
-    /* Tooltip overlay — slightly smaller text on mobile */
-    .kpi-tooltip { font-size: 10px; padding: 10px; line-height: 1.6; }
-
-    /* Footer */
-    .footer {
-      flex-direction: column;
-      gap: 4px;
-      text-align: center;
-      padding: 10px 12px;
-      font-size: 9px;
-    }
-
-    /* Error msg */
-    .error-msg { font-size: 10px; }
-
-    /* Refresh button */
-    .refresh-btn { padding: 5px 10px; font-size: 9px; }
-  }
-
-  @media (max-width: 480px) {
-    .logo span { display: none; }
-    .kpi-value { font-size: 20px !important; }
-    .live-badge span:last-child { display: none; }
-    .kpi-info { width: 12px; height: 12px; font-size: 8px; }
-    .main { padding: 8px; gap: 6px; }
-  }
-
-  /* ── ECONOMIC CALENDAR ─────────────────────────────────── */
-  .calendar-section {
-    position: relative;
-    z-index: 1;
-    padding: 0 24px 20px;
-  }
-  .calendar-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 12px;
-  }
-  .calendar-title {
-    color: var(--accent);
-    font-size: 9px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-  }
-  .calendar-range {
-    color: var(--muted);
-    font-size: 9px;
-  }
-  .calendar-grid {
-    display: grid;
-    grid-template-columns: 80px 52px 1fr 70px 70px 70px;
-    border: 1px solid var(--border);
-  }
-  .cal-date {
-    background: var(--surface);
-    padding: 8px 10px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-  }
-  .cal-date-day { color: var(--text); font-size: 10px; font-weight: bold; }
-  .cal-date-time { color: var(--muted); font-size: 9px; }
-  .cal-event {
-    padding: 8px 12px;
-    border-bottom: 1px solid var(--border);
-    border-left: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .cal-bar {
-    width: 3px;
-    height: 28px;
-    border-radius: 2px;
-    flex-shrink: 0;
-  }
-  .cal-name { color: var(--text); font-size: 11px; }
-  .cal-sub { color: var(--muted); font-size: 9px; margin-top: 1px; }
-  .cal-days {
-    padding: 8px 6px;
-    border-bottom: 1px solid var(--border);
-    border-left: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
-  .cal-days-num {
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    font-weight: 500;
-    line-height: 1;
-  }
-  .cal-days-label {
-    color: var(--muted);
-    font-size: 8px;
-    letter-spacing: 0.05em;
-    margin-top: 2px;
-  }
-  .cal-col-prev, .cal-col-est, .cal-col-act {
-    padding: 8px 8px;
-    border-bottom: 1px solid var(--border);
-    border-left: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-  }
-  .cal-hdr {
-    border-bottom: 1px solid var(--border);
-  }
-  .cal-hdr-label {
-    padding: 4px 8px;
-    border-left: 1px solid var(--border);
-    font-size: 8px;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    color: var(--muted);
-    text-align: right;
-    text-transform: uppercase;
-  }
-  .cal-est-dash {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    color: var(--muted);
-  }
-  .cal-est-group {
-    display: grid;
-    grid-template-columns: auto auto;
-    gap: 0 5px;
-    align-items: baseline;
-    justify-items: end;
-  }
-  .cal-est-label {
-    color: var(--muted);
-    font-size: 8px;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    justify-self: start;
-  }
-  .cal-est-val {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    color: var(--text);
-  }
-  .cal-est-prior { color: var(--muted); }
-  .cal-beat { color: var(--green); }
-  .cal-miss { color: var(--red); }
-  .cal-inline { color: var(--text); }
-  .cal-fomc { background: #131a22; }
-  .cal-impact {
-    background: rgba(255,59,92,0.08);
-    border: 1px solid rgba(255,59,92,0.25);
-    color: var(--red);
-    font-size: 9px;
-    padding: 2px 6px;
-    letter-spacing: 0.05em;
-    white-space: nowrap;
-  }
-  .cal-grid-last .cal-date,
-  .cal-grid-last .cal-event,
-  .cal-grid-last .cal-col-prev,
-  .cal-grid-last .cal-col-est,
-  .cal-grid-last .cal-col-act { border-bottom: none; }
-  .cal-legend {
-    display: flex;
-    gap: 16px;
-    margin-top: 10px;
-    flex-wrap: wrap;
-  }
-  .cal-legend-item {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    color: var(--muted);
-    font-size: 9px;
-  }
-  .cal-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-  .cal-empty {
-    grid-column: 1/-1;
-    padding: 20px;
-    text-align: center;
-    color: var(--muted);
-    font-size: 11px;
-  }
-  @media (max-width: 768px) {
-    .calendar-section { padding: 0 12px 16px; }
-    .calendar-grid { grid-template-columns: 65px 1fr; }
-    .cal-col-prev, .cal-col-est, .cal-col-act, .cal-hdr-label { display: none; }
-    .cal-days { display: none; }
-  }
-
-  /* ── NAV BAR ─────────────────────────────────────────────── */
-  .nav-bar {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 0 24px;
-    display: flex;
-    gap: 0;
-    position: sticky;
-    top: 52px;
-    z-index: 99;
-  }
-  .nav-link {
-    color: var(--muted);
-    text-decoration: none;
-    font-family: 'Space Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    padding: 10px 16px;
-    border-bottom: 2px solid transparent;
-    transition: all 0.15s;
-    white-space: nowrap;
-  }
-  .nav-link:hover { color: var(--text); }
-  .nav-link.active { color: var(--accent); border-bottom-color: var(--accent); }
-  @media (max-width: 768px) {
-    .nav-bar { overflow-x: auto; top: auto; }
-    .nav-link { padding: 8px 12px; font-size: 9px; }
-  }
-
-  .nav-bar { background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;gap:0;position:sticky;top:52px;z-index:99; }
-  .nav-link { color:var(--muted);text-decoration:none;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;padding:10px 16px;border-bottom:2px solid transparent;transition:all 0.15s;white-space:nowrap; }
-  .nav-link:hover { color:var(--text); }
-  .nav-link.active { color:var(--accent);border-bottom-color:var(--accent); }
-  @media(max-width:768px){.nav-bar{overflow-x:auto;top:auto;}.nav-link{padding:8px 12px;font-size:9px;}}
-</style>
-</head>
-<link rel="stylesheet" href="css/modules.css">
 <body>
 
-<header class="header">
-  <div class="logo">MACRO<span> // Inflation Dashboard</span></div>
-  <div class="header-right">
-    <div class="live-badge"><div class="live-dot"></div>Auto-Refresh ON</div>
-    <span id="last-updated">–</span>
-    <button class="refresh-btn" id="refreshBtn" onclick="fetchAll()">↻ Refresh</button>
+<header class="site-header">
+  <a class="brand" href="index.html">Macro</a>
+  <nav class="site-nav" aria-label="Sections"><a href="index.html">Overview</a><a href="inflation.html" aria-current="page">Inflation</a><a href="labor.html">Labor</a><a href="housing.html">Housing</a><a href="markets.html">Markets</a></nav>
+  <div class="header-meta">
+    <span id="last-updated"></span>
+    <button type="button" class="btn" id="refreshBtn">Refresh</button>
   </div>
 </header>
 
-<nav class="nav-bar"><a href="index.html" class="nav-link">Macro</a><a href="inflation.html" class="nav-link active">Inflation</a><a href="housing.html" class="nav-link">Housing</a><a href="labor.html" class="nav-link">Labor</a><a href="markets.html" class="nav-link">Sectors</a></nav>
-
-<main class="main">
-  <div class="error-msg" id="errorMsg"></div>
+<main class="page">
+  <div class="page-intro">
+    <h1>Inflation</h1>
+    <p>How fast prices are rising, where the pressure comes from, and what markets expect next. The Fed targets 2% on core PCE.</p>
+  </div>
+  <div class="error-msg" id="errorMsg" role="status" hidden></div>
   <div class="modules" id="modules"></div>
 
-  <div class="section-label" style="grid-column:1/-1;">// Market Charts</div>
-  <div style="grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-    <div class="chart-panel" style="animation-delay:0.5s;">
-      <div class="panel-header">
-        <div><div class="panel-title">Gold</div><div class="panel-sub">GC=F · Daily · Inflation hedge</div></div>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <span id="gold-val" style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;">–</span>
-          <span id="gold-chg" style="font-size:11px;">–</span>
-        </div>
-      </div>
-      <div class="chart-container" style="height:150px"><canvas id="chartGold"></canvas></div>
-    </div>
-    <div class="chart-panel" style="animation-delay:0.55s;">
-      <div class="panel-header">
-        <div><div class="panel-title">WTI Crude</div><div class="panel-sub">CL=F · Daily · Drives CPI energy component</div></div>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <span id="oil-val" style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;">–</span>
-          <span id="oil-chg" style="font-size:11px;">–</span>
-        </div>
-      </div>
-      <div class="chart-container" style="height:150px"><canvas id="chartOil"></canvas></div>
-    </div>
-  </div>
 </main>
 
-<footer class="footer">
-  <span>Data: Federal Reserve Bank of St. Louis (FRED) · Yahoo Finance</span>
-  <span id="footer-ts">–</span>
+<footer class="site-footer">
+  <span>Data: Federal Reserve Bank of St. Louis (FRED), Yahoo Finance. Shaded bands mark NBER recessions.</span>
+  <span>Design notes: <a href="https://github.com/Adam-A9/macro/blob/main/DESIGN.md">DESIGN.md</a></span>
 </footer>
 
 <script src="js/config.js"></script>
@@ -1487,54 +41,168 @@
 <script src="js/ui.js"></script>
 <script>
 // ─── PAGE CONFIG ─────────────────────────────────────────
-const FRED_SERIES = {
-  "CPI":        { id: "CPIAUCSL",           label: "CPI (All Urban)",          unit: "",  decimals: 2, freq: "MoM", desc: "The Consumer Price Index tracks how much a fixed basket of everyday goods and services — food, rent, gasoline, healthcare, clothing — costs over time. It is the Fed's primary gauge of whether inflation is under control. Their official target is 2% annual growth. When CPI runs significantly above target, the Fed raises interest rates aggressively to slow borrowing and cool demand. The 2022-2023 rate hike cycle, the fastest in 40 years, was a direct response to CPI hitting 9.1%. When CPI falls toward target, rate cuts become possible." },
-  "CoreCPI":    { id: "CPILFESL",           label: "Core CPI",                 unit: "",  decimals: 2, freq: "MoM", desc: "Core CPI strips out food and energy prices — the two most volatile components that swing with weather, geopolitics, and seasonal factors. What remains is the underlying structural inflation trend that the Fed actually controls. When Core CPI is elevated, it means inflation is broad-based and sticky, not just a fuel or grocery spike. The Fed watches Core more closely than headline CPI because you cannot fix food prices by raising interest rates, but you can cool wage growth, rent, and services inflation." },
-  "PCE":        { id: "PCEPI",              label: "PCE Price Index",          unit: "",  decimals: 2, freq: "MoM", desc: "The Personal Consumption Expenditures price index is the Federal Reserve's officially preferred inflation measure — they explicitly target PCE, not CPI. It differs from CPI in methodology: PCE adjusts for substitution (if beef gets expensive and people buy chicken, PCE captures that shift while CPI does not), covers a broader range of spending, and tends to run slightly lower than CPI. Released monthly by the Bureau of Economic Analysis alongside income and spending data, giving a comprehensive view of consumer behavior." },
-  "CorePCE":    { id: "PCEPILFE",           label: "Core PCE",                 unit: "",  decimals: 2, freq: "MoM", desc: "Core PCE excluding food and energy is the single most important inflation number for Federal Reserve rate decisions — their 2% target refers specifically to this series. When Fed Chair Powell says inflation is moving toward target, this is the number being referenced. It is the cleanest read on underlying demand-driven inflation. Wall Street analysts forecast this number more closely than any other inflation metric because it directly determines when the Fed will cut or raise rates. Even a 0.1% surprise can move markets significantly." },
-  "PPI":        { id: "PPIACO",             label: "Producer Price Index",     unit: "",  decimals: 2, freq: "MoM", desc: "The Producer Price Index measures the average change in prices that domestic producers receive for their goods and services at the factory gate, farm, and wholesale level — before those costs reach consumers. Because businesses eventually pass higher input costs on to retail prices, PPI tends to lead CPI by several weeks or months, making it a valuable early warning system for consumer inflation. A sustained rise in PPI while CPI is still calm often signals that consumer prices are about to accelerate. Traders watch the PPI release to front-run the next CPI print." },
-  "Breakeven5": { id: "T5YIE",              label: "5Y Breakeven Inflation",   unit: "%", decimals: 2, freq: "MoM", sample: "monthly", desc: "The 5-year breakeven inflation rate is the bond market's real-time forecast for average inflation over the next 5 years. It is derived from the yield spread between nominal Treasuries and Treasury Inflation-Protected Securities (TIPS). If nominal 5Y yields are 4.5% and TIPS yields are 2.0%, the breakeven is 2.5% — meaning bond traders collectively expect 2.5% annual inflation. When this rises, it means the market expects more inflation ahead, often a leading signal that the Fed will need to act. It moves daily and is more timely than any government CPI report." },
-  "Breakeven10":{ id: "T10YIE",             label: "10Y Breakeven Inflation",  unit: "%", decimals: 2, freq: "MoM", sample: "monthly", desc: "The 10-year breakeven inflation rate represents the bond market's collective expectation for average annual inflation over the next decade. It is the longer-term companion to the 5-year breakeven and measures whether inflation expectations are properly anchored near the Fed's 2% target. When the 10Y breakeven drifts significantly above 2.5%, it signals that investors believe inflation will be a persistent structural problem, not a temporary spike — which tends to push long-term Treasury yields higher and pressure equity valuations." },
-  "M2":         { id: "M2SL",               label: "M2 Money Supply",          unit: "B$",decimals: 0, freq: "MoM", desc: "M2 is the Federal Reserve's broad measure of money supply — it counts physical cash, checking accounts, savings accounts, and money market funds. When the Fed cuts rates or conducts quantitative easing, money supply expands. The relationship between M2 and inflation is foundational in monetary economics: more money chasing the same quantity of goods pushes prices up. The massive M2 surge of 2020-2021, when the Fed injected trillions into the economy during COVID, directly preceded the inflation wave of 2022. Conversely, when M2 contracts — as it did in 2022-2023 — it is powerfully disinflationary." },
-  "RealRates":  { id: "REAINTRATREARAT10Y", label: "Real Interest Rate",       unit: "%", decimals: 2, freq: "MoM", desc: "The real interest rate subtracts inflation expectations from the nominal 10-year Treasury yield. It represents the true cost of borrowing in inflation-adjusted terms. When real rates are positive, monetary conditions are genuinely restrictive and the economy is being slowed. When real rates are negative, money is effectively free even if nominal rates look high. The 2020-2021 era had deeply negative real rates despite low nominal rates because inflation expectations soared, which is why asset prices exploded and inflation followed." }
-};
-const MARKET = {
-  "GC=F": { label: "Gold",      canvasId: "chartGold", valId: "gold-val", chgId: "gold-chg", color: "#ffd700" },
-  "CL=F": { label: "WTI Crude", canvasId: "chartOil",  valId: "oil-val",  chgId: "oil-chg",  color: "#ff6b35" }
-};
-const HIGHER_IS_GOOD = ["M2"];
-const DUAL_ROW       = ["CPI", "CoreCPI", "PCE", "CorePCE", "PPI", "M2"];
+// Edit LAYOUT to reorder or regroup modules; SERIES holds each series' settings.
 const LAYOUT = [
-  { title: 'Consumer Prices',        series: ['CPI', 'CoreCPI', 'PCE', 'CorePCE'] },
-  { title: 'Pipeline Prices',        series: ['PPI'] },
-  { title: 'Market Expectations',    series: ['Breakeven5', 'Breakeven10', 'RealRates'] },
-  { title: 'Money Supply',           series: ['M2'] }
+  {
+    "title": "Consumer Prices",
+    "series": [
+      "CorePCE",
+      "PCE",
+      "CoreCPI",
+      "CPI"
+    ]
+  },
+  {
+    "title": "Drivers",
+    "series": [
+      "ShelterCPI",
+      "PPI",
+      "Oil"
+    ]
+  },
+  {
+    "title": "Expectations",
+    "series": [
+      "Breakeven5",
+      "Breakeven10"
+    ]
+  },
+  {
+    "title": "Money",
+    "series": [
+      "M2"
+    ]
+  }
 ];
+
+const SERIES = {
+  "CorePCE": {
+    "source": "fred",
+    "id": "PCEPILFE",
+    "label": "Core PCE Prices",
+    "unit": "",
+    "decimals": 2,
+    "freq": "MoM",
+    "mode": "YoY",
+    "target": {
+      "YoY": 2,
+      "label": "Fed 2% target"
+    },
+    "desc": "Core PCE excluding food and energy is the single most important inflation number for Federal Reserve rate decisions — their 2% target refers specifically to this series. When Fed Chair Powell says inflation is moving toward target, this is the number being referenced. It is the cleanest read on underlying demand-driven inflation. Wall Street analysts forecast this number more closely than any other inflation metric because it directly determines when the Fed will cut or raise rates. Even a 0.1% surprise can move markets significantly."
+  },
+  "PCE": {
+    "source": "fred",
+    "id": "PCEPI",
+    "label": "PCE Prices",
+    "unit": "",
+    "decimals": 2,
+    "freq": "MoM",
+    "mode": "YoY",
+    "target": {
+      "YoY": 2,
+      "label": "Fed 2% target"
+    },
+    "desc": "The Personal Consumption Expenditures price index is the Federal Reserve's officially preferred inflation measure — they explicitly target PCE, not CPI. It differs from CPI in methodology: PCE adjusts for substitution (if beef gets expensive and people buy chicken, PCE captures that shift while CPI does not), covers a broader range of spending, and tends to run slightly lower than CPI. Released monthly by the Bureau of Economic Analysis alongside income and spending data, giving a comprehensive view of consumer behavior."
+  },
+  "CoreCPI": {
+    "source": "fred",
+    "id": "CPILFESL",
+    "label": "Core CPI",
+    "unit": "",
+    "decimals": 2,
+    "freq": "MoM",
+    "mode": "YoY",
+    "target": {
+      "YoY": 2,
+      "label": "2% reference"
+    },
+    "desc": "Core CPI strips out food and energy prices — the two most volatile components that swing with weather, geopolitics, and seasonal factors. What remains is the underlying structural inflation trend that the Fed actually controls. When Core CPI is elevated, it means inflation is broad-based and sticky, not just a fuel or grocery spike. The Fed watches Core more closely than headline CPI because you cannot fix food prices by raising interest rates, but you can cool wage growth, rent, and services inflation."
+  },
+  "CPI": {
+    "source": "fred",
+    "id": "CPIAUCSL",
+    "label": "Consumer Price Index (CPI)",
+    "unit": "",
+    "decimals": 2,
+    "freq": "MoM",
+    "mode": "YoY",
+    "target": {
+      "YoY": 2,
+      "label": "2% reference"
+    },
+    "desc": "The Consumer Price Index tracks how much a fixed basket of everyday goods and services — food, rent, gasoline, healthcare, clothing — costs over time. It is the Fed's primary gauge of whether inflation is under control. Their official target is 2% annual growth. When CPI runs significantly above target, the Fed raises interest rates aggressively to slow borrowing and cool demand. The 2022-2023 rate hike cycle, the fastest in 40 years, was a direct response to CPI hitting 9.1%. When CPI falls toward target, rate cuts become possible."
+  },
+  "ShelterCPI": {
+    "source": "fred",
+    "id": "CUSR0000SAH1",
+    "label": "CPI: Shelter",
+    "unit": "",
+    "decimals": 2,
+    "freq": "MoM",
+    "mode": "YoY",
+    "desc": "The shelter component of CPI measures rents and owners' equivalent rent. It is about a third of the CPI basket and moves slowly, lagging market rents by roughly a year, so it explains much of why inflation stays elevated or falls gradually."
+  },
+  "PPI": {
+    "source": "fred",
+    "id": "PPIACO",
+    "label": "Producer Prices (All Commodities)",
+    "unit": "",
+    "decimals": 2,
+    "freq": "MoM",
+    "mode": "YoY",
+    "desc": "The Producer Price Index measures the average change in prices that domestic producers receive for their goods and services — think factory gates, farms, and wholesalers. Because businesses eventually pass higher input costs on to consumers, PPI tends to lead CPI by several weeks or months, making it a valuable early warning system for inflation. A sustained rise in PPI while CPI is still calm often signals that consumer prices are about to accelerate. It's closely watched by investors trying to anticipate the next CPI print."
+  },
+  "Oil": {
+    "source": "market",
+    "id": "CL=F",
+    "label": "WTI Crude Oil",
+    "unit": "$",
+    "decimals": 2,
+    "freq": "MoM",
+    "mode": "Level",
+    "desc": "West Texas Intermediate crude oil futures, in dollars per barrel. Oil feeds directly into gasoline and transport costs, so large moves show up quickly in headline inflation."
+  },
+  "Breakeven5": {
+    "source": "fred",
+    "id": "T5YIE",
+    "label": "5-Year Breakeven Inflation",
+    "unit": "%",
+    "decimals": 2,
+    "freq": "MoM",
+    "sample": "monthly",
+    "mode": "Level",
+    "target": {
+      "Level": 2,
+      "label": "2% reference"
+    },
+    "desc": "The 5-year breakeven inflation rate is the bond market's real-time forecast for average inflation over the next 5 years. It is derived from the yield spread between nominal Treasuries and Treasury Inflation-Protected Securities (TIPS). If nominal 5Y yields are 4.5% and TIPS yields are 2.0%, the breakeven is 2.5% — meaning bond traders collectively expect 2.5% annual inflation. When this rises, it means the market expects more inflation ahead, often a leading signal that the Fed will need to act. It moves daily and is more timely than any government CPI report."
+  },
+  "Breakeven10": {
+    "source": "fred",
+    "id": "T10YIE",
+    "label": "10-Year Breakeven Inflation",
+    "unit": "%",
+    "decimals": 2,
+    "freq": "MoM",
+    "sample": "monthly",
+    "mode": "Level",
+    "target": {
+      "Level": 2,
+      "label": "2% reference"
+    },
+    "desc": "The 10-year breakeven inflation rate represents the bond market's collective expectation for average annual inflation over the next decade. It is the longer-term companion to the 5-year breakeven and measures whether inflation expectations are properly anchored near the Fed's 2% target. When the 10Y breakeven drifts significantly above 2.5%, it signals that investors believe inflation will be a persistent structural problem, not a temporary spike — which tends to push long-term Treasury yields higher and pressure equity valuations."
+  },
+  "M2": {
+    "source": "fred",
+    "id": "M2SL",
+    "label": "M2 Money Supply",
+    "unit": "B$",
+    "decimals": 0,
+    "freq": "MoM",
+    "mode": "YoY",
+    "desc": "M2 is the Fed's broad measure of money supply — it counts physical cash, checking accounts, savings accounts, and money market funds. When the Fed cuts rates or conducts quantitative easing (buying bonds), money supply expands. The relationship between M2 and inflation is foundational: more money chasing the same quantity of goods pushes prices up. The massive M2 surge of 2020-2021, when the Fed injected trillions into the economy during COVID, directly preceded the inflation wave of 2022. A shrinking M2 is disinflationary and typically follows rate hikes."
+  }
+};
 </script>
-
-<!-- KPI Expand Modal -->
-<div class="modal-overlay" id="kpi-modal-overlay"></div>
-<div class="kpi-modal" id="kpi-modal">
-  <div class="modal-header">
-    <div>
-      <div class="modal-title" id="modal-title">–</div>
-      <div class="modal-meta">
-        <span class="kpi-series-id" id="modal-series">–</span>
-        <span style="color:var(--muted);font-size:9px;letter-spacing:0.1em;" id="modal-freq">–</span>
-      </div>
-    </div>
-    <button class="modal-close" id="modal-close-btn">✕</button>
-  </div>
-  <div class="modal-value" id="modal-value">–</div>
-  <div class="modal-change-row"><span class="kpi-change neutral" id="modal-change">–</span></div>
-  <div class="modal-chart-wrap"><canvas id="modal-chart-canvas"></canvas></div>
-  <div class="modal-recession-legend" id="modal-recession-legend" style="display:none;">
-    <div class="modal-recession-swatch"></div>
-    NBER Recession
-  </div>
-  <div class="modal-table-wrap" id="modal-table"></div>
-  <div class="modal-desc" id="modal-desc"></div>
-</div>
-
 </body>
 </html>

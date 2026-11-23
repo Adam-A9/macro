@@ -1,105 +1,70 @@
-// ─── Tests for js/ui.js helpers ──────────────────────────
-// Tests pure utility functions. DOM-dependent functions (updateCard, fetchAll)
-// require a full browser environment and are tested via manual integration testing.
+// ─── Tests for formatting, sector returns and signals ────
 
-describe('gradientColor', () => {
-  it('returns a red-ish color for t=0 when higherIsGood=true (worst)', () => {
-    const color = gradientColor(0, true);
-    assert.ok(color.startsWith('rgba('), 'should return rgba string');
-    assert.ok(color.includes(',40,60,'), 'should be in red range');
+describe('formatDisplayValue', () => {
+  it('puts $ before the number and scale letters after', () => {
+    assert.equal(formatDisplayValue(92.5, { unit: '$', decimals: 2 }), '$92.50');
+    assert.equal(formatDisplayValue(23500, { unit: 'B$', decimals: 0 }), '$23,500B');
   });
 
-  it('returns a green-ish color for t=1 when higherIsGood=true (best)', () => {
-    const color = gradientColor(1, true);
-    assert.ok(color.startsWith('rgba(0,'), 'should start with 0 red channel for green');
+  it('keeps other units as suffixes', () => {
+    assert.equal(formatDisplayValue(4.48, { unit: '%', decimals: 2 }), '4.48%');
+    assert.equal(formatDisplayValue(0.25, { unit: ' pp', decimals: 2, showSign: true }), '+0.25 pp');
   });
 
-  it('inverts scale when higherIsGood=false', () => {
-    const goodHigh  = gradientColor(1, true);
-    const badHigh   = gradientColor(1, false);
-    const goodLow   = gradientColor(0, true);
-    const badLow    = gradientColor(0, false);
-    // When higherIsGood=false, t=1 (high) should be red; t=0 (low) should be green
-    assert.equal(goodHigh, badLow,  'high-when-good = low-when-bad');
-    assert.equal(goodLow,  badHigh, 'low-when-good = high-when-bad');
+  it('uses a true minus sign and keeps the sign before $', () => {
+    assert.equal(formatDisplayValue(-1.5, { unit: '%', decimals: 1, showSign: true }), '−1.5%');
+    assert.equal(formatDisplayValue(-3, { unit: '$', decimals: 0, showSign: true }), '−$3');
   });
 
-  it('returns mid-range color for t=0.5', () => {
-    const color = gradientColor(0.5, true);
-    assert.ok(color.startsWith('rgba('), 'should return rgba string');
+  it('shows a dash for missing values', () => {
+    assert.equal(formatDisplayValue(null, { unit: '%', decimals: 1 }), '–');
   });
 });
 
-describe('cellColor', () => {
-  // Mock HIGHER_IS_GOOD (normally defined per-page)
-  before(() => { window._HIGHER_IS_GOOD_BAK = window.HIGHER_IS_GOOD; window.HIGHER_IS_GOOD = ['GDP']; });
-  after(()  => { window.HIGHER_IS_GOOD = window._HIGHER_IS_GOOD_BAK; });
+describe('trailingReturns', () => {
+  const daily = [
+    { date: '2025-11-20', value: 100 },
+    { date: '2025-12-31', value: 110 },
+    { date: '2026-08-20', value: 120 },
+    { date: '2026-10-20', value: 125 },
+    { date: '2026-11-20', value: 132 }
+  ];
+  const r = trailingReturns(daily);
 
-  it('returns green for positive Spread value', () => {
-    assert.equal(cellColor(0.5, 'Spread', false), 'rgba(0,190,90,0.38)');
+  it('measures from the close on or before each start date', () => {
+    assert.closeTo(r['1M'], (132 / 125 - 1) * 100, 1e-9);
+    assert.closeTo(r['3M'], (132 / 120 - 1) * 100, 1e-9);
+    assert.closeTo(r['1Y'], 32, 1e-9);
   });
 
-  it('returns red for negative Spread value', () => {
-    assert.equal(cellColor(-0.5, 'Spread', false), 'rgba(220,40,60,0.38)');
-  });
-
-  it('returns green for positive change when higherIsGood (isChange=true, GDP)', () => {
-    assert.equal(cellColor(1, 'GDP', true), 'rgba(0,190,90,0.38)');
-  });
-
-  it('returns red for negative change when higherIsGood (isChange=true, GDP)', () => {
-    assert.equal(cellColor(-1, 'GDP', true), 'rgba(220,40,60,0.38)');
-  });
-
-  it('returns red for positive change when !higherIsGood (isChange=true, CPI)', () => {
-    assert.equal(cellColor(1, 'CPI', true), 'rgba(220,40,60,0.38)');
-  });
-
-  it('returns green for negative change when !higherIsGood (isChange=true, CPI)', () => {
-    assert.equal(cellColor(-1, 'CPI', true), 'rgba(0,190,90,0.38)');
-  });
-
-  it('returns null for non-change, non-Spread values', () => {
-    assert.equal(cellColor(5, 'CPI', false), null);
+  it('measures YTD from the last close of the prior year', () => {
+    assert.closeTo(r['YTD'], 20, 1e-9);
   });
 });
 
-describe('display interval helpers', () => {
-  beforeEach(() => { window.DUAL_ROW = []; });
+describe('signals', () => {
+  afterEach(() => { Object.keys(seriesRawData).forEach(k => delete seriesRawData[k]); });
 
-  it('uses monthly samples for rates configured as MoM', () => {
-    const cfg = { freq: 'MoM', sample: 'monthly', unit: '%', decimals: 2 };
-    assert.equal(getDisplayInterval('Yield10Y', cfg), 'MoM');
-
-    const display = buildDisplaySeries('Yield10Y', [
-      { date: '2026-05-01', value: 4.40 },
-      { date: '2026-05-29', value: 4.42 },
-      { date: '2026-06-01', value: 4.45 },
-      { date: '2026-06-08', value: 4.48 }
-    ], cfg);
-    assert.equal(display.interval, 'MoM');
-    assert.equal(display.unit, '%');
-    assert.equal(display.obs.length, 2);
-    assert.deepEqual(display.obs.map(d => d.date), ['2026-05-29', '2026-06-08']);
-    assert.equal(formatDisplayValue(display.obs[1].value, display), '4.48%');
+  it('flags the Sahm rule at 0.50', () => {
+    seriesRawData.SahmRule = [{ date: '2026-09-01', value: 0.2 }, { date: '2026-10-01', value: 0.53 }];
+    const r = SIGNAL_LIBRARY.recession.read();
+    assert.equal(r.status, 'critical');
+    assert.equal(r.verdict, 'Triggered');
   });
 
-  it('uses YoY display data for dual-row series so charts and tables match', () => {
-    window.DUAL_ROW = ['CPI'];
-    const cfg = { freq: 'MoM', unit: '', decimals: 2 };
-    const obs = [
-      { date: '2025-04-01', value: 100 },
-      { date: '2025-05-01', value: 110 },
-      { date: '2026-04-01', value: 105 },
-      { date: '2026-05-01', value: 121 }
-    ];
+  it('flags an inverted yield curve', () => {
+    seriesRawData.Spread = [{ date: '2026-10-01', value: -0.3 }];
+    assert.equal(SIGNAL_LIBRARY.curve.read().verdict, 'Inverted');
+  });
 
-    const display = buildDisplaySeries('CPI', obs, cfg);
-    assert.equal(display.interval, 'YoY');
-    assert.equal(display.unit, '%');
-    assert.deepEqual(display.obs.map(d => d.date), ['2026-04-01', '2026-05-01']);
-    assert.closeTo(display.obs[0].value, 5, 0.0001);
-    assert.closeTo(display.obs[1].value, 10, 0.0001);
-    assert.equal(formatDisplayValue(display.obs[1].value, display), '+10.00%');
+  it('annualizes the latest quarter of real GDP', () => {
+    seriesRawData.RealGDP = [{ date: '2026-04-01', value: 100 }, { date: '2026-07-01', value: 101 }];
+    const r = SIGNAL_LIBRARY.growth.read();
+    assert.equal(r.value, '+4.1%');
+    assert.equal(r.status, 'good');
+  });
+
+  it('returns null before data arrives', () => {
+    assert.isNull(SIGNAL_LIBRARY.credit.read());
   });
 });

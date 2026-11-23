@@ -2,917 +2,50 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjEyIiBmaWxsPSIjMDgwYzEwIi8+PHBvbHlsaW5lIHBvaW50cz0iMCw2MCAyMCw2MCAzNSw2MCA0NSwxNSA1NSw4NSA2NSw2MCA4MCw2MCAxMDAsNjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwZDRmZiIgc3Ryb2tlLXdpZHRoPSI3IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L3N2Zz4=">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MACRO — Economic Overview Dashboard</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<title>Economic Overview · Macro</title>
+<meta name="description" content="The economy's vital signs: growth, jobs, inflation, rates and financial conditions. Each chart shows the full history beside the recent trend.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231a1a19'/%3E%3Cpolyline points='5,21 11,15 16,18 27,8' fill='none' stroke='%233987e5' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/site.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<style>
-  :root {
-    --bg: #080c10;
-    --surface: #0d1117;
-    --surface2: #131a22;
-    --border: #1e2d3d;
-    --border2: #243447;
-    --accent: #00d4ff;
-    --accent2: #00ff9d;
-    --warn: #ff6b35;
-    --red: #ff3b5c;
-    --green: #00ff9d;
-    --gold: #ffd700;
-    --text: #e8edf2;
-    --muted: #d8eaf5;
-    --muted2: #c8dff0;
-    --grid: rgba(0,212,255,0.04);
-  }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Space Mono', monospace;
-    font-size: 12px;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background:
-      repeating-linear-gradient(0deg, transparent, transparent 39px, var(--grid) 39px, var(--grid) 40px),
-      repeating-linear-gradient(90deg, transparent, transparent 39px, var(--grid) 39px, var(--grid) 40px);
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  /* HEADER */
-  .header {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    background: rgba(8,12,16,0.95);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border);
-    padding: 0 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 52px;
-  }
-
-  .logo {
-    font-family: 'DM Mono', monospace;
-    font-weight: 800;
-    font-size: 18px;
-    letter-spacing: 0.3em;
-    color: var(--accent);
-    text-transform: uppercase;
-  }
-  .logo span { color: var(--muted); font-weight: 400; }
-
-  .header-right {
-    display: flex;
-    align-items: center;
-    gap: 24px;
-  }
-
-  .live-badge {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--accent2);
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-  }
-  .live-dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--accent2);
-    animation: pulse 2s infinite;
-  }
-  @keyframes pulse {
-    0%,100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0,255,157,0.4); }
-    50% { opacity: 0.6; box-shadow: 0 0 0 4px rgba(0,255,157,0); }
-  }
-
-  #last-updated {
-    color: var(--muted);
-    font-size: 10px;
-    letter-spacing: 0.05em;
-  }
-
-  .refresh-btn {
-    background: transparent;
-    border: 1px solid var(--border2);
-    color: var(--accent);
-    font-family: 'Space Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    padding: 6px 12px;
-    cursor: pointer;
-    text-transform: uppercase;
-    transition: all 0.2s;
-  }
-  .refresh-btn:hover { background: var(--accent); color: var(--bg); border-color: var(--accent); }
-  .refresh-btn.loading { opacity: 0.5; cursor: not-allowed; }
-
-  /* MAIN LAYOUT */
-  .main {
-    position: relative;
-    z-index: 1;
-    padding: 20px 24px;
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    grid-template-rows: auto auto auto auto;
-    gap: 12px;
-  }
-
-
-  /* KPI CARDS */
-  .kpi-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    padding: 16px;
-    position: relative;
-    overflow: hidden;
-    transition: border-color 0.2s;
-    animation: fadeIn 0.5s ease forwards;
-    opacity: 0;
-  }
-  .kpi-card:hover { border-color: var(--border2); }
-  .kpi-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 3px;
-  }
-
-  @keyframes fadeIn {
-    to { opacity: 1; transform: translateY(0); }
-    from { opacity: 0; transform: translateY(8px); }
-  }
-
-  .kpi-tooltip {
-    position: absolute;
-    inset: 0;
-    background: rgba(13,17,23,0.97);
-    border: 1px solid var(--accent);
-    color: var(--text);
-    font-family: 'Space Mono', monospace;
-    font-size: 11px;
-    line-height: 1.7;
-    padding: 14px;
-    z-index: 200;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.2s;
-    white-space: normal;
-    display: flex;
-    align-items: center;
-  }
-  .kpi-card.show-tip .kpi-tooltip {
-    opacity: 1;
-  }
-  .kpi-info {
-    cursor: help;
-    color: var(--accent);
-    font-size: 9px;
-    border: 1px solid var(--accent);
-    border-radius: 50%;
-    width: 13px;
-    height: 13px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    margin-left: 4px;
-    flex-shrink: 0;
-    opacity: 0.7;
-  }
-  .kpi-label {
-    color: var(--muted);
-    font-size: 9px;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .kpi-series-id {
-    display: none;
-  }
-  .kpi-value {
-    font-family: 'DM Mono', monospace;
-    font-weight: 700;
-    font-size: 28px;
-    letter-spacing: -0.02em;
-    color: var(--text);
-    margin-bottom: 4px;
-    line-height: 1;
-  }
-  .kpi-value.loading-text { font-size: 16px; color: var(--muted); animation: blink 1.2s infinite; }
-  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
-
-  .kpi-unit { font-size: 13px; color: var(--muted); font-weight: 400; margin-left: 3px; }
-  .kpi-change {
-    display: none;
-  }
-  .kpi-change.pos { color: var(--green); }
-  .kpi-change.neg { color: var(--red); }
-  .kpi-change.neutral { color: var(--muted); }
-  .kpi-date { color: var(--muted2); font-size: 9px; margin-top: 6px; }
-  .revision-tag {
-    display: inline-block;
-    margin-top: 5px;
-    font-size: 9px;
-    letter-spacing: 0.05em;
-    padding: 2px 6px;
-    border: 1px solid var(--border2);
-    font-family: 'Space Mono', monospace;
-  }
-  .revision-tag.up { color: #00ff9d; border-color: #00ff9d33; }
-  .revision-tag.down { color: #ff3b5c; border-color: #ff3b5c33; }
-  .revision-tag.flat { color: var(--muted); }
-
-  .sparkline-wrap {
-    margin-top: 10px;
-    height: 52px;
-  }
-  .mini-table-wrap {
-    margin-top: 8px;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-  .mini-table-wrap::-webkit-scrollbar { display: none; }
-  .mini-table {
-    border-collapse: collapse;
-    white-space: nowrap;
-    width: 100%;
-    font-size: 10px;
-    font-family: 'Space Mono', monospace;
-  }
-  .mini-table th {
-    color: #e8edf2;
-    font-weight: 400;
-    padding: 4px 6px;
-    border: 1px solid var(--border);
-    background: var(--surface2);
-    letter-spacing: 0.05em;
-    text-align: center;
-  }
-  .mini-table td {
-    color: #ffffff;
-    padding: 4px 6px;
-    border: 1px solid var(--border);
-    text-align: center;
-    letter-spacing: 0.03em;
-  }
-
-  /* CHART PANELS */
-  .chart-panel {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    padding: 16px;
-    animation: fadeIn 0.6s ease forwards;
-    opacity: 0;
-  }
-  .panel-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 14px;
-  }
-  .panel-title {
-    font-family: 'DM Mono', monospace;
-    font-weight: 700;
-    font-size: 13px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--text);
-  }
-  .panel-sub {
-    color: var(--muted);
-    font-size: 9px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    margin-top: 2px;
-  }
-  .panel-badge {
-    font-size: 9px;
-    letter-spacing: 0.1em;
-    padding: 2px 6px;
-    border: 1px solid var(--border2);
-    color: var(--accent);
-    text-transform: uppercase;
-  }
-
-  .chart-container { position: relative; }
-
-
-  /* FOOTER */
-  .footer {
-    position: relative;
-    z-index: 1;
-    border-top: 1px solid var(--border);
-    padding: 12px 24px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    color: var(--muted2);
-    font-size: 10px;
-    letter-spacing: 0.05em;
-  }
-
-  /* ERROR */
-  .error-msg {
-    background: rgba(255,59,92,0.08);
-    border: 1px solid rgba(255,59,92,0.3);
-    color: var(--red);
-    padding: 8px 12px;
-    font-size: 11px;
-    grid-column: 1/-1;
-    display: none;
-  }
-
-  /* SECTION LABEL */
-  .section-label {
-    grid-column: 1/-1;
-    color: var(--muted);
-    font-size: 9px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    padding: 4px 0 0;
-    border-top: 1px solid var(--border);
-    margin-top: 4px;
-  }
-
-  /* ── KPI EXPAND MODAL ───────────────────────────────────── */
-  .modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.7);
-    backdrop-filter: blur(4px);
-    z-index: 1000;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.25s;
-  }
-  .modal-overlay.active {
-    opacity: 1;
-    pointer-events: auto;
-  }
-  .kpi-modal {
-    position: fixed;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%) scale(0.95);
-    background: var(--surface);
-    border: 1px solid var(--border2);
-    z-index: 1001;
-    width: 90vw;
-    max-width: 860px;
-    max-height: 90vh;
-    overflow-y: auto;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.25s, transform 0.25s;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border2) transparent;
-  }
-  .kpi-modal.active {
-    opacity: 1;
-    pointer-events: auto;
-    transform: translate(-50%, -50%) scale(1);
-  }
-  .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    padding: 20px 24px 0;
-  }
-  .modal-title {
-    font-family: 'DM Mono', monospace;
-    font-weight: 700;
-    font-size: 18px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--text);
-  }
-  .modal-meta {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    margin-top: 4px;
-  }
-  .modal-value {
-    font-family: 'DM Mono', monospace;
-    font-weight: 700;
-    font-size: 32px;
-    color: var(--text);
-    padding: 8px 24px 0;
-    line-height: 1;
-  }
-  .modal-change-row {
-    padding: 4px 24px 16px;
-  }
-  .modal-close {
-    background: transparent;
-    border: 1px solid var(--border2);
-    color: var(--muted);
-    font-family: 'Space Mono', monospace;
-    font-size: 18px;
-    width: 36px; height: 36px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.15s;
-    flex-shrink: 0;
-  }
-  .modal-close:hover {
-    color: var(--text);
-    border-color: var(--accent);
-  }
-  .modal-chart-wrap {
-    padding: 0 24px;
-    height: 340px;
-    position: relative;
-  }
-  .modal-table-wrap {
-    padding: 16px 24px;
-  }
-  .modal-table-wrap .mini-table {
-    font-size: 12px;
-  }
-  .modal-table-wrap .mini-table th,
-  .modal-table-wrap .mini-table td {
-    padding: 6px 10px;
-  }
-  .modal-recession-legend {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 0 24px 8px;
-    color: var(--muted);
-    font-size: 9px;
-    letter-spacing: 0.08em;
-  }
-  .modal-recession-swatch {
-    width: 20px;
-    height: 10px;
-    background: rgba(255,59,92,0.18);
-    border: 1px solid rgba(255,59,92,0.35);
-  }
-  .modal-desc {
-    padding: 0 24px 20px;
-    color: var(--muted2);
-    font-size: 11px;
-    line-height: 1.7;
-    border-top: 1px solid var(--border);
-    margin-top: 4px;
-    padding-top: 14px;
-  }
-
-  @media (max-width: 768px) {
-    .kpi-modal {
-      width: 96vw;
-      max-height: 94vh;
-    }
-    .modal-title { font-size: 14px; }
-    .modal-value { font-size: 24px; }
-    .modal-chart-wrap { height: 240px; padding: 0 12px; }
-    .modal-header { padding: 14px 12px 0; }
-    .modal-value { padding: 6px 12px 0; }
-    .modal-change-row { padding: 4px 12px 12px; }
-    .modal-table-wrap { padding: 12px; }
-    .modal-table-wrap .mini-table { font-size: 10px; }
-    .modal-table-wrap .mini-table th,
-    .modal-table-wrap .mini-table td { padding: 4px 6px; }
-    .modal-recession-legend { padding: 0 12px 6px; }
-    .modal-desc { padding: 0 12px 16px; padding-top: 12px; }
-  }
-
-  canvas { display: block; }
-
-  /* Staggered animation delays */
-  .kpi-card:nth-child(1) { animation-delay: 0.05s; }
-  .kpi-card:nth-child(2) { animation-delay: 0.10s; }
-  .kpi-card:nth-child(3) { animation-delay: 0.15s; }
-  .kpi-card:nth-child(4) { animation-delay: 0.20s; }
-  .kpi-card:nth-child(5) { animation-delay: 0.25s; }
-  .kpi-card:nth-child(6) { animation-delay: 0.30s; }
-  .kpi-card:nth-child(7) { animation-delay: 0.35s; }
-  .kpi-card:nth-child(8) { animation-delay: 0.40s; }
-
-  /* ── TABLET RESPONSIVE ─────────────────────────────────── */
-  @media (max-width: 1200px) {
-    .main {
-      grid-template-columns: 1fr 1fr;
-    }
-  }
-
-  /* ── MOBILE RESPONSIVE ────────────────────────────────── */
-  @media (max-width: 768px) {
-
-    /* Header */
-    .header {
-      padding: 0 12px;
-      height: auto;
-      min-height: 48px;
-      flex-wrap: wrap;
-      gap: 6px;
-      padding-top: 8px;
-      padding-bottom: 8px;
-    }
-    .logo { font-size: 14px; }
-    .header-right { gap: 10px; flex-wrap: wrap; }
-    #last-updated { display: none; }
-
-    /* Main grid → single column stacked cards */
-    .main {
-      grid-template-columns: 1fr;
-      padding: 10px;
-      gap: 8px;
-    }
-
-    /* KPI cards — full width, compact but readable */
-    .kpi-card {
-      padding: 14px 12px;
-    }
-    .kpi-label { font-size: 9px; margin-bottom: 6px; }
-    .kpi-value { font-size: 24px !important; }
-    .kpi-change { font-size: 11px; }
-    .kpi-date { font-size: 9px; }
-    .sparkline-wrap { height: 48px; margin-top: 8px; }
-    .mini-table { font-size: 9px; }
-    .mini-table th, .mini-table td { padding: 3px 4px; }
-    .mini-table-wrap { margin-top: 6px; }
-
-    /* Section labels */
-    .section-label { grid-column: 1 / -1; font-size: 9px; margin-top: 2px; }
-
-    /* Market + FRED charts → single column */
-    div[style*="grid-template-columns:1fr 1fr"] {
-      grid-template-columns: 1fr !important;
-    }
-
-    /* Chart panels */
-    .chart-panel { padding: 12px; }
-    .panel-title { font-size: 11px; }
-    .panel-sub { font-size: 8px; }
-    .panel-header span[style*="font-size:18px"] { font-size: 15px !important; }
-    .chart-container { height: 130px !important; }
-
-    /* Tooltip overlay — slightly smaller text on mobile */
-    .kpi-tooltip { font-size: 10px; padding: 10px; line-height: 1.6; }
-
-    /* Footer */
-    .footer {
-      flex-direction: column;
-      gap: 4px;
-      text-align: center;
-      padding: 10px 12px;
-      font-size: 9px;
-    }
-
-    /* Error msg */
-    .error-msg { font-size: 10px; }
-
-    /* Refresh button */
-    .refresh-btn { padding: 5px 10px; font-size: 9px; }
-  }
-
-  @media (max-width: 480px) {
-    .logo span { display: none; }
-    .kpi-value { font-size: 20px !important; }
-    .live-badge span:last-child { display: none; }
-    .kpi-info { width: 12px; height: 12px; font-size: 8px; }
-    .main { padding: 8px; gap: 6px; }
-  }
-
-  /* ── ECONOMIC CALENDAR ─────────────────────────────────── */
-  .calendar-section {
-    position: relative;
-    z-index: 1;
-    padding: 0 24px 20px;
-  }
-  .calendar-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 12px;
-  }
-  .calendar-title {
-    color: var(--accent);
-    font-size: 9px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-  }
-  .calendar-range {
-    color: var(--muted);
-    font-size: 9px;
-  }
-  .calendar-grid {
-    display: grid;
-    grid-template-columns: 80px 52px 1fr 70px 70px 70px;
-    border: 1px solid var(--border);
-  }
-  .cal-date {
-    background: var(--surface);
-    padding: 8px 10px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-  }
-  .cal-date-day { color: var(--text); font-size: 10px; font-weight: bold; }
-  .cal-date-time { color: var(--muted); font-size: 9px; }
-  .cal-event {
-    padding: 8px 12px;
-    border-bottom: 1px solid var(--border);
-    border-left: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .cal-bar {
-    width: 3px;
-    height: 28px;
-    border-radius: 2px;
-    flex-shrink: 0;
-  }
-  .cal-name { color: var(--text); font-size: 11px; }
-  .cal-sub { color: var(--muted); font-size: 9px; margin-top: 1px; }
-  .cal-days {
-    padding: 8px 6px;
-    border-bottom: 1px solid var(--border);
-    border-left: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
-  .cal-days-num {
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    font-weight: 500;
-    line-height: 1;
-  }
-  .cal-days-label {
-    color: var(--muted);
-    font-size: 8px;
-    letter-spacing: 0.05em;
-    margin-top: 2px;
-  }
-  .cal-col-prev, .cal-col-est, .cal-col-act {
-    padding: 8px 8px;
-    border-bottom: 1px solid var(--border);
-    border-left: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-  }
-  .cal-hdr {
-    border-bottom: 1px solid var(--border);
-  }
-  .cal-hdr-label {
-    padding: 4px 8px;
-    border-left: 1px solid var(--border);
-    font-size: 8px;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    color: var(--muted);
-    text-align: right;
-    text-transform: uppercase;
-  }
-  .cal-est-val {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    color: var(--text);
-  }
-  .cal-est-dash {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    color: var(--muted);
-  }
-  .cal-est-prior { color: var(--muted); }
-  .cal-beat { color: var(--green); }
-  .cal-miss { color: var(--red); }
-  .cal-inline { color: var(--text); }
-  .cal-fomc { background: #131a22; }
-  .cal-impact {
-    font-size: 9px;
-    padding: 2px 6px;
-    letter-spacing: 0.05em;
-    white-space: nowrap;
-  }
-  .cal-impact-high {
-    background: rgba(255,59,92,0.08);
-    border: 1px solid rgba(255,59,92,0.25);
-    color: var(--red);
-  }
-  .cal-impact-medium {
-    background: rgba(255,107,53,0.08);
-    border: 1px solid rgba(255,107,53,0.25);
-    color: var(--warn);
-  }
-  .cal-past { opacity: 0.45; }
-  .cal-past .cal-name { text-decoration: line-through; text-decoration-color: var(--muted); }
-  .cal-grid-last .cal-date,
-  .cal-grid-last .cal-event,
-  .cal-grid-last .cal-col-prev,
-  .cal-grid-last .cal-col-est,
-  .cal-grid-last .cal-col-act { border-bottom: none; }
-  .cal-legend {
-    display: flex;
-    gap: 16px;
-    margin-top: 10px;
-    flex-wrap: wrap;
-  }
-  .cal-legend-item {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    color: var(--muted);
-    font-size: 9px;
-  }
-  .cal-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-  .cal-empty {
-    grid-column: 1/-1;
-    padding: 20px;
-    text-align: center;
-    color: var(--muted);
-    font-size: 11px;
-  }
-  @media (max-width: 768px) {
-    .calendar-section { padding: 0 12px 16px; }
-    .calendar-grid { grid-template-columns: 65px 1fr; }
-    .cal-col-prev, .cal-col-est, .cal-col-act, .cal-hdr-label { display: none; }
-    .cal-days { display: none; }
-  }
-
-  /* ── NAV BAR ─────────────────────────────────────────────── */
-  .nav-bar {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 0 24px;
-    display: flex;
-    gap: 0;
-    position: sticky;
-    top: 52px;
-    z-index: 99;
-  }
-  .nav-link {
-    color: var(--muted);
-    text-decoration: none;
-    font-family: 'Space Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    padding: 10px 16px;
-    border-bottom: 2px solid transparent;
-    transition: all 0.15s;
-    white-space: nowrap;
-  }
-  .nav-link:hover { color: var(--text); }
-  .nav-link.active { color: var(--accent); border-bottom-color: var(--accent); }
-  @media (max-width: 768px) {
-    .nav-bar { overflow-x: auto; top: auto; }
-    .nav-link { padding: 8px 12px; font-size: 9px; }
-  }
-</style>
 </head>
-<link rel="stylesheet" href="css/modules.css">
 <body>
 
-<header class="header">
-  <div class="logo">MACRO<span> // Economic Overview</span></div>
-  <div class="header-right">
-    <div class="live-badge"><div class="live-dot"></div>Auto-Refresh ON</div>
-    <span id="last-updated">–</span>
-    <button class="refresh-btn" id="refreshBtn" onclick="fetchAll()">↻ Refresh</button>
+<header class="site-header">
+  <a class="brand" href="index.html">Macro</a>
+  <nav class="site-nav" aria-label="Sections"><a href="index.html" aria-current="page">Overview</a><a href="inflation.html">Inflation</a><a href="labor.html">Labor</a><a href="housing.html">Housing</a><a href="markets.html">Markets</a></nav>
+  <div class="header-meta">
+    <span id="last-updated"></span>
+    <button type="button" class="btn" id="refreshBtn">Refresh</button>
   </div>
 </header>
-<nav class="nav-bar"><a href="index.html" class="nav-link active">Macro</a><a href="inflation.html" class="nav-link">Inflation</a><a href="housing.html" class="nav-link">Housing</a><a href="labor.html" class="nav-link">Labor</a><a href="markets.html" class="nav-link">Sectors</a></nav>
 
+<main class="page">
+  <div class="page-intro">
+    <h1>Economic Overview</h1>
+    <p>The economy's vital signs: growth, jobs, inflation, rates and financial conditions. Each chart shows the full history beside the recent trend.</p>
+  </div>
+  <div class="error-msg" id="errorMsg" role="status" hidden></div>
+  <section class="signals" id="signals" aria-label="Key signals"></section>
+<div class="modules" id="modules"></div>
 
-<main class="main">
-  <div class="error-msg" id="errorMsg"></div>
-
-  <div class="modules" id="modules"></div>
-
-  <div class="section-label" style="grid-column:1/-1;">// Market &amp; Rate Charts</div>
-
-  <div style="grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-
-    <!-- S&P 500 -->
-    <div class="chart-panel" style="animation-delay:0.45s;">
-      <div class="panel-header">
-        <div>
-          <div class="panel-title">S&amp;P 500</div>
-          <div class="panel-sub">SPY · Daily</div>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <span id="spx-val" style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;">–</span>
-          <span id="spx-chg" style="font-size:11px;">–</span>
-        </div>
+  <section class="section">
+    <h2 class="group-title">Economic Calendar</h2>
+    <div class="calendar">
+      <div class="calendar-header">
+        <span class="calendar-range" id="cal-range">Loading…</span>
       </div>
-      <div class="chart-container" style="height:150px"><canvas id="chartSPX"></canvas></div>
-    </div>
-
-    <!-- VIX -->
-    <div class="chart-panel" style="animation-delay:0.6s;">
-      <div class="panel-header">
-        <div>
-          <div class="panel-title">VIX Volatility Index</div>
-          <div class="panel-sub">Fear Index · Daily</div>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <span id="vix-val" style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;">–</span>
-          <span id="vix-chg" style="font-size:11px;">–</span>
-        </div>
+      <div class="calendar-grid" id="calendarGrid">
+        <div class="cal-empty">Loading calendar…</div>
       </div>
-      <div class="chart-container" style="height:150px"><canvas id="chartVIX"></canvas></div>
     </div>
-
-
-    <!-- DXY -->
-    <div class="chart-panel" style="animation-delay:0.55s;">
-      <div class="panel-header">
-        <div>
-          <div class="panel-title">US Dollar Index</div>
-          <div class="panel-sub">DXY · Daily</div>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <span id="dxy-val" style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;">–</span>
-          <span id="dxy-chg" style="font-size:11px;">–</span>
-        </div>
-      </div>
-      <div class="chart-container" style="height:150px"><canvas id="chartDXY"></canvas></div>
-    </div>
-
-    <!-- WTI Crude -->
-    <div class="chart-panel" style="animation-delay:0.5s;">
-      <div class="panel-header">
-        <div>
-          <div class="panel-title">Crude Oil</div>
-          <div class="panel-sub">WTI · Daily</div>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <span id="oil-val" style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;">–</span>
-          <span id="oil-chg" style="font-size:11px;">–</span>
-        </div>
-      </div>
-      <div class="chart-container" style="height:150px"><canvas id="chartOil"></canvas></div>
-    </div>
-
-    <!-- Gold -->
-    <div class="chart-panel" style="animation-delay:0.65s;">
-      <div class="panel-header">
-        <div>
-          <div class="panel-title">Gold</div>
-          <div class="panel-sub">GC=F · Daily</div>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <span id="gold-val" style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;">–</span>
-          <span id="gold-chg" style="font-size:11px;">–</span>
-        </div>
-      </div>
-      <div class="chart-container" style="height:150px"><canvas id="chartGold"></canvas></div>
-    </div>
-
-    <!-- Bitcoin -->
-    <div class="chart-panel" style="animation-delay:0.7s;">
-      <div class="panel-header">
-        <div>
-          <div class="panel-title">Bitcoin</div>
-          <div class="panel-sub">BTC-USD · Daily</div>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <span id="btc-val" style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;">–</span>
-          <span id="btc-chg" style="font-size:11px;">–</span>
-        </div>
-      </div>
-      <div class="chart-container" style="height:150px"><canvas id="chartBTC"></canvas></div>
-    </div>
-
-  </div><!-- end charts wrapper -->
-
+  </section>
 </main>
 
-<footer class="footer">
-  <span>Data: Federal Reserve Bank of St. Louis (FRED) · Yahoo Finance</span>
-  <span id="footer-ts">–</span>
+<footer class="site-footer">
+  <span>Data: Federal Reserve Bank of St. Louis (FRED), Yahoo Finance. Shaded bands mark NBER recessions.</span>
+  <span>Design notes: <a href="https://github.com/Adam-A9/macro/blob/main/DESIGN.md">DESIGN.md</a></span>
 </footer>
-
 
 <script src="js/config.js"></script>
 <script src="js/api.js"></script>
@@ -921,189 +54,204 @@
 <script src="js/calendar.js"></script>
 <script>
 // ─── PAGE CONFIG ─────────────────────────────────────────
-const FRED_SERIES = {
-  // MoM
-  "10Y_Yield":    { id: "DGS10",         label: "10-Year Yield",         unit: "%",   decimals: 2, freq: "MoM", sample: "monthly", bar: "#00d4ff", desc: "The 10-year Treasury yield is the annualized return on a US government bond maturing in 10 years. Because Treasuries are considered risk-free, this rate serves as the foundation for virtually all other borrowing costs in the economy — mortgages, corporate bonds, auto loans, and student debt all price off of it. It also reflects the bond market's collective expectation for future growth and inflation. When yields rise sharply, financial conditions tighten across the board: stocks get repriced lower (future earnings are worth less today), and borrowing becomes more expensive for everyone." },
-  FedFunds:       { id: "FEDFUNDS",       label: "Fed Funds Rate",         unit: "%",   decimals: 2, freq: "MoM", bar: "#00ff9d", desc: "The federal funds rate is the interest rate at which banks lend reserves to each other overnight, set by the Federal Reserve's FOMC. It is the single most powerful lever in all of macroeconomics — every loan, mortgage, bond yield, and stock valuation in the world is influenced by this number. When the Fed raises rates, borrowing becomes more expensive, slowing inflation but also growth. When it cuts, credit loosens and the economy is stimulated. Markets obsess over every FOMC meeting because a single 0.25% move here ripples through the entire global financial system." },
-  Spread:         { id: "T10Y2Y",         label: "Yield Curve 10Y-2Y",     unit: "%",   decimals: 2, freq: "MoM", sample: "monthly", bar: "#ffd700", desc: "The yield curve spread is the difference between the 10-year and 2-year Treasury yields. In a normal, healthy economy this is positive — investors demand more compensation for locking up money for longer. When it turns negative (inverted), it means short-term rates exceed long-term rates, typically because the Fed has hiked rates aggressively. An inverted yield curve has preceded every US recession since the 1960s, usually with a 6-18 month lead time. It inverted sharply in 2022-2023 and is one of the most closely watched signals on Wall Street." },
-  // MoM
-  Jobless_Claims: { id: "ICSA",           label: "Jobless Claims",         unit: "",    decimals: 0, freq: "MoM", sample: "monthly", bar: "#a78bfa", desc: "Initial jobless claims counts the number of people filing for unemployment insurance for the first time in a given week, released every Thursday morning. Because it is weekly, it is the most timely labor market data available — stress in the job market shows up here weeks before the monthly unemployment rate captures it. A healthy economy typically sees claims below 250,000 per week. A sustained move above 300,000-350,000 is a warning sign. Sharp spikes — like those seen in March 2020 when claims hit 6 million in a single week — are among the first hard data signals of economic collapse." },
-  // MoM
-  Unemployment:   { id: "UNRATE",         label: "Unemployment",           unit: "%",   decimals: 1, freq: "MoM", bar: "#ff6b35", desc: "The unemployment rate measures the share of people in the labor force who are actively looking for a job but cannot find one. Released every first Friday of the month by the Bureau of Labor Statistics — it is one of the most market-moving data points on the calendar. A reading below 4% is considered a strong, healthy labor market. Above 5-6% signals stress. The Fed is mandated to keep unemployment low alongside controlling inflation, so this number directly shapes rate decisions. Sustained rises here are often a recession warning." },
-  CPI:            { id: "CPIAUCSL",       label: "CPI",                    unit: "",    decimals: 2, freq: "MoM", bar: "#00ff9d", desc: "The Consumer Price Index tracks how much a fixed basket of everyday goods and services — food, rent, gasoline, healthcare, clothing — costs over time. It is the Fed's primary gauge of whether inflation is under control. Their official target is 2% annual growth. When CPI runs significantly above target, the Fed raises interest rates aggressively to slow borrowing and cool demand. The 2022-2023 rate hike cycle, the fastest in 40 years, was a direct response to CPI hitting 9.1%. When CPI falls toward target, rate cuts become possible." },
-  PPI:            { id: "PPIACO",         label: "PPI",                    unit: "",    decimals: 2, freq: "MoM", bar: "#00ff9d", desc: "The Producer Price Index measures the average change in prices that domestic producers receive for their goods and services — think factory gates, farms, and wholesalers. Because businesses eventually pass higher input costs on to consumers, PPI tends to lead CPI by several weeks or months, making it a valuable early warning system for inflation. A sustained rise in PPI while CPI is still calm often signals that consumer prices are about to accelerate. It's closely watched by investors trying to anticipate the next CPI print." },
-  M2:             { id: "M2SL",           label: "M2 Money Supply",        unit: "B$",  decimals: 0, freq: "MoM", bar: "#ffd700", desc: "M2 is the Fed's broad measure of money supply — it counts physical cash, checking accounts, savings accounts, and money market funds. When the Fed cuts rates or conducts quantitative easing (buying bonds), money supply expands. The relationship between M2 and inflation is foundational: more money chasing the same quantity of goods pushes prices up. The massive M2 surge of 2020-2021, when the Fed injected trillions into the economy during COVID, directly preceded the inflation wave of 2022. A shrinking M2 is disinflationary and typically follows rate hikes." },
-  Housing_Starts: { id: "HOUST",          label: "Housing Starts",         unit: "K",   decimals: 0, freq: "MoM", bar: "#00ff9d", desc: "Housing starts count the number of new residential homes on which construction began in a given month. Housing is one of the most interest-rate-sensitive sectors of the economy — when mortgage rates rise, affordability drops and builders pull back quickly. Because constructing a home requires lumber, appliances, concrete, electrical work, plumbing, and dozens of other inputs, a slowdown in starts sends ripples through the entire economy. It is considered a leading economic indicator: when starts fall sharply and persistently, a broader slowdown typically follows within 6-12 months." },
-  Retail_Sales:   { id: "RSAFS",          label: "Retail Sales",           unit: "M$",  decimals: 0, freq: "MoM", bar: "#00ff9d", desc: "Retail sales measures the total dollar value of merchandise sold directly to consumers each month, from car dealerships to grocery stores to online retailers. Because consumer spending accounts for roughly 70% of US GDP, this number is one of the most direct real-time reads on economic momentum available. A strong retail sales print means households are employed, confident, and spending. Weakness here — especially if sustained — signals that consumers are pulling back, often a precursor to slower GDP growth. The Fed watches this closely when assessing whether the economy needs more stimulus or cooling." },
-  CC_Delinquency: { id: "DRCCLACBS",      label: "Credit Card Delinquency", unit: "%",  decimals: 2, freq: "QoQ", bar: "#ff6b35", desc: "The credit card delinquency rate measures the share of credit card balances that are 30 or more days past due. It is one of the most direct measures of household financial stress available — when consumers can no longer keep up with minimum payments, it signals that real purchasing power is eroding beneath the surface. This metric often rises before unemployment spikes, making it a leading indicator of consumer distress that the other cards on this dashboard won't capture until months later. A sustained move above 3% historically precedes broader credit tightening and economic slowdowns." },
-  // QoQ
-  GDP:            { id: "GDP",            label: "Real GDP",               unit: "B$",  decimals: 0, freq: "QoQ", bar: "#ffd700", desc: "Gross Domestic Product measures the total dollar value of all goods and services produced in the US economy each quarter, adjusted for inflation. It is the single broadest scorecard of economic health. Two consecutive quarters of negative GDP growth is the textbook definition of a recession. Strong growth means businesses are expanding, hiring is up, and consumers are spending confidently. Weak or negative GDP forces the Fed to consider rate cuts to stimulate activity." }
-};
-
-const MARKET = {
-  "^GSPC":   { label: "S&P 500",   canvasId: "chartSPX",  valId: "spx-val",  chgId: "spx-chg",  color: "#00d4ff" },
-  "CL=F":    { label: "WTI Crude", canvasId: "chartOil",  valId: "oil-val",  chgId: "oil-chg",  color: "#ff6b35" },
-  "DX-Y.NYB": { label: "US Dollar", canvasId: "chartDXY",  valId: "dxy-val",  chgId: "dxy-chg",  color: "#ffd700", alts: ["DX-Y.NYB","DX=F","UUP"] },
-  "^VIX":    { label: "VIX",       canvasId: "chartVIX",  valId: "vix-val",  chgId: "vix-chg",  color: "#ff3b5c" },
-  "GC=F":    { label: "Gold",      canvasId: "chartGold", valId: "gold-val", chgId: "gold-chg", color: "#ffd700" },
-  "BTC-USD": { label: "Bitcoin",   canvasId: "chartBTC",  valId: "btc-val",  chgId: "btc-chg",  color: "#f7931a" }
-};
-
-const HIGHER_IS_GOOD = ['GDP', 'Retail_Sales', 'Housing_Starts', 'M2'];
-const DUAL_ROW       = ['CPI', 'PPI', 'GDP', 'Retail_Sales', 'Housing_Starts', 'M2'];
+// Edit LAYOUT to reorder or regroup modules; SERIES holds each series' settings.
 const LAYOUT = [
-  { title: 'Growth & Spending',     series: ['GDP', 'Retail_Sales', 'Housing_Starts'] },
-  { title: 'Labor',                 series: ['Unemployment', 'Jobless_Claims'] },
-  { title: 'Inflation & Money',     series: ['CPI', 'PPI', 'M2'] },
-  { title: 'Fed Policy & Rates',    series: ['FedFunds', '10Y_Yield', 'Spread'] },
-  { title: 'Consumer Credit',       series: ['CC_Delinquency'] }
+  {
+    "title": "Growth",
+    "series": [
+      "RealGDP",
+      "RetailSales"
+    ]
+  },
+  {
+    "title": "Jobs",
+    "series": [
+      "Unemployment",
+      "Payrolls",
+      "JoblessClaims"
+    ]
+  },
+  {
+    "title": "Inflation",
+    "series": [
+      "CorePCE",
+      "CPI"
+    ]
+  },
+  {
+    "title": "Policy & Rates",
+    "series": [
+      "FedFunds",
+      "Yield10Y",
+      "Spread"
+    ]
+  },
+  {
+    "title": "Financial Conditions",
+    "series": [
+      "CreditSpread",
+      "SP500"
+    ]
+  }
 ];
 
-// ─── INDEX-SPECIFIC FETCH (overrides shared fetchAll) ────
-// Adds ALFRED revision data for GDP, Retail Sales, Housing Starts.
-async function fetchAll() {
-  const btn   = document.getElementById('refreshBtn');
-  const errEl = document.getElementById('errorMsg');
-  btn.classList.add('loading');
-  btn.textContent     = '⟳ Loading…';
-  errEl.style.display = 'none';
-
-  const errors       = {};
-  const allFredData  = {};
-
-  // FRED series
-  const fredNames = Object.keys(FRED_SERIES);
-  for (let i = 0; i < fredNames.length; i++) {
-    if (i > 0) await sleep(300);
-    const name = fredNames[i];
-    try {
-      const cfg = FRED_SERIES[name];
-      const obs = await fetchFREDSeries(cfg);
-      seriesRawData[name] = obs;
-      allFredData[name]   = obs;
-      updateCard(name, obs);
-    } catch (e) {
-      errors['FRED ' + FRED_SERIES[name].id] = e.message;
-      const el = document.getElementById('val-' + name);
-      if (el) { el.textContent = 'Error'; el.classList.add('loading-text'); }
-    }
+const SERIES = {
+  "RealGDP": {
+    "source": "fred",
+    "id": "GDPC1",
+    "label": "Real GDP",
+    "unit": "B$",
+    "decimals": 0,
+    "freq": "QoQ",
+    "mode": "YoY",
+    "desc": "Real gross domestic product is the inflation-adjusted value of all goods and services the US produces, in chained 2017 dollars. It is the broadest measure of the economy's size and growth. Two consecutive negative quarters is a popular rule of thumb for recession, though the NBER's official dating looks at a wider set of indicators. Trend growth for the US is roughly 2% per year."
+  },
+  "RetailSales": {
+    "source": "fred",
+    "id": "RSAFS",
+    "label": "Retail Sales",
+    "unit": "M$",
+    "decimals": 0,
+    "freq": "MoM",
+    "mode": "YoY",
+    "desc": "Retail sales measures the total dollar value of merchandise sold directly to consumers each month, from car dealerships to grocery stores to online retailers. Because consumer spending accounts for roughly 70% of US GDP, this number is one of the most direct real-time reads on economic momentum available. A strong retail sales print means households are employed, confident, and spending. Weakness here — especially if sustained — signals that consumers are pulling back, often a precursor to slower GDP growth. The Fed watches this closely when assessing whether the economy needs more stimulus or cooling."
+  },
+  "Unemployment": {
+    "source": "fred",
+    "id": "UNRATE",
+    "label": "Unemployment Rate",
+    "unit": "%",
+    "decimals": 1,
+    "freq": "MoM",
+    "mode": "Level",
+    "desc": "The unemployment rate measures the share of people in the labor force who are actively looking for a job but cannot find one. Released every first Friday of the month by the Bureau of Labor Statistics — it is one of the most market-moving data points on the calendar. A reading below 4% is considered a strong, healthy labor market. Above 5-6% signals stress. The Fed is mandated to keep unemployment low alongside controlling inflation, so this number directly shapes rate decisions. Sustained rises here are often a recession warning."
+  },
+  "Payrolls": {
+    "source": "fred",
+    "id": "PAYEMS",
+    "label": "Nonfarm Payrolls",
+    "unit": "K",
+    "decimals": 0,
+    "freq": "MoM",
+    "change": "diff",
+    "mode": "MoM",
+    "desc": "Nonfarm payrolls measures the monthly change in total employed persons across all industries except farming — the headline jobs number released the first Friday of every month. It is arguably the most market-moving regular data release in the world. Expectations are set by ADP payrolls and jobless claims, and surprises routinely move equity markets, bond yields, and the dollar significantly within seconds of the 8:30 AM release. Above 200,000 is strong. Consecutive months below 100,000 raise recession concerns. The number is typically revised substantially in the following two months, meaning the initial print can be misleading."
+  },
+  "JoblessClaims": {
+    "source": "fred",
+    "id": "ICSA",
+    "label": "Initial Jobless Claims",
+    "unit": "",
+    "decimals": 0,
+    "freq": "MoM",
+    "sample": "monthly",
+    "mode": "Level",
+    "desc": "Initial jobless claims counts the number of people filing for unemployment insurance for the first time in a given week, released every Thursday morning. Because it is weekly, it is the most timely labor market data available — stress in the job market shows up here weeks before the monthly unemployment rate captures it. A healthy economy typically sees claims below 250,000 per week. A sustained move above 300,000-350,000 is a warning sign. Sharp spikes — like those seen in March 2020 when claims hit 6 million in a single week — are among the first hard data signals of economic collapse."
+  },
+  "CorePCE": {
+    "source": "fred",
+    "id": "PCEPILFE",
+    "label": "Core PCE Prices",
+    "unit": "",
+    "decimals": 2,
+    "freq": "MoM",
+    "mode": "YoY",
+    "target": {
+      "YoY": 2,
+      "label": "Fed 2% target"
+    },
+    "desc": "Core PCE excluding food and energy is the single most important inflation number for Federal Reserve rate decisions — their 2% target refers specifically to this series. When Fed Chair Powell says inflation is moving toward target, this is the number being referenced. It is the cleanest read on underlying demand-driven inflation. Wall Street analysts forecast this number more closely than any other inflation metric because it directly determines when the Fed will cut or raise rates. Even a 0.1% surprise can move markets significantly."
+  },
+  "CPI": {
+    "source": "fred",
+    "id": "CPIAUCSL",
+    "label": "Consumer Price Index (CPI)",
+    "unit": "",
+    "decimals": 2,
+    "freq": "MoM",
+    "mode": "YoY",
+    "target": {
+      "YoY": 2,
+      "label": "2% reference"
+    },
+    "desc": "The Consumer Price Index tracks how much a fixed basket of everyday goods and services — food, rent, gasoline, healthcare, clothing — costs over time. It is the Fed's primary gauge of whether inflation is under control. Their official target is 2% annual growth. When CPI runs significantly above target, the Fed raises interest rates aggressively to slow borrowing and cool demand. The 2022-2023 rate hike cycle, the fastest in 40 years, was a direct response to CPI hitting 9.1%. When CPI falls toward target, rate cuts become possible."
+  },
+  "FedFunds": {
+    "source": "fred",
+    "id": "FEDFUNDS",
+    "label": "Fed Funds Rate",
+    "unit": "%",
+    "decimals": 2,
+    "freq": "MoM",
+    "mode": "Level",
+    "desc": "The federal funds rate is the interest rate at which banks lend their excess reserves to each other overnight, set by the Federal Reserve's FOMC at meetings held eight times per year. It is the most powerful single lever in all of macroeconomics — every loan, mortgage, bond yield, stock valuation, and currency exchange rate in the world is ultimately influenced by where the Fed sets this rate. Raising it makes borrowing expensive, slowing inflation but risking recession. Cutting it loosens credit, stimulating growth but risking inflation. Markets obsess over every Fed meeting because even a 0.25% move ripples through the entire global financial system."
+  },
+  "Yield10Y": {
+    "source": "fred",
+    "id": "DGS10",
+    "label": "10-Year Treasury Yield",
+    "unit": "%",
+    "decimals": 2,
+    "freq": "MoM",
+    "sample": "monthly",
+    "mode": "Level",
+    "desc": "The 10-year Treasury yield is the annualized return on a US government bond maturing in 10 years — the single most important interest rate in global finance. Because Treasuries are considered risk-free, this rate serves as the foundation for virtually all other borrowing costs in the economy. Mortgages, corporate bonds, auto loans, and student debt all price off the 10-year. It also encodes the bond market's collective forecast for future growth and inflation. When yields rise sharply, financial conditions tighten everywhere: stocks get repriced lower as future earnings are discounted more heavily."
+  },
+  "Spread": {
+    "source": "fred",
+    "id": "T10Y2Y",
+    "label": "Yield Curve (10Y – 2Y)",
+    "unit": "%",
+    "decimals": 2,
+    "freq": "MoM",
+    "sample": "monthly",
+    "mode": "Level",
+    "target": {
+      "Level": 0,
+      "label": "Inverted below"
+    },
+    "desc": "The yield curve spread subtracts the 2-year Treasury yield from the 10-year yield. In a normal economy this is positive — investors demand more compensation for locking up money for a decade. When it turns negative (inverted), short-term rates exceed long-term rates, typically because the Fed raised rates while the market expects future cuts and weak growth. An inverted yield curve has preceded every US recession since the 1960s, typically with a 6-18 month lead time. It inverted sharply in 2022-2023 following aggressive Fed hikes and is one of the most closely watched macroeconomic signals in existence."
+  },
+  "CreditSpread": {
+    "source": "fred",
+    "id": "BAA10Y",
+    "label": "Corporate Credit Spread (Baa – 10Y)",
+    "unit": "%",
+    "decimals": 2,
+    "freq": "MoM",
+    "sample": "monthly",
+    "mode": "Level",
+    "desc": "The extra yield investors demand to hold Moody's Baa-rated corporate bonds (the lowest investment grade) instead of 10-year Treasuries. It widens when lenders worry about defaults and narrows when credit is easy. It peaked near 6 percentage points in the 2008 financial crisis."
+  },
+  "SP500": {
+    "source": "market",
+    "id": "^GSPC",
+    "label": "S&P 500",
+    "unit": "",
+    "decimals": 0,
+    "freq": "MoM",
+    "mode": "Level",
+    "log": true,
+    "desc": "The S&P 500 index tracks 500 of the largest US companies and is the standard benchmark for the US stock market. The full-history chart uses a logarithmic scale so equal percentage moves look equal across decades."
+  },
+  "SahmRule": {
+    "source": "fred",
+    "id": "SAHMREALTIME",
+    "label": "Sahm Rule Recession Indicator",
+    "unit": " pp",
+    "decimals": 2,
+    "freq": "MoM",
+    "mode": "Level",
+    "change": "diff",
+    "target": {
+      "Level": 0.5,
+      "label": "Trigger 0.50"
+    },
+    "desc": "The Sahm rule, developed by economist Claudia Sahm, compares the three-month average of the unemployment rate with its lowest three-month average over the prior 12 months. When the gap reaches 0.50 percentage points, the economy has historically already been in the early months of a recession. This is the real-time version, built from data as first published.",
+    "hidden": true
   }
-
-  // ALFRED revision tags for GDP, Retail Sales, Housing Starts
-  const revisionSeries = [
-    { name: 'GDP',            id: 'GDP',   decimals: 0, unit: 'B$' },
-    { name: 'Retail_Sales',   id: 'RSAFS', decimals: 0, unit: 'M$' },
-    { name: 'Housing_Starts', id: 'HOUST', decimals: 0, unit: 'K'  },
-  ];
-  for (const rs of revisionSeries) {
-    try {
-      await sleep(300);
-      const currentObs = allFredData[rs.name];
-      if (!currentObs || currentObs.length < 1) continue;
-      const latestDate = currentObs[currentObs.length - 1].date;
-      const currentVal = currentObs[currentObs.length - 1].value;
-      const initUrl = 'https://api.stlouisfed.org/fred/series/observations' +
-        '?series_id=' + rs.id +
-        '&api_key=' + FRED_API_KEY +
-        '&file_type=json&sort_order=asc&limit=1' +
-        '&observation_start=' + latestDate +
-        '&observation_end='   + latestDate +
-        '&realtime_start='    + latestDate +
-        '&realtime_end='      + latestDate;
-      const initJson = await fetchWithProxy(initUrl);
-      if (!initJson.observations || initJson.observations.length === 0) continue;
-      const initVal = parseFloat(initJson.observations[0].value);
-      if (isNaN(initVal)) continue;
-      const diff = currentVal - initVal;
-      const el   = document.getElementById('revision-' + rs.name);
-      if (!el) continue;
-      if (Math.abs(diff) < 0.01) {
-        el.className  = 'revision-tag flat';
-        el.textContent = 'No revision';
-      } else {
-        const pos      = diff > 0;
-        el.className   = 'revision-tag ' + (pos ? 'up' : 'down');
-        el.textContent = 'Revised ' + (pos ? '+' : '') + diff.toFixed(rs.decimals) + rs.unit + ' from initial';
-      }
-      el.style.display = 'inline-block';
-    } catch (_) { /* silent — revision fetch is best-effort */ }
-  }
-
-  // Market / Yahoo Finance
-  const marketSymbols = Object.keys(MARKET);
-  for (let i = 0; i < marketSymbols.length; i++) {
-    if (i > 0) await sleep(600);
-    const sym = marketSymbols[i];
-    const cfg = MARKET[sym];
-    try {
-      const obs = cfg.alts ? await fetchMarketWithFallbacks(cfg.alts) : await fetchMarket(sym);
-      if (obs.length > 1) {
-        const latest = obs[obs.length - 1];
-        const prior  = obs[obs.length - 2];
-        const pct    = ((latest.value - prior.value) / Math.abs(prior.value)) * 100;
-        const pos    = pct >= 0;
-        document.getElementById(cfg.valId).textContent =
-          latest.value.toLocaleString(undefined, { maximumFractionDigits: 2 });
-        const chgEl = document.getElementById(cfg.chgId);
-        if (chgEl) {
-          chgEl.textContent = (pos ? '+' : '') + pct.toFixed(2) + '%';
-          chgEl.style.color = pos ? 'var(--green)' : 'var(--red)';
-        }
-        makeLineChart(cfg.canvasId, obs.map(d => d.date), obs.map(d => d.value), cfg.color);
-      }
-    } catch (e) {
-      errors['Market (' + cfg.label + ')'] = e.message;
-      document.getElementById(cfg.valId).textContent = 'N/A';
-      const chgEl = document.getElementById(cfg.chgId);
-      if (chgEl) chgEl.textContent = '–';
-    }
-  }
-
-  _finishFetch(Object.entries(errors).map(([k, v]) => k + ': ' + v));
-}
+};
+const SIGNALS = ["recession", "growth", "inflation", "curve", "credit"];
 </script>
-
-
-<div class="calendar-section">
-  <div class="calendar-header">
-    <span class="calendar-title">// Economic Calendar</span>
-    <span class="calendar-range" id="cal-range">Loading…</span>
-  </div>
-  <div class="calendar-grid" id="calendarGrid">
-    <div class="cal-empty">Loading calendar…</div>
-  </div>
-  <div class="cal-legend">
-    <div class="cal-legend-item"><div class="cal-dot" style="background:#00d4ff;"></div>DoD</div>
-    <div class="cal-legend-item"><div class="cal-dot" style="background:#a78bfa;"></div>WoW</div>
-    <div class="cal-legend-item"><div class="cal-dot" style="background:#00ff9d;"></div>MoM</div>
-    <div class="cal-legend-item"><div class="cal-dot" style="background:#ffd700;"></div>QoQ</div>
-    <div class="cal-legend-item"><div class="cal-dot" style="background:#ff3b5c;"></div>FOMC</div>
-  </div>
-</div>
-
-<!-- KPI Expand Modal -->
-<div class="modal-overlay" id="kpi-modal-overlay"></div>
-<div class="kpi-modal" id="kpi-modal">
-  <div class="modal-header">
-    <div>
-      <div class="modal-title" id="modal-title">–</div>
-      <div class="modal-meta">
-        <span class="kpi-series-id" id="modal-series">–</span>
-        <span style="color:var(--muted);font-size:9px;letter-spacing:0.1em;" id="modal-freq">–</span>
-      </div>
-    </div>
-    <button class="modal-close" id="modal-close-btn">✕</button>
-  </div>
-  <div class="modal-value" id="modal-value">–</div>
-  <div class="modal-change-row"><span class="kpi-change neutral" id="modal-change">–</span></div>
-  <div class="modal-chart-wrap"><canvas id="modal-chart-canvas"></canvas></div>
-  <div class="modal-recession-legend" id="modal-recession-legend" style="display:none;">
-    <div class="modal-recession-swatch"></div>
-    NBER Recession
-  </div>
-  <div class="modal-table-wrap" id="modal-table"></div>
-  <div class="modal-desc" id="modal-desc"></div>
-</div>
-
 </body>
 </html>

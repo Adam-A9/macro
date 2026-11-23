@@ -1,421 +1,467 @@
-// ─── HEATMAP HELPERS ─────────────────────────────────────
-// These reference HIGHER_IS_GOOD defined per-page in the inline script.
+// ─── PAGE MODEL ──────────────────────────────────────────
+// Each page defines:
+//   SERIES  = { name: { source: 'fred'|'market', id, label, unit, decimals,
+//                       freq, sample, mode, change, target, hidden, desc } }
+//   LAYOUT  = [{ title, series: [names...] }, ...]   (module order and groups)
+//   SIGNALS = ['recession', 'curve', ...]            (optional, see SIGNAL_LIBRARY)
+//   SECTORS = { symbol: label }                      (optional, ranked returns)
 
-function cellColor(val, sName, isChange) {
-  if (sName === 'Spread') return val >= 0 ? 'rgba(0,190,90,0.38)' : 'rgba(220,40,60,0.38)';
-  if (isChange) {
-    const good = HIGHER_IS_GOOD.includes(sName) ? val >= 0 : val <= 0;
-    return good ? 'rgba(0,190,90,0.38)' : 'rgba(220,40,60,0.38)';
-  }
-  return null;
-}
-
-function gradientColor(t, higherIsGood) {
-  const g = higherIsGood ? t : 1 - t;
-  if (g < 0.5) {
-    const r = Math.round(180 + (0.5 - g) * 2 * 75);
-    return 'rgba(' + r + ',40,60,0.4)';
-  }
-  const gr = Math.round(80 + (g - 0.5) * 2 * 150);
-  return 'rgba(0,' + gr + ',60,0.4)';
-}
-
-// ─── DASHBOARD MODULES (one full-width row per series) ───
-// Each page defines LAYOUT = [{ title, series: [names...] }, ...].
-// Pages without LAYOUT get one untitled group in FRED_SERIES order.
 const moduleModes = {};
+const moduleZoom = {};
+
+// Zoom window (years) for the "recent" chart. Shorter comparisons get
+// shorter default windows; the range buttons override it.
+const ZOOM_RANGES = [1, 2, 3, 5, 10];
+const DEFAULT_ZOOM = { Level: 5, YoY: 5, MoM: 3, QoQ: 2 };
+
+function pageSignals() { return typeof SIGNALS !== 'undefined' ? SIGNALS : []; }
+function pageSectors() { return typeof SECTORS !== 'undefined' ? SECTORS : null; }
 
 function pageLayout() {
   if (typeof LAYOUT !== 'undefined' && LAYOUT.length) return LAYOUT;
-  return [{ title: '', series: Object.keys(FRED_SERIES) }];
+  return [{ title: '', series: Object.keys(SERIES).filter(n => !SERIES[n].hidden) }];
 }
 
+function storageGet(key) { try { return localStorage.getItem(key); } catch (_) { return null; } }
+function storageSet(key, value) { try { localStorage.setItem(key, value); } catch (_) {} }
+
 function modeStorageKey(name) {
-  return 'macro.mode.' + location.pathname.split('/').pop() + '.' + name;
+  return 'macro.mode.' + (location.pathname.split('/').pop() || 'index.html') + '.' + name;
 }
 
 function getMode(name) {
   if (moduleModes[name]) return moduleModes[name];
-  const cfg = FRED_SERIES[name];
-  let saved = null;
-  try { saved = localStorage.getItem(modeStorageKey(name)); } catch (_) {}
+  const cfg = SERIES[name];
   const modes = seriesModes(cfg);
-  const fallback = cfg.mode || (DUAL_ROW.includes(name) ? 'YoY' : 'Level');
+  const saved = storageGet(modeStorageKey(name));
+  const fallback = cfg.mode || 'Level';
   moduleModes[name] = modes.includes(saved) ? saved : (modes.includes(fallback) ? fallback : 'Level');
   return moduleModes[name];
 }
 
 function setMode(name, mode) {
+  delete moduleZoom[name];
   moduleModes[name] = mode;
-  try { localStorage.setItem(modeStorageKey(name), mode); } catch (_) {}
-  document.querySelectorAll('#card-' + name + ' .mode-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.mode === mode);
-  });
+  storageSet(modeStorageKey(name), mode);
   renderModule(name);
 }
 
+function getZoom(name) {
+  return moduleZoom[name] || DEFAULT_ZOOM[getMode(name)] || 5;
+}
+
+function setZoom(name, years) {
+  moduleZoom[name] = years;
+  renderModule(name);
+}
+
+function escapeHtml(text) {
+  return String(text).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
+
+// ─── MODULE MARKUP ───────────────────────────────────────
+function segmented(cls, items, attr) {
+  return '<div class="segmented ' + cls + '" role="group">' +
+    items.map(it => '<button type="button" ' + attr + '="' + it.value + '">' + it.label + '</button>').join('') +
+    '</div>';
+}
+
 function moduleMarkup(name) {
-  const cfg = FRED_SERIES[name];
-  const buttons = seriesModes(cfg).map(m =>
-    '<button type="button" class="mode-btn" data-mode="' + m + '">' + m + '</button>').join('');
+  const cfg = SERIES[name];
+  const source = cfg.source === 'market' ? 'Yahoo Finance · ' + cfg.id : 'FRED · ' + cfg.id;
   return '' +
-    '<div class="kpi-card module" id="card-' + name + '">' +
-      '<div class="kpi-tooltip" id="tip-' + name + '"></div>' +
-      '<div class="module-top">' +
-        '<div class="kpi-label">' + cfg.label +
-          ' <span class="module-series-id">' + cfg.id + '</span><span class="kpi-info">?</span></div>' +
-        '<div class="mode-toggle" role="group" aria-label="View">' + buttons + '</div>' +
-      '</div>' +
-      '<div class="module-body">' +
-        '<div class="module-summary">' +
-          '<div class="kpi-value loading-text" id="val-' + name + '">Loading…</div>' +
-          '<div class="kpi-date" id="date-' + name + '">–</div>' +
-          '<div class="revision-tag flat" id="revision-' + name + '" style="display:none;"></div>' +
-          '<dl class="module-stats" id="stats-' + name + '"></dl>' +
-        '</div>' +
-        '<div class="module-chart">' +
-          '<div class="module-chart-canvas" title="Open full history"><canvas id="chart-' + name + '"></canvas></div>' +
-          '<div class="module-chart-key">' +
-            '<span><i class="key-line"></i>10-yr average</span>' +
-            '<span><i class="key-band"></i>Recession</span>' +
-            '<a href="#" class="module-history-link" data-series="' + name + '">Full history ↗</a>' +
+    '<article class="module" id="card-' + name + '">' +
+      '<header class="module-head">' +
+        '<div class="module-id">' +
+          '<h3 class="module-name">' + escapeHtml(cfg.label) + '</h3>' +
+          '<div class="module-reading">' +
+            '<span class="module-value is-loading" id="val-' + name + '">Loading…</span>' +
+            '<span class="module-asof" id="date-' + name + '"></span>' +
           '</div>' +
         '</div>' +
+        '<div class="module-controls">' +
+          segmented('mode-toggle', seriesModes(cfg).map(m => ({ value: m, label: m })), 'data-mode') +
+        '</div>' +
+      '</header>' +
+      '<div class="module-charts">' +
+        '<figure class="pane">' +
+          '<figcaption class="pane-head">' +
+            '<span class="pane-title" id="hist-title-' + name + '">Full history</span>' +
+            '<button type="button" class="link-btn" data-expand>Expand</button>' +
+          '</figcaption>' +
+          '<div class="pane-canvas"><canvas id="hist-' + name + '" role="img" aria-label="' + escapeHtml(cfg.label) + ', full history"></canvas></div>' +
+          '<div class="pane-key" id="hist-key-' + name + '"></div>' +
+        '</figure>' +
+        '<figure class="pane">' +
+          '<figcaption class="pane-head">' +
+            '<span class="pane-title" id="zoom-title-' + name + '">Recent</span>' +
+            segmented('zoom-toggle small', ZOOM_RANGES.map(y => ({ value: y, label: y + 'Y' })), 'data-years') +
+          '</figcaption>' +
+          '<div class="pane-canvas"><canvas id="chart-' + name + '" role="img" aria-label="' + escapeHtml(cfg.label) + ', recent"></canvas></div>' +
+          '<div class="pane-key" id="zoom-key-' + name + '"></div>' +
+        '</figure>' +
       '</div>' +
-      '<div class="mini-table-wrap" id="mini-table-' + name + '"></div>' +
-    '</div>';
+      '<div class="table-wrap" id="mini-table-' + name + '"></div>' +
+      '<details class="module-about">' +
+        '<summary>About this measure <span class="module-source">' + escapeHtml(source) + '</span></summary>' +
+        '<p>' + escapeHtml(cfg.desc || '') + '</p>' +
+      '</details>' +
+    '</article>';
 }
 
 function renderModules() {
   const host = document.getElementById('modules');
   if (!host) return;
   host.innerHTML = pageLayout().map(group =>
-    (group.title ? '<div class="section-label module-group">// ' + group.title + '</div>' : '') +
-    group.series.filter(n => FRED_SERIES[n]).map(moduleMarkup).join('')
+    '<section class="module-group">' +
+      (group.title ? '<h2 class="group-title">' + escapeHtml(group.title) + '</h2>' : '') +
+      group.series.filter(n => SERIES[n]).map(moduleMarkup).join('') +
+    '</section>'
   ).join('');
 
-  Object.keys(FRED_SERIES).forEach(name => {
+  Object.keys(SERIES).forEach(name => {
     const card = document.getElementById('card-' + name);
     if (!card) return;
-    const mode = getMode(name);
-    card.querySelectorAll('.mode-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.mode === mode);
-      btn.addEventListener('click', () => setMode(name, btn.dataset.mode));
-    });
-    card.querySelector('.module-chart-canvas').addEventListener('click', () => openFREDChart(name));
-    card.querySelector('.module-history-link').addEventListener('click', e => {
-      e.preventDefault();
-      openFREDChart(name);
-    });
+    card.querySelectorAll('[data-mode]').forEach(btn =>
+      btn.addEventListener('click', () => setMode(name, btn.dataset.mode)));
+    card.querySelectorAll('[data-years]').forEach(btn =>
+      btn.addEventListener('click', () => setZoom(name, parseInt(btn.dataset.years, 10))));
+    card.querySelector('[data-expand]').addEventListener('click', () => openSeriesChart(name));
+    syncButtons(name);
   });
 }
 
-function formatDisplayValue(value, display) {
-  const prefix = display.showSign && value > 0 ? '+' : '';
-  return prefix + value.toLocaleString(undefined, {
-    minimumFractionDigits: display.showSign ? Math.min(display.decimals, 2) : 0,
-    maximumFractionDigits: display.decimals
-  }) + display.unit;
+function syncButtons(name) {
+  const card = document.getElementById('card-' + name);
+  if (!card) return;
+  const mode = getMode(name), years = getZoom(name);
+  card.querySelectorAll('[data-mode]').forEach(b => b.setAttribute('aria-pressed', b.dataset.mode === mode));
+  card.querySelectorAll('[data-years]').forEach(b => b.setAttribute('aria-pressed', parseInt(b.dataset.years, 10) === years));
 }
 
-// Kept for chart links and older callers: the default interval for a series.
-function getDisplayInterval(name, cfg) {
-  if (cfg.displayFreq) return cfg.displayFreq;
-  return DUAL_ROW.includes(name) ? 'YoY' : cfg.freq;
-}
-
-function buildDisplaySeries(name, obs, cfg) {
-  const interval = getDisplayInterval(name, cfg);
-  const sampledObs = cfg.sample === 'monthly' ? sampleMonthlyObservations(obs) : obs;
-  if (interval !== 'YoY') {
-    return { interval, unit: cfg.unit, decimals: cfg.decimals, showSign: false, obs: sampledObs };
-  }
-  const fullObs = seriesRawData[name] || obs;
-  return { interval, unit: '%', decimals: 2, showSign: true, obs: calculateYoYObservations(fullObs) };
-}
-
-// ─── UPDATE MODULE ───────────────────────────────────────
-// References globals: FRED_SERIES, DUAL_ROW, seriesRawData
+// ─── MODULE RENDERING ────────────────────────────────────
 function updateCard(name, rawObs) {
   seriesRawData[name] = rawObs;
-  const tipEl = document.getElementById('tip-' + name);
-  if (tipEl) tipEl.textContent = FRED_SERIES[name].desc || '';
   renderModule(name);
+  renderSignals();
 }
 
 function renderModule(name) {
-  const cfg = FRED_SERIES[name];
+  const cfg = SERIES[name];
   const raw = seriesRawData[name];
   const valEl = document.getElementById('val-' + name);
   if (!cfg || !raw || raw.length < 2 || !valEl) return;
+  syncButtons(name);
 
   const quarterly = cfg.freq === 'QoQ';
   const display = buildModeSeries(raw, cfg, getMode(name));
   const obs = display.obs;
-  if (obs.length < 1) return;
+  if (!obs.length) return;
   const latest = obs[obs.length - 1];
-  const fmt = v => (v == null ? '–' : formatDisplayValue(v, display));
 
   // Headline
-  valEl.classList.remove('loading-text');
-  const prefix = display.showSign && latest.value > 0 ? '+' : '';
-  valEl.innerHTML = prefix + latest.value.toLocaleString(undefined, {
-      minimumFractionDigits: display.showSign ? Math.min(display.decimals, 2) : 0,
-      maximumFractionDigits: display.decimals
-    }) + '<span class="kpi-unit">' + display.unit.trim() + '</span>';
+  valEl.classList.remove('is-loading');
+  const u = splitUnit(display.unit);
+  const head = formatDisplayValue(latest.value, Object.assign({}, display, { unit: u.pre === '$' ? '$' : '' }));
+  valEl.innerHTML = escapeHtml(head) +
+    (u.post.trim() ? '<span class="module-unit">' + escapeHtml(u.post.trim()) + '</span>' : '');
   const modeText = display.mode === 'Level' ? '' : ' · ' + display.mode + ' change';
   document.getElementById('date-' + name).textContent =
-    'As of ' + formatObsDate(latest.date, 'long', quarterly) + modeText;
+    formatObsDate(latest.date, 'long', quarterly) + modeText;
 
-  // Historical context
-  const stats = historyStats(obs);
-  const statsEl = document.getElementById('stats-' + name);
-  if (statsEl && stats) {
-    const short = stats.yearsCovered < 9.5;
-    const rows = [
-      ['1 yr ago', fmt(stats.yearAgo)],
-      ['5-yr avg', fmt(stats.avg5)],
-      [short ? 'Period avg' : '10-yr avg', fmt(stats.avg10)],
-      [short ? 'Period range' : '10-yr range', fmt(stats.low10) + ' to ' + fmt(stats.high10)],
-      [short ? 'Percentile' : '10-yr percentile', stats.percentile == null ? '–' : ordinal(stats.percentile)]
-    ];
-    statsEl.innerHTML = rows.map(r => '<dt>' + r[0] + '</dt><dd>' + r[1] + '</dd>').join('');
-  }
+  // Full history (left) and recent window (right)
+  const years = getZoom(name);
+  const cutoff = (parseInt(latest.date.slice(0, 4), 10) - years) + latest.date.slice(4);
+  const recent = obs.filter(d => d.date > cutoff);
+  const bars = display.mode === 'MoM' || display.mode === 'QoQ';
+  const reference = cfg.target && cfg.target[display.mode] != null
+    ? { value: cfg.target[display.mode], label: cfg.target.label || 'Target' } : null;
+  document.getElementById('hist-title-' + name).textContent = 'Since ' + obs[0].date.slice(0, 4);
+  document.getElementById('zoom-title-' + name).textContent =
+    'Last ' + years + (years === 1 ? ' year' : ' years');
 
-  // 10-year chart
-  const cutoff = (parseInt(latest.date.slice(0, 4), 10) - 10) + latest.date.slice(4);
-  const chartObs = obs.filter(d => d.date > cutoff);
-  makeModuleChart('chart-' + name, chartObs, display, stats ? stats.avg10 : null);
+  const log = !!cfg.log && display.mode === 'Level';
+  makeModuleChart('hist-' + name, obs, display, {
+    quarterly, reference, log, maxLabels: 8,
+    highlight: recent.length ? [recent[0].date, latest.date] : null
+  });
+  makeModuleChart('chart-' + name, recent, display, { quarterly, bars, reference, maxLabels: 10 });
 
-  // Recent readings table (last 12)
+  // Keys: say what the shading, highlight and dashed line mean.
+  const refKey = reference ? '<span><i class="key-ref"></i>' + escapeHtml(reference.label) + '</span>' : '';
+  document.getElementById('hist-key-' + name).innerHTML =
+    '<span><i class="key-recession"></i>Recession</span>' +
+    '<span><i class="key-window"></i>Shown at right</span>' + refKey;
+  document.getElementById('zoom-key-' + name).innerHTML = refKey;
+
+  // Last 12 readings
   const tableObs = obs.slice(-12);
   const wrap = document.getElementById('mini-table-' + name);
   if (!wrap) return;
-  const headers = tableObs.map(d =>
-    '<th title="' + formatObsDate(d.date, 'long', quarterly) + '">' + formatObsDate(d.date, 'short', quarterly) + '</th>').join('');
-  const cells = tableObs.map(d => '<td>' + fmt(d.value) + '</td>').join('');
   wrap.innerHTML =
-    '<table class="mini-table"><thead><tr><th class="row-head"></th>' + headers + '</tr></thead>' +
-    '<tbody><tr><td class="row-head">' + display.mode + '</td>' + cells + '</tr></tbody></table>';
+    '<table class="readings"><thead><tr><th scope="row">' + display.mode + '</th>' +
+      tableObs.map(d => '<th scope="col" title="' + formatObsDate(d.date, 'long', quarterly) + '">' +
+        formatObsDate(d.date, 'short', quarterly) + '</th>').join('') +
+    '</tr></thead><tbody><tr><th scope="row"></th>' +
+      tableObs.map(d => '<td>' + formatDisplayValue(d.value, display) + '</td>').join('') +
+    '</tr></tbody></table>';
+  wrap.scrollLeft = wrap.scrollWidth;   // latest readings first on narrow screens
 }
 
-function ordinal(n) {
-  const s = ['th', 'st', 'nd', 'rd'], v = n % 100;
-  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+function renderAllModules() {
+  Object.keys(SERIES).forEach(renderModule);
 }
 
-// ─── STANDARD FETCH ALL ──────────────────────────────────
-// References globals: FRED_SERIES, MARKET (both defined per-page).
-// index.html overrides this function to add ALFRED revision logic.
+// ─── SIGNALS ─────────────────────────────────────────────
+// Rule-of-thumb readings of the economy's vital signs. Each returns
+// { value, status: 'good'|'warning'|'critical', verdict, note } or null.
+const STATUS_ICON = { good: '✓', warning: '!', critical: '✕' };
+
+function latestOf(name) {
+  const obs = seriesRawData[name];
+  return obs && obs.length ? obs[obs.length - 1] : null;
+}
+
+const SIGNAL_LIBRARY = {
+  recession: {
+    title: 'Recession signal',
+    series: 'SahmRule',
+    read() {
+      const l = latestOf('SahmRule'); if (!l) return null;
+      const v = l.value;
+      return {
+        value: v.toFixed(2) + ' pp',
+        status: v >= 0.5 ? 'critical' : v >= 0.3 ? 'warning' : 'good',
+        verdict: v >= 0.5 ? 'Triggered' : v >= 0.3 ? 'Approaching' : 'Not triggered',
+        note: 'Sahm rule: 3-mo avg unemployment vs. its 12-mo low. Triggers at 0.50.',
+        date: l.date
+      };
+    }
+  },
+  curve: {
+    title: 'Yield curve',
+    series: 'Spread',
+    read() {
+      const l = latestOf('Spread'); if (!l) return null;
+      const v = l.value;
+      return {
+        value: (v > 0 ? '+' : '') + v.toFixed(2) + ' pp',
+        status: v < 0 ? 'warning' : 'good',
+        verdict: v < 0 ? 'Inverted' : 'Positive',
+        note: '10-yr minus 2-yr Treasury. Inversions have preceded past recessions.',
+        date: l.date
+      };
+    }
+  },
+  inflation: {
+    title: 'Core inflation',
+    series: 'CorePCE',
+    read() {
+      const obs = seriesRawData.CorePCE; if (!obs) return null;
+      const yoy = buildModeSeries(obs, SERIES.CorePCE, 'YoY').obs;
+      const l = yoy[yoy.length - 1]; if (!l) return null;
+      const v = l.value;
+      return {
+        value: v.toFixed(1) + '%',
+        status: v <= 2.5 ? 'good' : v <= 3.5 ? 'warning' : 'critical',
+        verdict: v <= 2.5 ? 'Near target' : v <= 3.5 ? 'Above target' : 'Well above target',
+        note: 'Core PCE, year over year. The Fed targets 2%.',
+        date: l.date
+      };
+    }
+  },
+  growth: {
+    title: 'Real growth',
+    series: 'RealGDP',
+    read() {
+      const obs = seriesRawData.RealGDP; if (!obs || obs.length < 2) return null;
+      const a = obs[obs.length - 2], b = obs[obs.length - 1];
+      const v = (Math.pow(b.value / a.value, 4) - 1) * 100;
+      return {
+        value: (v > 0 ? '+' : '') + v.toFixed(1) + '%',
+        status: v < 0 ? 'critical' : v < 1 ? 'warning' : 'good',
+        verdict: v < 0 ? 'Contracting' : v < 1 ? 'Weak' : 'Expanding',
+        note: 'Real GDP, latest quarter at an annualized rate.',
+        date: b.date, quarterly: true
+      };
+    }
+  },
+  credit: {
+    title: 'Credit stress',
+    series: 'CreditSpread',
+    read() {
+      const l = latestOf('CreditSpread'); if (!l) return null;
+      const v = l.value;
+      return {
+        value: v.toFixed(2) + ' pp',
+        status: v >= 3.5 ? 'critical' : v >= 2.5 ? 'warning' : 'good',
+        verdict: v >= 3.5 ? 'Stressed' : v >= 2.5 ? 'Elevated' : 'Calm',
+        note: 'Baa corporate bond yield minus 10-yr Treasury. Above ~3.5 pp has marked past credit crunches.',
+        date: l.date
+      };
+    }
+  }
+};
+
+function renderSignals() {
+  const host = document.getElementById('signals');
+  const ids = pageSignals();
+  if (!host || !ids.length) return;
+  host.innerHTML = ids.map(id => {
+    const sig = SIGNAL_LIBRARY[id];
+    const r = sig.read();
+    if (!r) {
+      return '<div class="signal"><div class="signal-title">' + sig.title + '</div>' +
+        '<div class="signal-value is-loading">Loading…</div></div>';
+    }
+    return '<div class="signal">' +
+      '<div class="signal-title">' + sig.title + '</div>' +
+      '<div class="signal-value">' + r.value + '</div>' +
+      '<div class="status status-' + r.status + '"><span class="status-icon" aria-hidden="true">' +
+        STATUS_ICON[r.status] + '</span>' + r.verdict + '</div>' +
+      '<p class="signal-note">' + r.note + ' <span class="signal-date">' +
+        formatObsDate(r.date, 'long', r.quarterly) + '</span></p>' +
+    '</div>';
+  }).join('');
+}
+
+// ─── SECTOR RETURNS ──────────────────────────────────────
+const SECTOR_PERIODS = ['1M', '3M', 'YTD', '1Y'];
+const sectorReturns = {};
+let sectorPeriod = storageGet('macro.sectorPeriod') || 'YTD';
+
+function renderSectors() {
+  const sectors = pageSectors();
+  const host = document.getElementById('sectors');
+  if (!sectors || !host) return;
+  const rows = Object.keys(sectors)
+    .filter(sym => sectorReturns[sym] && sectorReturns[sym][sectorPeriod] != null)
+    .map(sym => ({ sym, label: sectors[sym], value: sectorReturns[sym][sectorPeriod] }))
+    .sort((a, b) => b.value - a.value);
+
+  // One linear scale spanning the actual range, so the zero line sits
+  // where the data puts it instead of wasting half the width.
+  const maxPos = Math.max(0, ...rows.map(r => r.value));
+  const maxNeg = Math.max(0, ...rows.map(r => -r.value));
+  const span = (maxPos + maxNeg) || 1;
+  const hasNeg = maxNeg > 0;
+  const zero = maxNeg / span * 100;         // % position of the zero line
+
+  host.querySelector('.sector-rows').innerHTML = rows.length ? rows.map(r => {
+    const w = Math.abs(r.value) / span * 100;
+    const left = r.value >= 0 ? zero : zero - w;
+    const val = formatDisplayValue(r.value, { unit: '%', decimals: 1, showSign: true });
+    return '<div class="sector-row">' +
+      '<span class="sector-label">' + escapeHtml(r.label) + ' <span class="sector-sym">' + r.sym + '</span></span>' +
+      '<span class="sector-track">' +
+        (hasNeg ? '<span class="sector-zero" style="left:' + zero + '%"></span>' : '') +
+        '<span class="sector-bar' + (r.value < 0 ? ' neg' : '') + '" style="left:' + left + '%;width:' + w + '%"></span>' +
+      '</span>' +
+      '<span class="sector-value">' + val + '</span>' +
+    '</div>';
+  }).join('') : '<div class="empty">Loading sector returns…</div>';
+
+  host.querySelectorAll('[data-period]').forEach(b =>
+    b.setAttribute('aria-pressed', b.dataset.period === sectorPeriod));
+}
+
+function initSectors() {
+  const host = document.getElementById('sectors');
+  if (!pageSectors() || !host) return;
+  host.querySelector('.sector-controls').innerHTML =
+    segmented('period-toggle', SECTOR_PERIODS.map(p => ({ value: p, label: p })), 'data-period');
+  host.querySelectorAll('[data-period]').forEach(b => b.addEventListener('click', () => {
+    sectorPeriod = b.dataset.period;
+    storageSet('macro.sectorPeriod', sectorPeriod);
+    renderSectors();
+  }));
+  renderSectors();
+}
+
+// ─── FETCH ───────────────────────────────────────────────
 async function fetchAll() {
   const btn   = document.getElementById('refreshBtn');
   const errEl = document.getElementById('errorMsg');
-  btn.classList.add('loading');
-  btn.textContent    = '⟳ Loading…';
-  errEl.style.display = 'none';
-
+  btn.disabled = true;
+  btn.textContent = 'Loading…';
+  errEl.hidden = true;
   const errors = [];
 
-  // FRED series
-  const fredNames = Object.keys(FRED_SERIES);
-  for (let i = 0; i < fredNames.length; i++) {
-    if (i > 0) await sleep(300);
-    const name = fredNames[i];
+  const names = Object.keys(SERIES);
+  for (let i = 0; i < names.length; i++) {
+    if (i > 0) await sleep(SERIES[names[i]].source === 'market' ? 400 : 200);
+    const name = names[i];
     try {
-      const cfg = FRED_SERIES[name];
-      const obs = await fetchFREDSeries(cfg);
-      updateCard(name, obs);
+      updateCard(name, await fetchSeries(SERIES[name]));
     } catch (e) {
-      errors.push('FRED ' + FRED_SERIES[name].id + ': ' + e.message);
+      errors.push(SERIES[name].label + ': ' + e.message);
       const el = document.getElementById('val-' + name);
-      if (el) { el.textContent = 'Error'; el.classList.add('loading-text'); }
+      if (el) { el.textContent = 'Unavailable'; el.classList.add('is-loading'); }
     }
   }
 
-  // Market / Yahoo Finance
-  const marketSymbols = Object.keys(MARKET);
-  for (let i = 0; i < marketSymbols.length; i++) {
-    if (i > 0) await sleep(600);
-    const sym = marketSymbols[i];
-    const cfg = MARKET[sym];
-    try {
-      const obs    = await fetchMarket(sym);
-      if (obs.length > 1) {
-        const latest = obs[obs.length - 1];
-        const prior  = obs[obs.length - 2];
-        const pct    = ((latest.value - prior.value) / Math.abs(prior.value)) * 100;
-        const pos    = pct >= 0;
-        document.getElementById(cfg.valId).textContent =
-          latest.value.toLocaleString(undefined, { maximumFractionDigits: 2 });
-        const chgEl = document.getElementById(cfg.chgId);
-        if (chgEl) {
-          chgEl.textContent = (pos ? '+' : '') + pct.toFixed(2) + '%';
-          chgEl.style.color = pos ? 'var(--green)' : 'var(--red)';
-        }
-        makeLineChart(cfg.canvasId, obs.map(d => d.date), obs.map(d => d.value), cfg.color);
+  const sectors = pageSectors();
+  if (sectors) {
+    for (const sym of Object.keys(sectors)) {
+      try {
+        await sleep(400);
+        sectorReturns[sym] = trailingReturns(await fetchMarketRange(sym, '2y', '1d'));
+        renderSectors();
+      } catch (e) {
+        errors.push(sectors[sym] + ': ' + e.message);
       }
-    } catch (e) {
-      errors.push('Market (' + cfg.label + '): ' + e.message);
-      document.getElementById(cfg.valId).textContent = 'N/A';
-      const chgEl = document.getElementById(cfg.chgId);
-      if (chgEl) chgEl.textContent = '–';
     }
   }
 
   _finishFetch(errors);
 }
 
-// Shared post-fetch housekeeping (timestamp, error display, auto-refresh timer)
 function _finishFetch(errors) {
   const btn   = document.getElementById('refreshBtn');
   const errEl = document.getElementById('errorMsg');
-  const now   = new Date();
-  const ts    = now.toLocaleString('en-US', {
-    month: 'short', day: 'numeric', year: 'numeric',
-    hour: '2-digit', minute: '2-digit'
+  const ts = new Date().toLocaleString('en-US', {
+    month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
   });
   document.getElementById('last-updated').textContent = 'Updated ' + ts;
-  const footer = document.getElementById('footer-ts');
-  if (footer) footer.textContent = 'Last fetch: ' + ts;
-
-  if (errors.length > 0) {
-    errEl.innerHTML     = errors.map(e => '⚠ ' + e).join('<br>');
-    errEl.style.display = 'block';
+  if (errors.length) {
+    errEl.textContent = 'Some data could not be loaded: ' + errors.join(' · ');
+    errEl.hidden = false;
   }
-  btn.classList.remove('loading');
-  btn.textContent = '↻ Refresh';
-
+  btn.disabled = false;
+  btn.textContent = 'Refresh';
   clearTimeout(refreshTimer);
   refreshTimer = setTimeout(fetchAll, REFRESH_INTERVAL);
 }
 
-// ─── EXPAND MODAL ───────────────────────────────────────
-function openChartWindow(params) {
-  const query = new URLSearchParams(params);
-  window.open('chart.html?' + query.toString(), '_blank', 'noopener');
-}
-
-function openFREDChart(name) {
-  const cfg = FRED_SERIES[name];
+// ─── FULL-SCREEN CHART ───────────────────────────────────
+function openSeriesChart(name) {
+  const cfg = SERIES[name];
   if (!cfg) return;
-  openChartWindow({
-    source: 'fred',
-    id: cfg.id,
+  const query = new URLSearchParams({
+    source: cfg.source || 'fred',
+    id: cfg.alts ? cfg.alts[0] : cfg.id,
     label: cfg.label,
     unit: cfg.unit,
     decimals: cfg.decimals,
     interval: getMode(name),
     freq: cfg.freq || '',
     change: changeKind(cfg),
-    sample: cfg.sample || '',
-    color: cfg.bar || '#3b82f6'
+    sample: cfg.sample || ''
   });
-}
-
-function openModal(name) {
-  const cfg = FRED_SERIES[name];
-  if (!cfg) return;
-  const obs = seriesRawData[name];
-  if (!obs || obs.length < 2) return;
-
-  const modal   = document.getElementById('kpi-modal');
-  const overlay = document.getElementById('kpi-modal-overlay');
-  if (!modal || !overlay) return;
-
-  // Header info
-  document.getElementById('modal-title').textContent = cfg.label;
-  var modalSeriesEl = document.getElementById('modal-series');
-  if (modalSeriesEl) modalSeriesEl.style.display = 'none';
-  const display = buildDisplaySeries(name, obs, cfg);
-  document.getElementById('modal-freq').textContent = display.interval;
-
-  const latest = obs[obs.length - 1];
-  const prior  = obs[obs.length - 2];
-  const change = latest.value - prior.value;
-  const pct    = (change / Math.abs(prior.value)) * 100;
-  const pos    = change >= 0;
-
-  document.getElementById('modal-value').innerHTML =
-    latest.value.toLocaleString(undefined, { maximumFractionDigits: cfg.decimals }) +
-    '<span style="font-size:16px;color:var(--muted);font-weight:400;margin-left:4px;">' + cfg.unit + '</span>';
-
-  const chgEl = document.getElementById('modal-change');
-  chgEl.textContent = (pos ? '▲' : '▼') + ' ' +
-    Math.abs(change).toLocaleString(undefined, { maximumFractionDigits: cfg.decimals }) +
-    ' (' + pct.toFixed(2) + '%)';
-  chgEl.className = 'kpi-change ' + (pos ? 'pos' : 'neg');
-
-  // Full chart
-  makeModalChart(
-    'modal-chart-canvas',
-    display.obs.map(d => d.date),
-    display.obs.map(d => d.value),
-    '#3b82f6',
-    display.unit
-  );
-
-  // Enlarged heatmap table
-  const tableWrap = document.getElementById('modal-table');
-  const srcTable = document.getElementById('mini-table-' + name);
-  tableWrap.innerHTML = srcTable ? srcTable.innerHTML : '';
-
-  // Recession legend — show only if recession bands overlap
-  const firstDate = obs[0].date, lastDate = obs[obs.length - 1].date;
-  const hasRecession = NBER_RECESSIONS.some(([s, e]) => s <= lastDate && e >= firstDate);
-  document.getElementById('modal-recession-legend').style.display = hasRecession ? 'flex' : 'none';
-
-  // Description
-  document.getElementById('modal-desc').textContent = cfg.desc || '';
-
-  // Show
-  overlay.classList.add('active');
-  modal.classList.add('active');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeModal() {
-  const modal   = document.getElementById('kpi-modal');
-  const overlay = document.getElementById('kpi-modal-overlay');
-  if (modal) modal.classList.remove('active');
-  if (overlay) overlay.classList.remove('active');
-  document.body.style.overflow = '';
-  if (modalChart) { modalChart.destroy(); modalChart = null; }
+  if (cfg.target && cfg.target[getMode(name)] != null) {
+    query.set('target', cfg.target[getMode(name)]);
+    query.set('targetLabel', cfg.target.label || 'Target');
+  }
+  window.open('chart.html?' + query.toString(), '_blank', 'noopener');
 }
 
 // ─── PAGE INIT ───────────────────────────────────────────
-// Called on DOMContentLoaded. Populates tooltips and kicks off the first fetch.
-// Also calls fetchCalendar() if it is defined (only loaded on index.html).
 function initPage() {
+  if (!document.getElementById('modules')) return;   // e.g. the test runner
   renderModules();
-  Object.keys(FRED_SERIES).forEach(name => {
-    const tip = document.getElementById('tip-' + name);
-    if (tip && FRED_SERIES[name].desc) tip.textContent = FRED_SERIES[name].desc;
-  });
-  document.querySelectorAll('.kpi-info').forEach(icon => {
-    const card = icon.closest('.kpi-card');
-    icon.addEventListener('mouseenter', () => card.classList.add('show-tip'));
-    icon.addEventListener('mouseleave', () => card.classList.remove('show-tip'));
-  });
-
-  // Market chart panels use the same full-history window.
-  Object.keys(MARKET).forEach(symbol => {
-    const cfg = MARKET[symbol];
-    const panel = document.getElementById(cfg.canvasId)?.closest('.chart-panel');
-    if (!panel) return;
-    panel.style.cursor = 'pointer';
-    panel.addEventListener('click', () => {
-      openChartWindow({
-        source: 'market',
-        id: symbol,
-        label: cfg.label,
-        unit: cfg.unit || '',
-        decimals: cfg.decimals ?? 2,
-        interval: 'Level',
-        color: cfg.color
-      });
-    });
-  });
-
+  renderSignals();
+  initSectors();
+  document.getElementById('refreshBtn').addEventListener('click', fetchAll);
   fetchAll();
   if (typeof fetchCalendar === 'function') fetchCalendar();
 }

@@ -2,1532 +2,189 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjEyIiBmaWxsPSIjMDgwYzEwIi8+PHBvbHlsaW5lIHBvaW50cz0iMCw2MCAyMCw2MCAzNSw2MCA0NSwxNSA1NSw4NSA2NSw2MCA4MCw2MCAxMDAsNjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwZDRmZiIgc3Ryb2tlLXdpZHRoPSI3IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L3N2Zz4=">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MACRO — Economic Overview Dashboard</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<title>Labor Market · Macro</title>
+<meta name="description" content="Jobs, slack and wages, plus the early-warning indicators that tend to turn first.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231a1a19'/%3E%3Cpolyline points='5,21 11,15 16,18 27,8' fill='none' stroke='%233987e5' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/site.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<style>
-  :root {
-    --bg: #080c10;
-    --surface: #0d1117;
-    --surface2: #131a22;
-    --border: #1e2d3d;
-    --border2: #243447;
-    --accent: #00d4ff;
-    --accent2: #00ff9d;
-    --warn: #ff6b35;
-    --red: #ff3b5c;
-    --green: #00ff9d;
-    --gold: #ffd700;
-    --text: #e8edf2;
-    --muted: #d8eaf5;
-    --muted2: #c8dff0;
-    --grid: rgba(0,212,255,0.04);
-  }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Space Mono', monospace;
-    font-size: 12px;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background:
-      repeating-linear-gradient(0deg, transparent, transparent 39px, var(--grid) 39px, var(--grid) 40px),
-      repeating-linear-gradient(90deg, transparent, transparent 39px, var(--grid) 39px, var(--grid) 40px);
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  /* HEADER */
-  .header {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    background: rgba(8,12,16,0.95);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border);
-    padding: 0 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 52px;
-  }
-
-  .logo {
-    font-family: 'DM Mono', monospace;
-    font-weight: 800;
-    font-size: 18px;
-    letter-spacing: 0.3em;
-    color: var(--accent);
-    text-transform: uppercase;
-  }
-  .logo span { color: var(--muted); font-weight: 400; }
-
-  .header-right {
-    display: flex;
-    align-items: center;
-    gap: 24px;
-  }
-
-  .live-badge {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--accent2);
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-  }
-  .live-dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--accent2);
-    animation: pulse 2s infinite;
-  }
-  @keyframes pulse {
-    0%,100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0,255,157,0.4); }
-    50% { opacity: 0.6; box-shadow: 0 0 0 4px rgba(0,255,157,0); }
-  }
-
-  #last-updated {
-    color: var(--muted);
-    font-size: 10px;
-    letter-spacing: 0.05em;
-  }
-
-  .refresh-btn {
-    background: transparent;
-    border: 1px solid var(--border2);
-    color: var(--accent);
-    font-family: 'Space Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    padding: 6px 12px;
-    cursor: pointer;
-    text-transform: uppercase;
-    transition: all 0.2s;
-  }
-  .refresh-btn:hover { background: var(--accent); color: var(--bg); border-color: var(--accent); }
-  .refresh-btn.loading { opacity: 0.5; cursor: not-allowed; }
-
-  /* MAIN LAYOUT */
-  .main {
-    position: relative;
-    z-index: 1;
-    padding: 20px 24px;
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    grid-template-rows: auto auto auto auto;
-    gap: 12px;
-  }
-
-
-  /* KPI CARDS */
-  .kpi-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    padding: 16px;
-    position: relative;
-    overflow: hidden;
-    transition: border-color 0.2s;
-    animation: fadeIn 0.5s ease forwards;
-    opacity: 0;
-  }
-  .kpi-card:hover { border-color: var(--border2); }
-  .kpi-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 3px;
-  }
-
-  @keyframes fadeIn {
-    to { opacity: 1; transform: translateY(0); }
-    from { opacity: 0; transform: translateY(8px); }
-  }
-
-  .kpi-tooltip {
-    position: absolute;
-    inset: 0;
-    background: rgba(13,17,23,0.97);
-    border: 1px solid var(--accent);
-    color: var(--text);
-    font-family: 'Space Mono', monospace;
-    font-size: 11px;
-    line-height: 1.7;
-    padding: 14px;
-    z-index: 200;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.2s;
-    white-space: normal;
-    display: flex;
-    align-items: center;
-  }
-  .kpi-card.show-tip .kpi-tooltip {
-    opacity: 1;
-  }
-  .kpi-info {
-    cursor: help;
-    color: var(--accent);
-    font-size: 9px;
-    border: 1px solid var(--accent);
-    border-radius: 50%;
-    width: 13px;
-    height: 13px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    margin-left: 4px;
-    flex-shrink: 0;
-    opacity: 0.7;
-  }
-  .kpi-label {
-    color: var(--muted);
-    font-size: 9px;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .kpi-series-id {
-    display: none;
-  }
-  .kpi-value {
-    font-family: 'DM Mono', monospace;
-    font-weight: 700;
-    font-size: 28px;
-    letter-spacing: -0.02em;
-    color: var(--text);
-    margin-bottom: 4px;
-    line-height: 1;
-  }
-  .kpi-value.loading-text { font-size: 16px; color: var(--muted); animation: blink 1.2s infinite; }
-  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
-
-  .kpi-unit { font-size: 13px; color: var(--muted); font-weight: 400; margin-left: 3px; }
-  .kpi-change {
-    display: none;
-  }
-  .kpi-change.pos { color: var(--green); }
-  .kpi-change.neg { color: var(--red); }
-  .kpi-change.neutral { color: var(--muted); }
-  .kpi-date { color: var(--muted2); font-size: 9px; margin-top: 6px; }
-  .revision-tag {
-    display: inline-block;
-    margin-top: 5px;
-    font-size: 9px;
-    letter-spacing: 0.05em;
-    padding: 2px 6px;
-    border: 1px solid var(--border2);
-    font-family: 'Space Mono', monospace;
-  }
-  .revision-tag.up { color: #00ff9d; border-color: #00ff9d33; }
-  .revision-tag.down { color: #ff3b5c; border-color: #ff3b5c33; }
-  .revision-tag.flat { color: var(--muted); }
-
-  .sparkline-wrap {
-    margin-top: 10px;
-    height: 52px;
-  }
-  .mini-table-wrap {
-    margin-top: 8px;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-  .mini-table-wrap::-webkit-scrollbar { display: none; }
-  .mini-table {
-    border-collapse: collapse;
-    white-space: nowrap;
-    width: 100%;
-    font-size: 10px;
-    font-family: 'Space Mono', monospace;
-  }
-  .mini-table th {
-    color: #e8edf2;
-    font-weight: 400;
-    padding: 4px 6px;
-    border: 1px solid var(--border);
-    background: var(--surface2);
-    letter-spacing: 0.05em;
-    text-align: center;
-  }
-  .mini-table td {
-    color: #ffffff;
-    padding: 4px 6px;
-    border: 1px solid var(--border);
-    text-align: center;
-    letter-spacing: 0.03em;
-  }
-
-  /* CHART PANELS */
-  .chart-panel {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    padding: 16px;
-    animation: fadeIn 0.6s ease forwards;
-    opacity: 0;
-  }
-  .panel-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 14px;
-  }
-  .panel-title {
-    font-family: 'DM Mono', monospace;
-    font-weight: 700;
-    font-size: 13px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--text);
-  }
-  .panel-sub {
-    color: var(--muted);
-    font-size: 9px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    margin-top: 2px;
-  }
-  .panel-badge {
-    font-size: 9px;
-    letter-spacing: 0.1em;
-    padding: 2px 6px;
-    border: 1px solid var(--border2);
-    color: var(--accent);
-    text-transform: uppercase;
-  }
-
-  .chart-container { position: relative; }
-
-
-  /* FOOTER */
-  .footer {
-    position: relative;
-    z-index: 1;
-    border-top: 1px solid var(--border);
-    padding: 12px 24px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    color: var(--muted2);
-    font-size: 10px;
-    letter-spacing: 0.05em;
-  }
-
-  /* ERROR */
-  .error-msg {
-    background: rgba(255,59,92,0.08);
-    border: 1px solid rgba(255,59,92,0.3);
-    color: var(--red);
-    padding: 8px 12px;
-    font-size: 11px;
-    grid-column: 1/-1;
-    display: none;
-  }
-
-  /* SECTION LABEL */
-  .section-label {
-    grid-column: 1/-1;
-    color: var(--muted);
-    font-size: 9px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    padding: 4px 0 0;
-    border-top: 1px solid var(--border);
-    margin-top: 4px;
-  }
-
-  canvas { display: block; }
-
-  /* Staggered animation delays */
-  .kpi-card:nth-child(1) { animation-delay: 0.05s; }
-  .kpi-card:nth-child(2) { animation-delay: 0.10s; }
-  .kpi-card:nth-child(3) { animation-delay: 0.15s; }
-  .kpi-card:nth-child(4) { animation-delay: 0.20s; }
-  .kpi-card:nth-child(5) { animation-delay: 0.25s; }
-  .kpi-card:nth-child(6) { animation-delay: 0.30s; }
-  .kpi-card:nth-child(7) { animation-delay: 0.35s; }
-  .kpi-card:nth-child(8) { animation-delay: 0.40s; }
-
-  /* ── TABLET RESPONSIVE ─────────────────────────────────── */
-  @media (max-width: 1200px) {
-    .main {
-      grid-template-columns: 1fr 1fr;
-    }
-  }
-
-  /* ── MOBILE RESPONSIVE ────────────────────────────────── */
-  @media (max-width: 768px) {
-
-    /* Header */
-    .header {
-      padding: 0 12px;
-      height: auto;
-      min-height: 52px;
-      flex-wrap: wrap;
-      gap: 8px;
-      padding-top: 8px;
-      padding-bottom: 8px;
-    }
-    .logo { font-size: 14px; }
-    .header-right { gap: 12px; flex-wrap: wrap; }
-    #last-updated { display: none; }
-
-    /* Main grid → single column */
-    .main {
-      grid-template-columns: 1fr;
-      padding: 12px;
-      gap: 10px;
-    }
-
-    /* KPI cards — full width, more compact */
-    .kpi-card {
-      padding: 12px;
-    }
-    .kpi-value { font-size: 22px !important; }
-    .sparkline-wrap { height: 44px; }
-    .mini-table { font-size: 9px; }
-    .mini-table th, .mini-table td { padding: 2px 4px; }
-
-    /* Section labels */
-    .section-label { grid-column: 1 / -1; }
-
-    /* Market + FRED charts → single column */
-    div[style*="grid-template-columns:1fr 1fr"] {
-      grid-template-columns: 1fr !important;
-    }
-
-    /* Chart panels */
-    .chart-panel { padding: 12px; }
-    .panel-title { font-size: 11px; }
-
-    /* Tooltip overlay — slightly smaller text on mobile */
-    .kpi-tooltip { font-size: 10px; padding: 10px; }
-
-    /* Footer */
-    .footer {
-      flex-direction: column;
-      gap: 4px;
-      text-align: center;
-      padding: 10px 12px;
-    }
-
-    /* Error msg */
-    .error-msg { font-size: 10px; }
-
-    /* Refresh button */
-    .refresh-btn { padding: 5px 10px; font-size: 9px; }
-  }
-
-  @media (max-width: 480px) {
-    .logo span { display: none; }
-    .kpi-value { font-size: 20px !important; }
-    .live-badge span:last-child { display: none; }
-  }
-
-  /* ── ECONOMIC CALENDAR ─────────────────────────────────── */
-  .calendar-section {
-    position: relative;
-    z-index: 1;
-    padding: 0 24px 20px;
-  }
-  .calendar-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 12px;
-  }
-  .calendar-title {
-    color: var(--accent);
-    font-size: 9px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-  }
-  .calendar-range {
-    color: var(--muted);
-    font-size: 9px;
-  }
-  .calendar-grid {
-    display: grid;
-    grid-template-columns: 80px 52px 1fr 70px 70px 70px;
-    border: 1px solid var(--border);
-  }
-  .cal-date {
-    background: var(--surface);
-    padding: 8px 10px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-  }
-  .cal-date-day { color: var(--text); font-size: 10px; font-weight: bold; }
-  .cal-date-time { color: var(--muted); font-size: 9px; }
-  .cal-event {
-    padding: 8px 12px;
-    border-bottom: 1px solid var(--border);
-    border-left: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .cal-bar {
-    width: 3px;
-    height: 28px;
-    border-radius: 2px;
-    flex-shrink: 0;
-  }
-  .cal-name { color: var(--text); font-size: 11px; }
-  .cal-sub { color: var(--muted); font-size: 9px; margin-top: 1px; }
-  .cal-days {
-    padding: 8px 6px;
-    border-bottom: 1px solid var(--border);
-    border-left: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
-  .cal-days-num {
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    font-weight: 500;
-    line-height: 1;
-  }
-  .cal-days-label {
-    color: var(--muted);
-    font-size: 8px;
-    letter-spacing: 0.05em;
-    margin-top: 2px;
-  }
-  .cal-col-prev, .cal-col-est, .cal-col-act {
-    padding: 8px 8px;
-    border-bottom: 1px solid var(--border);
-    border-left: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-  }
-  .cal-hdr {
-    border-bottom: 1px solid var(--border);
-  }
-  .cal-hdr-label {
-    padding: 4px 8px;
-    border-left: 1px solid var(--border);
-    font-size: 8px;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    color: var(--muted);
-    text-align: right;
-    text-transform: uppercase;
-  }
-  .cal-est-dash {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    color: var(--muted);
-  }
-  .cal-est-group {
-    display: grid;
-    grid-template-columns: auto auto;
-    gap: 0 5px;
-    align-items: baseline;
-    justify-items: end;
-  }
-  .cal-est-label {
-    color: var(--muted);
-    font-size: 8px;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    justify-self: start;
-  }
-  .cal-est-val {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    color: var(--text);
-  }
-  .cal-est-prior { color: var(--muted); }
-  .cal-beat { color: var(--green); }
-  .cal-miss { color: var(--red); }
-  .cal-inline { color: var(--text); }
-  .cal-fomc { background: #131a22; }
-  .cal-impact {
-    background: rgba(255,59,92,0.08);
-    border: 1px solid rgba(255,59,92,0.25);
-    color: var(--red);
-    font-size: 9px;
-    padding: 2px 6px;
-    letter-spacing: 0.05em;
-    white-space: nowrap;
-  }
-  .cal-grid-last .cal-date,
-  .cal-grid-last .cal-event,
-  .cal-grid-last .cal-col-prev,
-  .cal-grid-last .cal-col-est,
-  .cal-grid-last .cal-col-act { border-bottom: none; }
-  .cal-legend {
-    display: flex;
-    gap: 16px;
-    margin-top: 10px;
-    flex-wrap: wrap;
-  }
-  .cal-legend-item {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    color: var(--muted);
-    font-size: 9px;
-  }
-  .cal-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-  .cal-empty {
-    grid-column: 1/-1;
-    padding: 20px;
-    text-align: center;
-    color: var(--muted);
-    font-size: 11px;
-  }
-  @media (max-width: 768px) {
-    .calendar-section { padding: 0 12px 16px; }
-    .calendar-grid { grid-template-columns: 65px 1fr; }
-    .cal-col-prev, .cal-col-est, .cal-col-act, .cal-hdr-label { display: none; }
-    .cal-days { display: none; }
-  }
-
-  /* ── NAV BAR ─────────────────────────────────────────────── */
-  .nav-bar {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 0 24px;
-    display: flex;
-    gap: 0;
-    position: sticky;
-    top: 52px;
-    z-index: 99;
-  }
-  .nav-link {
-    color: var(--muted);
-    text-decoration: none;
-    font-family: 'Space Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    padding: 10px 16px;
-    border-bottom: 2px solid transparent;
-    transition: all 0.15s;
-    white-space: nowrap;
-  }
-  .nav-link:hover { color: var(--text); }
-  .nav-link.active { color: var(--accent); border-bottom-color: var(--accent); }
-  @media (max-width: 768px) {
-    .nav-bar { overflow-x: auto; top: auto; }
-    .nav-link { padding: 8px 12px; font-size: 9px; }
-  }
-</style>
 </head>
-<style>
-  :root {
-    --bg: #080c10;
-    --surface: #0d1117;
-    --surface2: #131a22;
-    --border: #1e2d3d;
-    --border2: #243447;
-    --accent: #00d4ff;
-    --accent2: #00ff9d;
-    --warn: #ff6b35;
-    --red: #ff3b5c;
-    --green: #00ff9d;
-    --gold: #ffd700;
-    --text: #e8edf2;
-    --muted: #d8eaf5;
-    --muted2: #c8dff0;
-    --grid: rgba(0,212,255,0.04);
-  }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Space Mono', monospace;
-    font-size: 12px;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background:
-      repeating-linear-gradient(0deg, transparent, transparent 39px, var(--grid) 39px, var(--grid) 40px),
-      repeating-linear-gradient(90deg, transparent, transparent 39px, var(--grid) 39px, var(--grid) 40px);
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  /* HEADER */
-  .header {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    background: rgba(8,12,16,0.95);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border);
-    padding: 0 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 52px;
-  }
-
-  .logo {
-    font-family: 'DM Mono', monospace;
-    font-weight: 800;
-    font-size: 18px;
-    letter-spacing: 0.3em;
-    color: var(--accent);
-    text-transform: uppercase;
-  }
-  .logo span { color: var(--muted); font-weight: 400; }
-
-  .header-right {
-    display: flex;
-    align-items: center;
-    gap: 24px;
-  }
-
-  .live-badge {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--accent2);
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-  }
-  .live-dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--accent2);
-    animation: pulse 2s infinite;
-  }
-  @keyframes pulse {
-    0%,100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0,255,157,0.4); }
-    50% { opacity: 0.6; box-shadow: 0 0 0 4px rgba(0,255,157,0); }
-  }
-
-  #last-updated {
-    color: var(--muted);
-    font-size: 10px;
-    letter-spacing: 0.05em;
-  }
-
-  .refresh-btn {
-    background: transparent;
-    border: 1px solid var(--border2);
-    color: var(--accent);
-    font-family: 'Space Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    padding: 6px 12px;
-    cursor: pointer;
-    text-transform: uppercase;
-    transition: all 0.2s;
-  }
-  .refresh-btn:hover { background: var(--accent); color: var(--bg); border-color: var(--accent); }
-  .refresh-btn.loading { opacity: 0.5; cursor: not-allowed; }
-
-  /* MAIN LAYOUT */
-  .main {
-    position: relative;
-    z-index: 1;
-    padding: 20px 24px;
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    grid-template-rows: auto auto auto auto;
-    gap: 12px;
-  }
-
-
-  /* KPI CARDS */
-  .kpi-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    padding: 16px;
-    position: relative;
-    overflow: hidden;
-    transition: border-color 0.2s;
-    animation: fadeIn 0.5s ease forwards;
-    opacity: 0;
-  }
-  .kpi-card:hover { border-color: var(--border2); }
-  .kpi-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 3px;
-  }
-
-  @keyframes fadeIn {
-    to { opacity: 1; transform: translateY(0); }
-    from { opacity: 0; transform: translateY(8px); }
-  }
-
-  .kpi-tooltip {
-    position: absolute;
-    inset: 0;
-    background: rgba(13,17,23,0.97);
-    border: 1px solid var(--accent);
-    color: var(--text);
-    font-family: 'Space Mono', monospace;
-    font-size: 11px;
-    line-height: 1.7;
-    padding: 14px;
-    z-index: 200;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.2s;
-    white-space: normal;
-    display: flex;
-    align-items: center;
-  }
-  .kpi-card.show-tip .kpi-tooltip {
-    opacity: 1;
-  }
-  .kpi-info {
-    cursor: help;
-    color: var(--accent);
-    font-size: 9px;
-    border: 1px solid var(--accent);
-    border-radius: 50%;
-    width: 13px;
-    height: 13px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    margin-left: 4px;
-    flex-shrink: 0;
-    opacity: 0.7;
-  }
-  .kpi-label {
-    color: var(--muted);
-    font-size: 9px;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .kpi-series-id {
-    display: none;
-  }
-  .kpi-value {
-    font-family: 'DM Mono', monospace;
-    font-weight: 700;
-    font-size: 28px;
-    letter-spacing: -0.02em;
-    color: var(--text);
-    margin-bottom: 4px;
-    line-height: 1;
-  }
-  .kpi-value.loading-text { font-size: 16px; color: var(--muted); animation: blink 1.2s infinite; }
-  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
-
-  .kpi-unit { font-size: 13px; color: var(--muted); font-weight: 400; margin-left: 3px; }
-  .kpi-change {
-    display: none;
-  }
-  .kpi-change.pos { color: var(--green); }
-  .kpi-change.neg { color: var(--red); }
-  .kpi-change.neutral { color: var(--muted); }
-  .kpi-date { color: var(--muted2); font-size: 9px; margin-top: 6px; }
-  .revision-tag {
-    display: inline-block;
-    margin-top: 5px;
-    font-size: 9px;
-    letter-spacing: 0.05em;
-    padding: 2px 6px;
-    border: 1px solid var(--border2);
-    font-family: 'Space Mono', monospace;
-  }
-  .revision-tag.up { color: #00ff9d; border-color: #00ff9d33; }
-  .revision-tag.down { color: #ff3b5c; border-color: #ff3b5c33; }
-  .revision-tag.flat { color: var(--muted); }
-
-  .sparkline-wrap {
-    margin-top: 10px;
-    height: 52px;
-  }
-  .mini-table-wrap {
-    margin-top: 8px;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-  .mini-table-wrap::-webkit-scrollbar { display: none; }
-  .mini-table {
-    border-collapse: collapse;
-    white-space: nowrap;
-    width: 100%;
-    font-size: 10px;
-    font-family: 'Space Mono', monospace;
-  }
-  .mini-table th {
-    color: #e8edf2;
-    font-weight: 400;
-    padding: 4px 6px;
-    border: 1px solid var(--border);
-    background: var(--surface2);
-    letter-spacing: 0.05em;
-    text-align: center;
-  }
-  .mini-table td {
-    color: #ffffff;
-    padding: 4px 6px;
-    border: 1px solid var(--border);
-    text-align: center;
-    letter-spacing: 0.03em;
-  }
-
-  /* CHART PANELS */
-  .chart-panel {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    padding: 16px;
-    animation: fadeIn 0.6s ease forwards;
-    opacity: 0;
-  }
-  .panel-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 14px;
-  }
-  .panel-title {
-    font-family: 'DM Mono', monospace;
-    font-weight: 700;
-    font-size: 13px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--text);
-  }
-  .panel-sub {
-    color: var(--muted);
-    font-size: 9px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    margin-top: 2px;
-  }
-  .panel-badge {
-    font-size: 9px;
-    letter-spacing: 0.1em;
-    padding: 2px 6px;
-    border: 1px solid var(--border2);
-    color: var(--accent);
-    text-transform: uppercase;
-  }
-
-  .chart-container { position: relative; }
-
-
-  /* FOOTER */
-  .footer {
-    position: relative;
-    z-index: 1;
-    border-top: 1px solid var(--border);
-    padding: 12px 24px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    color: var(--muted2);
-    font-size: 10px;
-    letter-spacing: 0.05em;
-  }
-
-  /* ERROR */
-  .error-msg {
-    background: rgba(255,59,92,0.08);
-    border: 1px solid rgba(255,59,92,0.3);
-    color: var(--red);
-    padding: 8px 12px;
-    font-size: 11px;
-    grid-column: 1/-1;
-    display: none;
-  }
-
-  /* SECTION LABEL */
-  .section-label {
-    grid-column: 1/-1;
-    color: var(--muted);
-    font-size: 9px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    padding: 4px 0 0;
-    border-top: 1px solid var(--border);
-    margin-top: 4px;
-  }
-
-
-  /* ── KPI EXPAND MODAL ───────────────────────────────────── */
-  .modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.7);
-    backdrop-filter: blur(4px);
-    z-index: 1000;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.25s;
-  }
-  .modal-overlay.active {
-    opacity: 1;
-    pointer-events: auto;
-  }
-  .kpi-modal {
-    position: fixed;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%) scale(0.95);
-    background: var(--surface);
-    border: 1px solid var(--border2);
-    z-index: 1001;
-    width: 90vw;
-    max-width: 860px;
-    max-height: 90vh;
-    overflow-y: auto;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.25s, transform 0.25s;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border2) transparent;
-  }
-  .kpi-modal.active {
-    opacity: 1;
-    pointer-events: auto;
-    transform: translate(-50%, -50%) scale(1);
-  }
-  .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    padding: 20px 24px 0;
-  }
-  .modal-title {
-    font-family: 'DM Mono', monospace;
-    font-weight: 700;
-    font-size: 18px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--text);
-  }
-  .modal-meta {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    margin-top: 4px;
-  }
-  .modal-value {
-    font-family: 'DM Mono', monospace;
-    font-weight: 700;
-    font-size: 32px;
-    color: var(--text);
-    padding: 8px 24px 0;
-    line-height: 1;
-  }
-  .modal-change-row {
-    padding: 4px 24px 16px;
-  }
-  .modal-close {
-    background: transparent;
-    border: 1px solid var(--border2);
-    color: var(--muted);
-    font-family: 'Space Mono', monospace;
-    font-size: 18px;
-    width: 36px; height: 36px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.15s;
-    flex-shrink: 0;
-  }
-  .modal-close:hover {
-    color: var(--text);
-    border-color: var(--accent);
-  }
-  .modal-chart-wrap {
-    padding: 0 24px;
-    height: 340px;
-    position: relative;
-  }
-  .modal-table-wrap {
-    padding: 16px 24px;
-  }
-  .modal-table-wrap .mini-table {
-    font-size: 12px;
-  }
-  .modal-table-wrap .mini-table th,
-  .modal-table-wrap .mini-table td {
-    padding: 6px 10px;
-  }
-  .modal-recession-legend {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 0 24px 8px;
-    color: var(--muted);
-    font-size: 9px;
-    letter-spacing: 0.08em;
-  }
-  .modal-recession-swatch {
-    width: 20px;
-    height: 10px;
-    background: rgba(255,59,92,0.18);
-    border: 1px solid rgba(255,59,92,0.35);
-  }
-  .modal-desc {
-    padding: 0 24px 20px;
-    color: var(--muted2);
-    font-size: 11px;
-    line-height: 1.7;
-    border-top: 1px solid var(--border);
-    margin-top: 4px;
-    padding-top: 14px;
-  }
-
-  @media (max-width: 768px) {
-    .kpi-modal {
-      width: 96vw;
-      max-height: 94vh;
-    }
-    .modal-title { font-size: 14px; }
-    .modal-value { font-size: 24px; }
-    .modal-chart-wrap { height: 240px; padding: 0 12px; }
-    .modal-header { padding: 14px 12px 0; }
-    .modal-value { padding: 6px 12px 0; }
-    .modal-change-row { padding: 4px 12px 12px; }
-    .modal-table-wrap { padding: 12px; }
-    .modal-table-wrap .mini-table { font-size: 10px; }
-    .modal-table-wrap .mini-table th,
-    .modal-table-wrap .mini-table td { padding: 4px 6px; }
-    .modal-recession-legend { padding: 0 12px 6px; }
-    .modal-desc { padding: 0 12px 16px; padding-top: 12px; }
-  }
-
-  canvas { display: block; }
-
-  /* Staggered animation delays */
-  .kpi-card:nth-child(1) { animation-delay: 0.05s; }
-  .kpi-card:nth-child(2) { animation-delay: 0.10s; }
-  .kpi-card:nth-child(3) { animation-delay: 0.15s; }
-  .kpi-card:nth-child(4) { animation-delay: 0.20s; }
-  .kpi-card:nth-child(5) { animation-delay: 0.25s; }
-  .kpi-card:nth-child(6) { animation-delay: 0.30s; }
-  .kpi-card:nth-child(7) { animation-delay: 0.35s; }
-  .kpi-card:nth-child(8) { animation-delay: 0.40s; }
-
-  /* ── TABLET RESPONSIVE ─────────────────────────────────── */
-  @media (max-width: 1200px) {
-    .main {
-      grid-template-columns: 1fr 1fr;
-    }
-  }
-
-  /* ── MOBILE RESPONSIVE ────────────────────────────────── */
-  @media (max-width: 768px) {
-
-    /* Header */
-    .header {
-      padding: 0 12px;
-      height: auto;
-      min-height: 48px;
-      flex-wrap: wrap;
-      gap: 6px;
-      padding-top: 8px;
-      padding-bottom: 8px;
-    }
-    .logo { font-size: 14px; }
-    .header-right { gap: 10px; flex-wrap: wrap; }
-    #last-updated { display: none; }
-
-    /* Main grid → single column stacked cards */
-    .main {
-      grid-template-columns: 1fr;
-      padding: 10px;
-      gap: 8px;
-    }
-
-    /* KPI cards — full width, compact but readable */
-    .kpi-card {
-      padding: 14px 12px;
-    }
-    .kpi-label { font-size: 9px; margin-bottom: 6px; }
-    .kpi-value { font-size: 24px !important; }
-    .kpi-change { font-size: 11px; }
-    .kpi-date { font-size: 9px; }
-    .sparkline-wrap { height: 48px; margin-top: 8px; }
-    .mini-table { font-size: 9px; }
-    .mini-table th, .mini-table td { padding: 3px 4px; }
-    .mini-table-wrap { margin-top: 6px; }
-
-    /* Section labels */
-    .section-label { grid-column: 1 / -1; font-size: 9px; margin-top: 2px; }
-
-    /* Market + FRED charts → single column */
-    div[style*="grid-template-columns:1fr 1fr"] {
-      grid-template-columns: 1fr !important;
-    }
-
-    /* Chart panels */
-    .chart-panel { padding: 12px; }
-    .panel-title { font-size: 11px; }
-    .panel-sub { font-size: 8px; }
-    .chart-container { height: 130px !important; }
-
-    /* Tooltip overlay — slightly smaller text on mobile */
-    .kpi-tooltip { font-size: 10px; padding: 10px; line-height: 1.6; }
-
-    /* Footer */
-    .footer {
-      flex-direction: column;
-      gap: 4px;
-      text-align: center;
-      padding: 10px 12px;
-      font-size: 9px;
-    }
-
-    /* Error msg */
-    .error-msg { font-size: 10px; }
-
-    /* Refresh button */
-    .refresh-btn { padding: 5px 10px; font-size: 9px; }
-  }
-
-  @media (max-width: 480px) {
-    .logo span { display: none; }
-    .kpi-value { font-size: 20px !important; }
-    .live-badge span:last-child { display: none; }
-    .kpi-info { width: 12px; height: 12px; font-size: 8px; }
-    .main { padding: 8px; gap: 6px; }
-  }
-
-  /* ── ECONOMIC CALENDAR ─────────────────────────────────── */
-  .calendar-section {
-    position: relative;
-    z-index: 1;
-    padding: 0 24px 20px;
-  }
-  .calendar-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 12px;
-  }
-  .calendar-title {
-    color: var(--accent);
-    font-size: 9px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-  }
-  .calendar-range {
-    color: var(--muted);
-    font-size: 9px;
-  }
-  .calendar-grid {
-    display: grid;
-    grid-template-columns: 80px 52px 1fr 70px 70px 70px;
-    border: 1px solid var(--border);
-  }
-  .cal-date {
-    background: var(--surface);
-    padding: 8px 10px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-  }
-  .cal-date-day { color: var(--text); font-size: 10px; font-weight: bold; }
-  .cal-date-time { color: var(--muted); font-size: 9px; }
-  .cal-event {
-    padding: 8px 12px;
-    border-bottom: 1px solid var(--border);
-    border-left: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .cal-bar {
-    width: 3px;
-    height: 28px;
-    border-radius: 2px;
-    flex-shrink: 0;
-  }
-  .cal-name { color: var(--text); font-size: 11px; }
-  .cal-sub { color: var(--muted); font-size: 9px; margin-top: 1px; }
-  .cal-days {
-    padding: 8px 6px;
-    border-bottom: 1px solid var(--border);
-    border-left: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
-  .cal-days-num {
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    font-weight: 500;
-    line-height: 1;
-  }
-  .cal-days-label {
-    color: var(--muted);
-    font-size: 8px;
-    letter-spacing: 0.05em;
-    margin-top: 2px;
-  }
-  .cal-col-prev, .cal-col-est, .cal-col-act {
-    padding: 8px 8px;
-    border-bottom: 1px solid var(--border);
-    border-left: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-  }
-  .cal-hdr {
-    border-bottom: 1px solid var(--border);
-  }
-  .cal-hdr-label {
-    padding: 4px 8px;
-    border-left: 1px solid var(--border);
-    font-size: 8px;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    color: var(--muted);
-    text-align: right;
-    text-transform: uppercase;
-  }
-  .cal-est-dash {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    color: var(--muted);
-  }
-  .cal-est-group {
-    display: grid;
-    grid-template-columns: auto auto;
-    gap: 0 5px;
-    align-items: baseline;
-    justify-items: end;
-  }
-  .cal-est-label {
-    color: var(--muted);
-    font-size: 8px;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    justify-self: start;
-  }
-  .cal-est-val {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    color: var(--text);
-  }
-  .cal-est-prior { color: var(--muted); }
-  .cal-beat { color: var(--green); }
-  .cal-miss { color: var(--red); }
-  .cal-inline { color: var(--text); }
-  .cal-fomc { background: #131a22; }
-  .cal-impact {
-    background: rgba(255,59,92,0.08);
-    border: 1px solid rgba(255,59,92,0.25);
-    color: var(--red);
-    font-size: 9px;
-    padding: 2px 6px;
-    letter-spacing: 0.05em;
-    white-space: nowrap;
-  }
-  .cal-grid-last .cal-date,
-  .cal-grid-last .cal-event,
-  .cal-grid-last .cal-col-prev,
-  .cal-grid-last .cal-col-est,
-  .cal-grid-last .cal-col-act { border-bottom: none; }
-  .cal-legend {
-    display: flex;
-    gap: 16px;
-    margin-top: 10px;
-    flex-wrap: wrap;
-  }
-  .cal-legend-item {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    color: var(--muted);
-    font-size: 9px;
-  }
-  .cal-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-  .cal-empty {
-    grid-column: 1/-1;
-    padding: 20px;
-    text-align: center;
-    color: var(--muted);
-    font-size: 11px;
-  }
-  @media (max-width: 768px) {
-    .calendar-section { padding: 0 12px 16px; }
-    .calendar-grid { grid-template-columns: 65px 1fr; }
-    .cal-col-prev, .cal-col-est, .cal-col-act, .cal-hdr-label { display: none; }
-    .cal-days { display: none; }
-  }
-
-  /* ── NAV BAR ─────────────────────────────────────────────── */
-  .nav-bar {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 0 24px;
-    display: flex;
-    gap: 0;
-    position: sticky;
-    top: 52px;
-    z-index: 99;
-  }
-  .nav-link {
-    color: var(--muted);
-    text-decoration: none;
-    font-family: 'Space Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    padding: 10px 16px;
-    border-bottom: 2px solid transparent;
-    transition: all 0.15s;
-    white-space: nowrap;
-  }
-  .nav-link:hover { color: var(--text); }
-  .nav-link.active { color: var(--accent); border-bottom-color: var(--accent); }
-  @media (max-width: 768px) {
-    .nav-bar { overflow-x: auto; top: auto; }
-    .nav-link { padding: 8px 12px; font-size: 9px; }
-  }
-
-  .nav-bar { background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;gap:0;position:sticky;top:52px;z-index:99; }
-  .nav-link { color:var(--muted);text-decoration:none;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;padding:10px 16px;border-bottom:2px solid transparent;transition:all 0.15s;white-space:nowrap; }
-  .nav-link:hover { color:var(--text); }
-  .nav-link.active { color:var(--accent);border-bottom-color:var(--accent); }
-  @media(max-width:768px){.nav-bar{overflow-x:auto;top:auto;}.nav-link{padding:8px 12px;font-size:9px;}}
-</style>
-</head>
-<link rel="stylesheet" href="css/modules.css">
 <body>
-<header class="header">
-  <div class="logo">MACRO<span> // Labor Dashboard</span></div>
-  <div class="header-right">
-    <div class="live-badge"><div class="live-dot"></div>Auto-Refresh ON</div>
-    <span id="last-updated">–</span>
-    <button class="refresh-btn" id="refreshBtn" onclick="fetchAll()">↻ Refresh</button>
+
+<header class="site-header">
+  <a class="brand" href="index.html">Macro</a>
+  <nav class="site-nav" aria-label="Sections"><a href="index.html">Overview</a><a href="inflation.html">Inflation</a><a href="labor.html" aria-current="page">Labor</a><a href="housing.html">Housing</a><a href="markets.html">Markets</a></nav>
+  <div class="header-meta">
+    <span id="last-updated"></span>
+    <button type="button" class="btn" id="refreshBtn">Refresh</button>
   </div>
 </header>
-<nav class="nav-bar"><a href="index.html" class="nav-link">Macro</a><a href="inflation.html" class="nav-link">Inflation</a><a href="housing.html" class="nav-link">Housing</a><a href="labor.html" class="nav-link active">Labor</a><a href="markets.html" class="nav-link">Sectors</a></nav>
-<main class="main">
-  <div class="error-msg" id="errorMsg"></div>
+
+<main class="page">
+  <div class="page-intro">
+    <h1>Labor Market</h1>
+    <p>Jobs, slack and wages, plus the early-warning indicators that tend to turn first.</p>
+  </div>
+  <div class="error-msg" id="errorMsg" role="status" hidden></div>
   <div class="modules" id="modules"></div>
 
-  <div class="section-label" style="grid-column:1/-1;">// Market Charts</div>
-  <div style="grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-    <div class="chart-panel" style="animation-delay:0.5s;">
-      <div class="panel-header">
-        <div><div class="panel-title">Industrials ETF</div><div class="panel-sub">XLI · SPDR Industrials</div></div>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <span id="xli-val" style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;">–</span>
-          <span id="xli-chg" style="font-size:11px;">–</span>
-        </div>
-      </div>
-      <div class="chart-container" style="height:150px"><canvas id="chartXLI"></canvas></div>
-    </div>
-    <div class="chart-panel" style="animation-delay:0.55s;">
-      <div class="panel-header">
-        <div><div class="panel-title">S&P 500</div><div class="panel-sub">SPX · Daily</div></div>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <span id="spx-val" style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;">–</span>
-          <span id="spx-chg" style="font-size:11px;">–</span>
-        </div>
-      </div>
-      <div class="chart-container" style="height:150px"><canvas id="chartSPX"></canvas></div>
-    </div>
-  </div>
 </main>
-<footer class="footer">
-  <span>Data: Federal Reserve Bank of St. Louis (FRED) · Yahoo Finance</span>
-  <span id="footer-ts">–</span>
+
+<footer class="site-footer">
+  <span>Data: Federal Reserve Bank of St. Louis (FRED), Yahoo Finance. Shaded bands mark NBER recessions.</span>
+  <span>Design notes: <a href="https://github.com/Adam-A9/macro/blob/main/DESIGN.md">DESIGN.md</a></span>
 </footer>
+
 <script src="js/config.js"></script>
 <script src="js/api.js"></script>
 <script src="js/charts.js"></script>
 <script src="js/ui.js"></script>
 <script>
 // ─── PAGE CONFIG ─────────────────────────────────────────
-const FRED_SERIES = {
-  "Unemployment":  { id: "UNRATE",         label: "Unemployment Rate",        unit: "%", decimals: 1, freq: "MoM", desc: "The unemployment rate measures the share of the labor force actively looking for work but unable to find it. Released every first Friday by the Bureau of Labor Statistics — one of the most market-moving releases on the calendar. Below 4% is considered a strong labor market. Above 5-6% signals meaningful stress. The Fed is constitutionally mandated to pursue maximum employment alongside price stability, so this number directly shapes rate decisions. The Sahm Rule states that if the 3-month average unemployment rate rises 0.5% above its prior 12-month low, a recession has likely already begun." },
-  "JoblessClaims": { id: "ICSA",           label: "Initial Jobless Claims",   unit: "",  decimals: 0, freq: "MoM", sample: "monthly", desc: "Initial jobless claims counts people filing for unemployment insurance for the first time each week, released every Thursday at 8:30 AM ET. Because it is weekly, it is the most timely labor market indicator available — deterioration shows up here weeks before the monthly unemployment rate captures it. A healthy economy sees claims below 250,000 per week. A sustained move above 300,000-350,000 is a warning sign. The March 2020 spike to 6 million claims in a single week was one of the most dramatic economic data points ever recorded, signaling instantaneous economic collapse." },
-  "ContClaims":    { id: "CCSA",           label: "Continuing Claims",        unit: "",  decimals: 0, freq: "MoM", sample: "monthly", desc: "Continuing claims measures the total number of people currently receiving unemployment benefits — not new filers, but everyone still on the rolls. While initial claims show the rate of job losses, continuing claims shows how long people stay unemployed, reflecting how hard it is to find a new job. Rising continuing claims while initial claims are stable suggests the labor market is absorbing new workers but those already unemployed are struggling — often an early signal of softening labor demand before it shows up in the headline unemployment rate." },
-  "LFPR":          { id: "CIVPART",        label: "Labor Force Participation", unit: "%", decimals: 1, freq: "MoM", desc: "The labor force participation rate measures the percentage of civilians aged 16+ who are either employed or actively seeking work. It provides critical context for the headline unemployment rate — a falling unemployment rate can look good while actually reflecting discouraged workers who stopped searching and dropped out of the labor force. The LFPR fell sharply during COVID and has never fully recovered, partly due to early retirements, disability, and caregiving demands. A rising LFPR while unemployment stays low signals genuine labor market expansion rather than statistical shrinkage from dropouts." },
-  "JOLTS":         { id: "JTSJOL",         label: "Job Openings (JOLTS)",     unit: "K", decimals: 0, freq: "MoM", desc: "The JOLTS survey counts unfilled job positions at month end. The Fed watches the openings-to-unemployed ratio extremely closely — when there are two openings for every unemployed person, employers compete for workers by raising wages, feeding services inflation. This was the situation in 2021-2022 when openings hit a record 12 million against 6 million unemployed. Former Chair Yellen and Chair Powell both cited this ratio as a key indicator of labor market imbalance requiring rate increases. A declining JOLTS figure signals that labor demand is cooling and wage pressure may be easing." },
-  "AHE":           { id: "CES0500000003",  label: "Avg Hourly Earnings",      unit: "$", decimals: 2, freq: "MoM", desc: "Average hourly earnings measures the pace of nominal wage growth across all private sector employees. Rising wages are good for workers but create a dilemma for the Fed — if wages grow faster than productivity, businesses pass higher labor costs on as price increases, fueling a wage-price spiral. The Fed targets wage growth around 3-3.5% annually as consistent with 2% inflation. When AHE runs at 5-6%, it signals labor market tightness generating inflationary pressure in services that persists even after goods inflation normalizes — and services inflation is far harder to kill." },
-  "Underemployment":{ id: "U6RATE",        label: "Underemployment U-6",      unit: "%", decimals: 1, freq: "MoM", desc: "The U-6 rate is the broadest official measure of labor underutilization. In addition to the standard unemployed (U-3), it includes marginally attached workers — people who want jobs and have looked recently but not in the past four weeks — plus part-time workers who want full-time work. This fuller picture reveals the true slack in the labor market. U-6 typically runs 1.7-2x the headline U-3 rate. When the gap between U-6 and U-3 is unusually wide, it signals many workers are stuck in part-time or gig work despite wanting full-time employment, indicating hidden labor market weakness." },
-  "NFP":           { id: "PAYEMS",         label: "Nonfarm Payrolls",         unit: "K", decimals: 0, freq: "MoM", change: "diff", mode: "MoM", desc: "Nonfarm payrolls measures the monthly change in total employed persons across all industries except farming — the headline jobs number released the first Friday of every month. It is arguably the most market-moving regular data release in the world. Expectations are set by ADP payrolls and jobless claims, and surprises routinely move equity markets, bond yields, and the dollar significantly within seconds of the 8:30 AM release. Above 200,000 is strong. Consecutive months below 100,000 raise recession concerns. The number is typically revised substantially in the following two months, meaning the initial print can be misleading." },
-  "QuitRate":      { id: "JTSQUR",         label: "Quit Rate",                unit: "%", decimals: 1, freq: "MoM", desc: "The quit rate from the JOLTS survey measures the percentage of employed workers who voluntarily left their jobs during the month — sometimes called the take-this-job-and-shove-it index. A high quit rate signals extreme worker confidence: people only voluntarily quit when certain they can find something better, usually at higher pay. The record quit rates of 2021-2022 were a leading indicator of the wage inflation that followed as employers competed to replace departed workers with higher salaries. When the quit rate falls, workers are becoming cautious — often a leading signal of softening labor demand before unemployment rises." }
-};
-const MARKET = {
-  "XLI":   { label: "Industrials ETF", canvasId: "chartXLI", valId: "xli-val", chgId: "xli-chg", color: "#00d4ff" },
-  "^GSPC": { label: "S&P 500",         canvasId: "chartSPX", valId: "spx-val", chgId: "spx-chg", color: "#a78bfa" }
-};
-const HIGHER_IS_GOOD = ["LFPR", "JOLTS", "AHE", "NFP", "QuitRate"];
-const DUAL_ROW       = ["JOLTS", "AHE", "NFP"];
+// Edit LAYOUT to reorder or regroup modules; SERIES holds each series' settings.
 const LAYOUT = [
-  { title: 'Jobs & Unemployment',    series: ['NFP', 'Unemployment', 'Underemployment', 'LFPR'] },
-  { title: 'Weekly Claims',          series: ['JoblessClaims', 'ContClaims'] },
-  { title: 'Labor Demand (JOLTS)',   series: ['JOLTS', 'QuitRate'] },
-  { title: 'Wages',                  series: ['AHE'] }
+  {
+    "title": "Employment",
+    "series": [
+      "Payrolls",
+      "Unemployment",
+      "PrimeEPOP",
+      "U6"
+    ]
+  },
+  {
+    "title": "Early Warning",
+    "series": [
+      "SahmRule",
+      "JoblessClaims",
+      "ContClaims"
+    ]
+  },
+  {
+    "title": "Labor Demand",
+    "series": [
+      "JOLTS",
+      "QuitRate"
+    ]
+  },
+  {
+    "title": "Wages",
+    "series": [
+      "AHE"
+    ]
+  }
 ];
+
+const SERIES = {
+  "Payrolls": {
+    "source": "fred",
+    "id": "PAYEMS",
+    "label": "Nonfarm Payrolls",
+    "unit": "K",
+    "decimals": 0,
+    "freq": "MoM",
+    "change": "diff",
+    "mode": "MoM",
+    "desc": "Nonfarm payrolls measures the monthly change in total employed persons across all industries except farming — the headline jobs number released the first Friday of every month. It is arguably the most market-moving regular data release in the world. Expectations are set by ADP payrolls and jobless claims, and surprises routinely move equity markets, bond yields, and the dollar significantly within seconds of the 8:30 AM release. Above 200,000 is strong. Consecutive months below 100,000 raise recession concerns. The number is typically revised substantially in the following two months, meaning the initial print can be misleading."
+  },
+  "Unemployment": {
+    "source": "fred",
+    "id": "UNRATE",
+    "label": "Unemployment Rate",
+    "unit": "%",
+    "decimals": 1,
+    "freq": "MoM",
+    "mode": "Level",
+    "desc": "The unemployment rate measures the share of people in the labor force who are actively looking for a job but cannot find one. Released every first Friday of the month by the Bureau of Labor Statistics — it is one of the most market-moving data points on the calendar. A reading below 4% is considered a strong, healthy labor market. Above 5-6% signals stress. The Fed is mandated to keep unemployment low alongside controlling inflation, so this number directly shapes rate decisions. Sustained rises here are often a recession warning."
+  },
+  "PrimeEPOP": {
+    "source": "fred",
+    "id": "LNS12300060",
+    "label": "Prime-Age Employment Rate (25–54)",
+    "unit": "%",
+    "decimals": 1,
+    "freq": "MoM",
+    "mode": "Level",
+    "desc": "The prime-age employment-to-population ratio is the share of Americans aged 25 to 54 who have a job. Many economists prefer it to the unemployment rate because it is not distorted by people giving up on job searches or by an aging population retiring. Higher is a stronger labor market."
+  },
+  "U6": {
+    "source": "fred",
+    "id": "U6RATE",
+    "label": "Underemployment (U-6)",
+    "unit": "%",
+    "decimals": 1,
+    "freq": "MoM",
+    "mode": "Level",
+    "desc": "The U-6 rate is the broadest official measure of labor underutilization. In addition to the standard unemployed (U-3), it includes marginally attached workers — people who want jobs and have looked recently but not in the past four weeks — plus part-time workers who want full-time work. This fuller picture reveals the true slack in the labor market. U-6 typically runs 1.7-2x the headline U-3 rate. When the gap between U-6 and U-3 is unusually wide, it signals many workers are stuck in part-time or gig work despite wanting full-time employment, indicating hidden labor market weakness."
+  },
+  "SahmRule": {
+    "source": "fred",
+    "id": "SAHMREALTIME",
+    "label": "Sahm Rule Recession Indicator",
+    "unit": " pp",
+    "decimals": 2,
+    "freq": "MoM",
+    "mode": "Level",
+    "change": "diff",
+    "target": {
+      "Level": 0.5,
+      "label": "Trigger 0.50"
+    },
+    "desc": "The Sahm rule, developed by economist Claudia Sahm, compares the three-month average of the unemployment rate with its lowest three-month average over the prior 12 months. When the gap reaches 0.50 percentage points, the economy has historically already been in the early months of a recession. This is the real-time version, built from data as first published."
+  },
+  "JoblessClaims": {
+    "source": "fred",
+    "id": "ICSA",
+    "label": "Initial Jobless Claims",
+    "unit": "",
+    "decimals": 0,
+    "freq": "MoM",
+    "sample": "monthly",
+    "mode": "Level",
+    "desc": "Initial jobless claims counts the number of people filing for unemployment insurance for the first time in a given week, released every Thursday morning. Because it is weekly, it is the most timely labor market data available — stress in the job market shows up here weeks before the monthly unemployment rate captures it. A healthy economy typically sees claims below 250,000 per week. A sustained move above 300,000-350,000 is a warning sign. Sharp spikes — like those seen in March 2020 when claims hit 6 million in a single week — are among the first hard data signals of economic collapse."
+  },
+  "ContClaims": {
+    "source": "fred",
+    "id": "CCSA",
+    "label": "Continuing Claims",
+    "unit": "",
+    "decimals": 0,
+    "freq": "MoM",
+    "sample": "monthly",
+    "mode": "Level",
+    "desc": "Continuing claims measures the total number of people currently receiving unemployment benefits — not new filers, but everyone still on the rolls. While initial claims show the rate of job losses, continuing claims shows how long people stay unemployed, reflecting how hard it is to find a new job. Rising continuing claims while initial claims are stable suggests the labor market is absorbing new workers but those already unemployed are struggling — often an early signal of softening labor demand before it shows up in the headline unemployment rate."
+  },
+  "JOLTS": {
+    "source": "fred",
+    "id": "JTSJOL",
+    "label": "Job Openings (JOLTS)",
+    "unit": "K",
+    "decimals": 0,
+    "freq": "MoM",
+    "mode": "Level",
+    "desc": "The JOLTS survey counts unfilled job positions at month end. The Fed watches the openings-to-unemployed ratio extremely closely — when there are two openings for every unemployed person, employers compete for workers by raising wages, feeding services inflation. This was the situation in 2021-2022 when openings hit a record 12 million against 6 million unemployed. Former Chair Yellen and Chair Powell both cited this ratio as a key indicator of labor market imbalance requiring rate increases. A declining JOLTS figure signals that labor demand is cooling and wage pressure may be easing."
+  },
+  "QuitRate": {
+    "source": "fred",
+    "id": "JTSQUR",
+    "label": "Quits Rate",
+    "unit": "%",
+    "decimals": 1,
+    "freq": "MoM",
+    "mode": "Level",
+    "desc": "The quit rate from the JOLTS survey measures the percentage of employed workers who voluntarily left their jobs during the month — sometimes called the take-this-job-and-shove-it index. A high quit rate signals extreme worker confidence: people only voluntarily quit when certain they can find something better, usually at higher pay. The record quit rates of 2021-2022 were a leading indicator of the wage inflation that followed as employers competed to replace departed workers with higher salaries. When the quit rate falls, workers are becoming cautious — often a leading signal of softening labor demand before unemployment rises."
+  },
+  "AHE": {
+    "source": "fred",
+    "id": "CES0500000003",
+    "label": "Average Hourly Earnings",
+    "unit": "$",
+    "decimals": 2,
+    "freq": "MoM",
+    "mode": "YoY",
+    "desc": "Average hourly earnings measures the pace of nominal wage growth across all private sector employees. Rising wages are good for workers but create a dilemma for the Fed — if wages grow faster than productivity, businesses pass higher labor costs on as price increases, fueling a wage-price spiral. The Fed targets wage growth around 3-3.5% annually as consistent with 2% inflation. When AHE runs at 5-6%, it signals labor market tightness generating inflationary pressure in services that persists even after goods inflation normalizes — and services inflation is far harder to kill."
+  }
+};
 </script>
-
-<!-- KPI Expand Modal -->
-<div class="modal-overlay" id="kpi-modal-overlay"></div>
-<div class="kpi-modal" id="kpi-modal">
-  <div class="modal-header">
-    <div>
-      <div class="modal-title" id="modal-title">–</div>
-      <div class="modal-meta">
-        <span class="kpi-series-id" id="modal-series">–</span>
-        <span style="color:var(--muted);font-size:9px;letter-spacing:0.1em;" id="modal-freq">–</span>
-      </div>
-    </div>
-    <button class="modal-close" id="modal-close-btn">✕</button>
-  </div>
-  <div class="modal-value" id="modal-value">–</div>
-  <div class="modal-change-row"><span class="kpi-change neutral" id="modal-change">–</span></div>
-  <div class="modal-chart-wrap"><canvas id="modal-chart-canvas"></canvas></div>
-  <div class="modal-recession-legend" id="modal-recession-legend" style="display:none;">
-    <div class="modal-recession-swatch"></div>
-    NBER Recession
-  </div>
-  <div class="modal-table-wrap" id="modal-table"></div>
-  <div class="modal-desc" id="modal-desc"></div>
-</div>
-
+</body>
+</html>

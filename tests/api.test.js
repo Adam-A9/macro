@@ -142,9 +142,10 @@ describe('module view modes', () => {
   it('MoM mode computes percent change from the prior observation', () => {
     const d = buildModeSeries(monthly, { unit: '', decimals: 2 }, 'MoM');
     assert.equal(d.unit, '%');
-    assert.equal(d.obs.length, 3);
+    // Jan 2025 → Feb 2025 and Jan 2026 → Feb 2026; the 11-month gap is skipped.
+    assert.deepEqual(d.obs.map(o => o.date), ['2025-02-01', '2026-02-01']);
     assert.closeTo(d.obs[0].value, 2, 1e-9);
-    assert.closeTo(d.obs[2].value, (108.12 / 105 - 1) * 100, 1e-9);
+    assert.closeTo(d.obs[1].value, (108.12 / 105 - 1) * 100, 1e-9);
   });
 
   it('YoY mode compares against the same month a year earlier', () => {
@@ -169,32 +170,6 @@ describe('module view modes', () => {
   });
 });
 
-describe('historyStats', () => {
-  // 11 years of monthly values 0..131
-  const obs = [];
-  for (let i = 0; i < 132; i++) {
-    const y = 2015 + Math.floor(i / 12), m = (i % 12) + 1;
-    obs.push({ date: y + '-' + String(m).padStart(2, '0') + '-01', value: i });
-  }
-  const s = historyStats(obs);
-
-  it('reports the value one year earlier', () => {
-    assert.equal(s.latest, 131);
-    assert.equal(s.yearAgo, 119);
-  });
-
-  it('averages the trailing 5 and 10 years', () => {
-    assert.closeTo(s.avg5, (72 + 131) / 2, 1e-9);   // last 60 points: 72..131
-    assert.closeTo(s.avg10, (12 + 131) / 2, 1e-9);  // last 120 points: 12..131
-  });
-
-  it('reports the 10-year range and percentile', () => {
-    assert.equal(s.low10, 12);
-    assert.equal(s.high10, 131);
-    assert.equal(s.percentile, 100);
-  });
-});
-
 describe('mergeLatestObservation', () => {
   it('replaces the current month with the latest raw reading', () => {
     const monthly = [{ date: '2026-09-01', value: 4.1 }, { date: '2026-10-01', value: 4.2 }];
@@ -216,5 +191,18 @@ describe('formatObsDate', () => {
     assert.equal(formatObsDate('2026-10-01', 'short'), "Oct '26");
     assert.equal(formatObsDate('2026-07-01', 'long', true), 'Q3 2026');
     assert.equal(formatObsDate('2026-11-19', 'short'), '11/19');
+  });
+});
+
+describe('gaps in source data', () => {
+  it('does not compute a MoM change across a missing month', () => {
+    const obs = [
+      { date: '2026-01-01', value: 100 },
+      { date: '2026-04-01', value: 110 },
+      { date: '2026-05-01', value: 121 }
+    ];
+    const d = buildModeSeries(obs, { unit: '', decimals: 2 }, 'MoM');
+    assert.deepEqual(d.obs.map(o => o.date), ['2026-05-01']);
+    assert.closeTo(d.obs[0].value, 10, 1e-9);
   });
 });
