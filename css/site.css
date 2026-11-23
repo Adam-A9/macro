@@ -378,45 +378,41 @@ a { color: inherit; }
 
 /* ─── ECONOMIC CALENDAR ────────────────────────────────── */
 .calendar { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; }
-.calendar-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
-.calendar-range { color: var(--ink-3); font-size: 12px; }
-.calendar-grid {
+.calendar-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 8px; }
+.calendar-intro { color: var(--ink-2); font-size: 13px; max-width: 70ch; }
+.calendar-intro b { color: var(--ink); }
+.cal-day { margin-top: 16px; }
+.cal-day-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-2);
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-strong);
+}
+.cal-row, .cal-head {
   display: grid;
-  grid-template-columns: 110px 64px minmax(0, 1fr) 90px 90px 90px;
+  grid-template-columns: 72px minmax(0, 1fr) 120px 120px;
+  align-items: center;
+  gap: 16px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
   font-size: 13px;
 }
-.calendar-grid > div { padding: 9px 8px; border-bottom: 1px solid var(--border); display: flex; align-items: center; }
-.calendar-grid > .cal-grid-last { border-bottom: none; }
-.cal-hdr { color: var(--ink-3); font-size: 11px; font-weight: 500; }
-.cal-hdr-label { justify-content: flex-end; }
-.cal-date { flex-direction: column; align-items: flex-start !important; justify-content: center; }
-.cal-date-day { font-weight: 600; }
-.cal-date-time { color: var(--ink-3); font-size: 12px; }
-.cal-days { flex-direction: column; justify-content: center; }
-.cal-days-num { font-weight: 650; font-variant-numeric: tabular-nums; color: var(--ink) !important; }
-.cal-days-label { color: var(--ink-3); font-size: 11px; }
-.cal-event { gap: 10px; }
-.cal-bar { display: none; }
-.cal-name { font-weight: 500; }
+.cal-time { color: var(--ink-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cal-event { display: flex; flex-direction: column; min-width: 0; }
+.cal-name { color: var(--ink); }
+.cal-high .cal-name { font-weight: 650; }
 .cal-sub { color: var(--ink-3); font-size: 12px; }
-.cal-col-prev, .cal-col-est, .cal-col-act { justify-content: flex-end; font-variant-numeric: tabular-nums; }
-.cal-est-dash, .cal-est-prior { color: var(--ink-3); }
-/* Beat/miss isn't good/bad (a CPI miss is good news), so no status color. */
-.cal-beat, .cal-miss { color: var(--ink); font-weight: 600; }
-.cal-fomc .cal-name { font-weight: 700; }
-.cal-impact {
-  margin-left: auto;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: var(--ink-2);
-  border: 1px solid var(--border-strong);
-  border-radius: 4px;
-  padding: 1px 6px;
-}
-.cal-impact-medium { color: var(--ink-3); border-color: var(--border); }
-.cal-past { opacity: 0.5; }
-.cal-empty { grid-column: 1 / -1; color: var(--ink-3); justify-content: center; }
+.cal-num { display: flex; flex-direction: column; align-items: flex-end; font-variant-numeric: tabular-nums; }
+.cal-num-label { display: none; color: var(--ink-3); font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+.cal-head { border-bottom: none; padding: 0; margin-top: 4px; color: var(--ink-3); font-size: 11px; }
+.cal-head span:nth-child(n+3) { text-align: right; }
+.cal-more { display: block; margin: 14px auto 0; font-size: 13px; color: var(--ink-2); }
+.cal-value { color: var(--ink-2); white-space: nowrap; }
+.cal-actual { color: var(--ink); font-weight: 650; }
+.cal-dash { color: var(--ink-3); }
+.cal-status { color: var(--ink-3); font-size: 12px; font-style: italic; white-space: nowrap; }
+.calendar-foot { color: var(--ink-3); font-size: 11px; margin-top: 16px; line-height: 1.5; }
 
 /* ─── FOOTER ───────────────────────────────────────────── */
 .site-footer {
@@ -459,9 +455,12 @@ a { color: inherit; }
   .sector-row { grid-template-columns: 120px minmax(0, 1fr) 56px; font-size: 12px; }
   .sector-sym { display: none; }
   .sectors, .calendar { padding: 16px; }
-  .calendar-grid { grid-template-columns: 80px minmax(0, 1fr) 70px; }
-  .cal-days, .cal-col-prev, .cal-col-est, .calendar-grid > .cal-hdr:nth-child(2),
-  .calendar-grid > .cal-hdr:nth-child(4), .calendar-grid > .cal-hdr:nth-child(5) { display: none !important; }
+  .calendar-header { flex-direction: column; }
+  .cal-row { grid-template-columns: minmax(0, 1fr) 76px 76px; gap: 10px; }
+  .cal-time { grid-column: 1 / -1; margin-bottom: -6px; font-size: 11px; }
+  .cal-head { display: none; }
+  .cal-num-label { display: block; }
+  .site-nav a { padding: 6px 8px; }
 }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }

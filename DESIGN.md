@@ -93,12 +93,41 @@ What stays is the data line, hairline horizontal gridlines, a single stronger ze
 - The layout reflows to one column on phones, and tables scroll to the latest reading.
 - Motion is disabled under `prefers-reduced-motion`.
 
+## Economic calendar
+
+The calendar (on the Overview) is built by `python/calendar_data.py` during the hourly data job, from official sources only.
+
+**Where each part comes from**
+- **Release schedule:** FRED's release calendar, including scheduled future dates. Each release ID and series was checked against FRED's own metadata.
+- **Actual and previous:** the values as first published on the release day, read from FRED's historical vintages (ALFRED), not today's revised figures. Example: the October jobs report printed +165K, with September revised to +60K.
+- **Fed decisions:** dates come from the Federal Reserve's FOMC calendar page, read on every run, with a built-in list as backup. The target range before and after comes from `DFEDTARL`/`DFEDTARU`; the new range takes effect the day after the announcement.
+
+**What each row shows**
+- **Reference period:** the month, quarter or week the number covers (e.g. "Oct 2026", "Week ending Nov 21"). For upcoming releases it comes from each agency's standard publication lag.
+- **Value convention:** each release uses its usual headline form, e.g. CPI m/m, payrolls change, GDP q/q annualized, housing starts at an annual rate.
+- **GDP estimates:** labeled advance, second or third. For a revision, "previous" is the earlier estimate of the same quarter.
+- **"Previous" for upcoming rows:** shown only when it's already published. Later weeks of claims show "–".
+- **Revision-only dates on FRED's schedule are skipped:** if a release would cover an already-published period, it doesn't get a row.
+- **"Awaiting data":** the release time has passed but FRED hasn't posted the number yet, usually a matter of hours.
+
+**What's deliberately left out**
+- **Consensus forecasts.** No free source permits automated use, and the old "estimate" column copied the previous value, which was a made-up number.
+- **Reports without reliable data on FRED:**
+  - Existing home sales (NAR licensing; no release history or future dates)
+  - University of Michigan sentiment (FRED posts it a month late)
+  - ISM PMIs and the Conference Board's consumer confidence (not on FRED)
+
+**Layout**
+- **Two tabs:** Upcoming and Past week.
+- **Upcoming** shows the next two weeks plus later high-impact releases; minor releases beyond two weeks sit behind a "show all" button.
+- **Rows are grouped under day headings.** High-impact releases are in bold. Color isn't used, because beating or missing a number isn't inherently good or bad: a CPI miss is good news.
+
 ## Data pipeline
 
 The browser never calls FRED or Yahoo. A GitHub Actions workflow (`.github/workflows/deploy.yml`) runs `python/build_data.py`:
 - **When:** hourly at :17, on every push to `main`, and on demand from the Actions tab.
 - **What it does:**
-  - fetches every series in `config/series.json`, the sector returns and the calendar's FRED data
+  - fetches every series in `config/series.json`, the sector returns and the economic calendar
   - writes them to one file, `data/macro.json`, which it publishes with the site to GitHub Pages
 - **Why:**
   - pages load in about a second instead of 30–60

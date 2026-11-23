@@ -59,12 +59,12 @@ class TrailingReturns(unittest.TestCase):
 
 class StaleFallback(unittest.TestCase):
     def test_failed_series_keeps_previous_data(self):
-        catalog = {"series": {"X": {"source": "fred", "id": "X"}}, "sectors": {}, "calendar_series": []}
+        catalog = {"series": {"X": {"source": "fred", "id": "X"}}, "sectors": {}}
         previous = {"series": {"X": {"obs": [["2026-01-01", 1.0], ["2026-02-01", 2.0]],
                                      "updated_at": "2026-02-02T00:00:00+00:00"}}}
         orig_fred, orig_cal = bd.fetch_fred_series, bd.fetch_calendar
         bd.fetch_fred_series = lambda cfg, key: (_ for _ in ()).throw(RuntimeError("down"))
-        bd.fetch_calendar = lambda key, ids: {"release_dates": [], "observations": {}}
+        bd.fetch_calendar = lambda key: {"events": [], "problems": []}
         try:
             data, fresh = bd.build(catalog, "k", previous)
         finally:

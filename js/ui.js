@@ -635,6 +635,7 @@ async function fetchAll() {
     Object.keys(SERIES).forEach(updateGlanceRow);
     sectorReturns = (data.sectors && data.sectors.returns) || {};
     renderSectors();
+    if (typeof renderCalendar === 'function') renderCalendar();
     _finishFetch(notes, data.generated_at);
   } catch (e) {
     if (!modulesRendered) {
