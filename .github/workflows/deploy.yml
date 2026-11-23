@@ -49,6 +49,9 @@ jobs:
           mkdir -p _site/data
           cp *.html _site/
           cp -r css js config _site/
+          # Version-stamp CSS/JS links so a browser never mixes a new page
+          # with old cached scripts (Pages caches files for 10 minutes).
+          sed -i "s/?v=dev/?v=${GITHUB_SHA::7}/g" _site/*.html
 
       - name: Build data
         env:
