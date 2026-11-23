@@ -14,6 +14,12 @@
 <header class="site-header">
   <a class="brand" href="index.html">Macro</a>
   <nav class="site-nav" aria-label="Sections"><a href="index.html">Overview</a><a href="inflation.html" aria-current="page">Inflation</a><a href="labor.html">Labor</a><a href="housing.html">Housing</a><a href="markets.html">Markets</a></nav>
+  <div class="search" role="search">
+    <input type="search" id="searchInput" placeholder="Search metrics" aria-label="Search metrics"
+           autocomplete="off" spellcheck="false" aria-controls="searchResults" aria-expanded="false">
+    <kbd class="search-key" aria-hidden="true">/</kbd>
+    <div class="search-results" id="searchResults" role="listbox" hidden></div>
+  </div>
   <div class="header-meta">
     <span id="last-updated"></span>
     <button type="button" class="btn" id="refreshBtn">Refresh</button>
@@ -26,6 +32,10 @@
     <p>How fast prices are rising, where the pressure comes from, and what markets expect next. The Fed targets 2% on core PCE.</p>
   </div>
   <div class="error-msg" id="errorMsg" role="status" hidden></div>
+  <section class="glance" id="glance" aria-labelledby="glance-title">
+    <div class="glance-head"><h2 class="group-title" id="glance-title">At a glance</h2><span class="glance-hint">Click a metric to jump to its charts</span></div>
+    <div class="glance-body" id="glanceBody"><p class="empty">Loading…</p></div>
+  </section>
   <div class="modules" id="modules"><p class="empty">Loading data…</p></div>
 
 </main>
@@ -77,7 +87,6 @@ const LAYOUT = [
   }
 ];
 const HIDDEN = [];
-const SIGNALS = [];
 const SHOW_SECTORS = false;
 </script>
 </body>

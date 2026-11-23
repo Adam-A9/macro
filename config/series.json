@@ -29,7 +29,8 @@
       "decimals": 1,
       "freq": "MoM",
       "mode": "Level",
-      "desc": "The unemployment rate measures the share of people in the labor force who are actively looking for a job but cannot find one. Released every first Friday of the month by the Bureau of Labor Statistics — it is one of the most market-moving data points on the calendar. A reading below 4% is considered a strong, healthy labor market. Above 5-6% signals stress. The Fed is mandated to keep unemployment low alongside controlling inflation, so this number directly shapes rate decisions. Sustained rises here are often a recession warning."
+      "desc": "The unemployment rate measures the share of people in the labor force who are actively looking for a job but cannot find one. Released every first Friday of the month by the Bureau of Labor Statistics — it is one of the most market-moving data points on the calendar. A reading below 4% is considered a strong, healthy labor market. Above 5-6% signals stress. The Fed is mandated to keep unemployment low alongside controlling inflation, so this number directly shapes rate decisions. Sustained rises here are often a recession warning.",
+      "short": "Unemployment"
     },
     "U6": {
       "source": "fred",
@@ -39,7 +40,8 @@
       "decimals": 1,
       "freq": "MoM",
       "mode": "Level",
-      "desc": "The U-6 rate is the broadest official measure of labor underutilization. In addition to the standard unemployed (U-3), it includes marginally attached workers — people who want jobs and have looked recently but not in the past four weeks — plus part-time workers who want full-time work. This fuller picture reveals the true slack in the labor market. U-6 typically runs 1.7-2x the headline U-3 rate. When the gap between U-6 and U-3 is unusually wide, it signals many workers are stuck in part-time or gig work despite wanting full-time employment, indicating hidden labor market weakness."
+      "desc": "The U-6 rate is the broadest official measure of labor underutilization. In addition to the standard unemployed (U-3), it includes marginally attached workers — people who want jobs and have looked recently but not in the past four weeks — plus part-time workers who want full-time work. This fuller picture reveals the true slack in the labor market. U-6 typically runs 1.7-2x the headline U-3 rate. When the gap between U-6 and U-3 is unusually wide, it signals many workers are stuck in part-time or gig work despite wanting full-time employment, indicating hidden labor market weakness.",
+      "short": "U-6 Rate"
     },
     "PrimeEPOP": {
       "source": "fred",
@@ -49,7 +51,8 @@
       "decimals": 1,
       "freq": "MoM",
       "mode": "Level",
-      "desc": "The prime-age employment-to-population ratio is the share of Americans aged 25 to 54 who have a job. Many economists prefer it to the unemployment rate because it is not distorted by people giving up on job searches or by an aging population retiring. Higher is a stronger labor market."
+      "desc": "The prime-age employment-to-population ratio is the share of Americans aged 25 to 54 who have a job. Many economists prefer it to the unemployment rate because it is not distorted by people giving up on job searches or by an aging population retiring. Higher is a stronger labor market.",
+      "short": "Prime-Age Emp. Rate"
     },
     "Payrolls": {
       "source": "fred",
@@ -71,7 +74,8 @@
       "freq": "MoM",
       "sample": "monthly",
       "mode": "Level",
-      "desc": "Initial jobless claims counts the number of people filing for unemployment insurance for the first time in a given week, released every Thursday morning. Because it is weekly, it is the most timely labor market data available — stress in the job market shows up here weeks before the monthly unemployment rate captures it. A healthy economy typically sees claims below 250,000 per week. A sustained move above 300,000-350,000 is a warning sign. Sharp spikes — like those seen in March 2020 when claims hit 6 million in a single week — are among the first hard data signals of economic collapse."
+      "desc": "Initial jobless claims counts the number of people filing for unemployment insurance for the first time in a given week, released every Thursday morning. Because it is weekly, it is the most timely labor market data available — stress in the job market shows up here weeks before the monthly unemployment rate captures it. A healthy economy typically sees claims below 250,000 per week. A sustained move above 300,000-350,000 is a warning sign. Sharp spikes — like those seen in March 2020 when claims hit 6 million in a single week — are among the first hard data signals of economic collapse.",
+      "short": "Initial Claims"
     },
     "ContClaims": {
       "source": "fred",
@@ -82,7 +86,8 @@
       "freq": "MoM",
       "sample": "monthly",
       "mode": "Level",
-      "desc": "Continuing claims measures the total number of people currently receiving unemployment benefits — not new filers, but everyone still on the rolls. While initial claims show the rate of job losses, continuing claims shows how long people stay unemployed, reflecting how hard it is to find a new job. Rising continuing claims while initial claims are stable suggests the labor market is absorbing new workers but those already unemployed are struggling — often an early signal of softening labor demand before it shows up in the headline unemployment rate."
+      "desc": "Continuing claims measures the total number of people currently receiving unemployment benefits — not new filers, but everyone still on the rolls. While initial claims show the rate of job losses, continuing claims shows how long people stay unemployed, reflecting how hard it is to find a new job. Rising continuing claims while initial claims are stable suggests the labor market is absorbing new workers but those already unemployed are struggling — often an early signal of softening labor demand before it shows up in the headline unemployment rate.",
+      "short": "Continuing Claims"
     },
     "SahmRule": {
       "source": "fred",
@@ -97,7 +102,8 @@
         "Level": 0.5,
         "label": "Trigger 0.50"
       },
-      "desc": "The Sahm rule, developed by economist Claudia Sahm, compares the three-month average of the unemployment rate with its lowest three-month average over the prior 12 months. When the gap reaches 0.50 percentage points, the economy has historically already been in the early months of a recession. This is the real-time version, built from data as first published."
+      "desc": "The Sahm rule, developed by economist Claudia Sahm, compares the three-month average of the unemployment rate with its lowest three-month average over the prior 12 months. When the gap reaches 0.50 percentage points, the economy has historically already been in the early months of a recession. This is the real-time version, built from data as first published.",
+      "short": "Sahm Rule"
     },
     "JOLTS": {
       "source": "fred",
@@ -107,7 +113,8 @@
       "decimals": 0,
       "freq": "MoM",
       "mode": "Level",
-      "desc": "The JOLTS survey counts unfilled job positions at month end. The Fed watches the openings-to-unemployed ratio extremely closely — when there are two openings for every unemployed person, employers compete for workers by raising wages, feeding services inflation. This was the situation in 2021-2022 when openings hit a record 12 million against 6 million unemployed. Former Chair Yellen and Chair Powell both cited this ratio as a key indicator of labor market imbalance requiring rate increases. A declining JOLTS figure signals that labor demand is cooling and wage pressure may be easing."
+      "desc": "The JOLTS survey counts unfilled job positions at month end. The Fed watches the openings-to-unemployed ratio extremely closely — when there are two openings for every unemployed person, employers compete for workers by raising wages, feeding services inflation. This was the situation in 2021-2022 when openings hit a record 12 million against 6 million unemployed. Former Chair Yellen and Chair Powell both cited this ratio as a key indicator of labor market imbalance requiring rate increases. A declining JOLTS figure signals that labor demand is cooling and wage pressure may be easing.",
+      "short": "Job Openings"
     },
     "QuitRate": {
       "source": "fred",
@@ -127,7 +134,8 @@
       "decimals": 2,
       "freq": "MoM",
       "mode": "YoY",
-      "desc": "Average hourly earnings measures the pace of nominal wage growth across all private sector employees. Rising wages are good for workers but create a dilemma for the Fed — if wages grow faster than productivity, businesses pass higher labor costs on as price increases, fueling a wage-price spiral. The Fed targets wage growth around 3-3.5% annually as consistent with 2% inflation. When AHE runs at 5-6%, it signals labor market tightness generating inflationary pressure in services that persists even after goods inflation normalizes — and services inflation is far harder to kill."
+      "desc": "Average hourly earnings measures the pace of nominal wage growth across all private sector employees. Rising wages are good for workers but create a dilemma for the Fed — if wages grow faster than productivity, businesses pass higher labor costs on as price increases, fueling a wage-price spiral. The Fed targets wage growth around 3-3.5% annually as consistent with 2% inflation. When AHE runs at 5-6%, it signals labor market tightness generating inflationary pressure in services that persists even after goods inflation normalizes — and services inflation is far harder to kill.",
+      "short": "Hourly Earnings"
     },
     "CorePCE": {
       "source": "fred",
@@ -183,7 +191,8 @@
         "YoY": 2,
         "label": "2% reference"
       },
-      "desc": "The Consumer Price Index tracks how much a fixed basket of everyday goods and services — food, rent, gasoline, healthcare, clothing — costs over time. It is the Fed's primary gauge of whether inflation is under control. Their official target is 2% annual growth. When CPI runs significantly above target, the Fed raises interest rates aggressively to slow borrowing and cool demand. The 2022-2023 rate hike cycle, the fastest in 40 years, was a direct response to CPI hitting 9.1%. When CPI falls toward target, rate cuts become possible."
+      "desc": "The Consumer Price Index tracks how much a fixed basket of everyday goods and services — food, rent, gasoline, healthcare, clothing — costs over time. It is the Fed's primary gauge of whether inflation is under control. Their official target is 2% annual growth. When CPI runs significantly above target, the Fed raises interest rates aggressively to slow borrowing and cool demand. The 2022-2023 rate hike cycle, the fastest in 40 years, was a direct response to CPI hitting 9.1%. When CPI falls toward target, rate cuts become possible.",
+      "short": "CPI"
     },
     "ShelterCPI": {
       "source": "fred",
@@ -193,7 +202,8 @@
       "decimals": 2,
       "freq": "MoM",
       "mode": "YoY",
-      "desc": "The shelter component of CPI measures rents and owners' equivalent rent. It is about a third of the CPI basket and moves slowly, lagging market rents by roughly a year, so it explains much of why inflation stays elevated or falls gradually."
+      "desc": "The shelter component of CPI measures rents and owners' equivalent rent. It is about a third of the CPI basket and moves slowly, lagging market rents by roughly a year, so it explains much of why inflation stays elevated or falls gradually.",
+      "short": "Shelter CPI"
     },
     "PPI": {
       "source": "fred",
@@ -203,7 +213,8 @@
       "decimals": 2,
       "freq": "MoM",
       "mode": "YoY",
-      "desc": "The Producer Price Index measures the average change in prices that domestic producers receive for their goods and services — think factory gates, farms, and wholesalers. Because businesses eventually pass higher input costs on to consumers, PPI tends to lead CPI by several weeks or months, making it a valuable early warning system for inflation. A sustained rise in PPI while CPI is still calm often signals that consumer prices are about to accelerate. It's closely watched by investors trying to anticipate the next CPI print."
+      "desc": "The Producer Price Index measures the average change in prices that domestic producers receive for their goods and services — think factory gates, farms, and wholesalers. Because businesses eventually pass higher input costs on to consumers, PPI tends to lead CPI by several weeks or months, making it a valuable early warning system for inflation. A sustained rise in PPI while CPI is still calm often signals that consumer prices are about to accelerate. It's closely watched by investors trying to anticipate the next CPI print.",
+      "short": "PPI"
     },
     "Breakeven5": {
       "source": "fred",
@@ -218,7 +229,8 @@
         "Level": 2,
         "label": "2% reference"
       },
-      "desc": "The 5-year breakeven inflation rate is the bond market's real-time forecast for average inflation over the next 5 years. It is derived from the yield spread between nominal Treasuries and Treasury Inflation-Protected Securities (TIPS). If nominal 5Y yields are 4.5% and TIPS yields are 2.0%, the breakeven is 2.5% — meaning bond traders collectively expect 2.5% annual inflation. When this rises, it means the market expects more inflation ahead, often a leading signal that the Fed will need to act. It moves daily and is more timely than any government CPI report."
+      "desc": "The 5-year breakeven inflation rate is the bond market's real-time forecast for average inflation over the next 5 years. It is derived from the yield spread between nominal Treasuries and Treasury Inflation-Protected Securities (TIPS). If nominal 5Y yields are 4.5% and TIPS yields are 2.0%, the breakeven is 2.5% — meaning bond traders collectively expect 2.5% annual inflation. When this rises, it means the market expects more inflation ahead, often a leading signal that the Fed will need to act. It moves daily and is more timely than any government CPI report.",
+      "short": "5Y Breakeven"
     },
     "Breakeven10": {
       "source": "fred",
@@ -233,7 +245,8 @@
         "Level": 2,
         "label": "2% reference"
       },
-      "desc": "The 10-year breakeven inflation rate represents the bond market's collective expectation for average annual inflation over the next decade. It is the longer-term companion to the 5-year breakeven and measures whether inflation expectations are properly anchored near the Fed's 2% target. When the 10Y breakeven drifts significantly above 2.5%, it signals that investors believe inflation will be a persistent structural problem, not a temporary spike — which tends to push long-term Treasury yields higher and pressure equity valuations."
+      "desc": "The 10-year breakeven inflation rate represents the bond market's collective expectation for average annual inflation over the next decade. It is the longer-term companion to the 5-year breakeven and measures whether inflation expectations are properly anchored near the Fed's 2% target. When the 10Y breakeven drifts significantly above 2.5%, it signals that investors believe inflation will be a persistent structural problem, not a temporary spike — which tends to push long-term Treasury yields higher and pressure equity valuations.",
+      "short": "10Y Breakeven"
     },
     "M2": {
       "source": "fred",
@@ -264,7 +277,8 @@
       "freq": "MoM",
       "sample": "monthly",
       "mode": "Level",
-      "desc": "The 2-year Treasury yield is the most policy-sensitive point on the yield curve, moving fastest in response to changing Fed rate expectations. When markets expect rate cuts, the 2Y falls sharply as traders buy short-duration bonds. When inflation surprises force the Fed to hike, the 2Y spikes. The spread between the 2Y and the current Fed Funds rate tells you whether markets think the Fed is ahead of or behind the curve. A 2Y significantly below Fed Funds means markets expect imminent cuts; a 2Y above Fed Funds means they expect more hikes — a real-time vote on Fed policy credibility."
+      "desc": "The 2-year Treasury yield is the most policy-sensitive point on the yield curve, moving fastest in response to changing Fed rate expectations. When markets expect rate cuts, the 2Y falls sharply as traders buy short-duration bonds. When inflation surprises force the Fed to hike, the 2Y spikes. The spread between the 2Y and the current Fed Funds rate tells you whether markets think the Fed is ahead of or behind the curve. A 2Y significantly below Fed Funds means markets expect imminent cuts; a 2Y above Fed Funds means they expect more hikes — a real-time vote on Fed policy credibility.",
+      "short": "2Y Treasury"
     },
     "Yield10Y": {
       "source": "fred",
@@ -275,7 +289,8 @@
       "freq": "MoM",
       "sample": "monthly",
       "mode": "Level",
-      "desc": "The 10-year Treasury yield is the annualized return on a US government bond maturing in 10 years — the single most important interest rate in global finance. Because Treasuries are considered risk-free, this rate serves as the foundation for virtually all other borrowing costs in the economy. Mortgages, corporate bonds, auto loans, and student debt all price off the 10-year. It also encodes the bond market's collective forecast for future growth and inflation. When yields rise sharply, financial conditions tighten everywhere: stocks get repriced lower as future earnings are discounted more heavily."
+      "desc": "The 10-year Treasury yield is the annualized return on a US government bond maturing in 10 years — the single most important interest rate in global finance. Because Treasuries are considered risk-free, this rate serves as the foundation for virtually all other borrowing costs in the economy. Mortgages, corporate bonds, auto loans, and student debt all price off the 10-year. It also encodes the bond market's collective forecast for future growth and inflation. When yields rise sharply, financial conditions tighten everywhere: stocks get repriced lower as future earnings are discounted more heavily.",
+      "short": "10Y Treasury"
     },
     "Spread": {
       "source": "fred",
@@ -290,7 +305,8 @@
         "Level": 0,
         "label": "Inverted below"
       },
-      "desc": "The yield curve spread subtracts the 2-year Treasury yield from the 10-year yield. In a normal economy this is positive — investors demand more compensation for locking up money for a decade. When it turns negative (inverted), short-term rates exceed long-term rates, typically because the Fed raised rates while the market expects future cuts and weak growth. An inverted yield curve has preceded every US recession since the 1960s, typically with a 6-18 month lead time. It inverted sharply in 2022-2023 following aggressive Fed hikes and is one of the most closely watched macroeconomic signals in existence."
+      "desc": "The yield curve spread subtracts the 2-year Treasury yield from the 10-year yield. In a normal economy this is positive — investors demand more compensation for locking up money for a decade. When it turns negative (inverted), short-term rates exceed long-term rates, typically because the Fed raised rates while the market expects future cuts and weak growth. An inverted yield curve has preceded every US recession since the 1960s, typically with a 6-18 month lead time. It inverted sharply in 2022-2023 following aggressive Fed hikes and is one of the most closely watched macroeconomic signals in existence.",
+      "short": "Yield Curve 10Y–2Y"
     },
     "CreditSpread": {
       "source": "fred",
@@ -301,7 +317,8 @@
       "freq": "MoM",
       "sample": "monthly",
       "mode": "Level",
-      "desc": "The extra yield investors demand to hold Moody's Baa-rated corporate bonds (the lowest investment grade) instead of 10-year Treasuries. It widens when lenders worry about defaults and narrows when credit is easy. It peaked near 6 percentage points in the 2008 financial crisis."
+      "desc": "The extra yield investors demand to hold Moody's Baa-rated corporate bonds (the lowest investment grade) instead of 10-year Treasuries. It widens when lenders worry about defaults and narrows when credit is easy. It peaked near 6 percentage points in the 2008 financial crisis.",
+      "short": "Credit Spread (Baa)"
     },
     "CCDelinquency": {
       "source": "fred",
@@ -311,7 +328,8 @@
       "decimals": 2,
       "freq": "QoQ",
       "mode": "Level",
-      "desc": "The credit card delinquency rate measures the share of credit card balances that are 30 or more days past due. It is one of the most direct measures of household financial stress available — when consumers can no longer keep up with minimum payments, it signals that real purchasing power is eroding beneath the surface. This metric often rises before unemployment spikes, making it a leading indicator of consumer distress that the other cards on this dashboard won't capture until months later. A sustained move above 3% historically precedes broader credit tightening and economic slowdowns."
+      "desc": "The credit card delinquency rate measures the share of credit card balances that are 30 or more days past due. It is one of the most direct measures of household financial stress available — when consumers can no longer keep up with minimum payments, it signals that real purchasing power is eroding beneath the surface. This metric often rises before unemployment spikes, making it a leading indicator of consumer distress that the other cards on this dashboard won't capture until months later. A sustained move above 3% historically precedes broader credit tightening and economic slowdowns.",
+      "short": "Card Delinquency"
     },
     "Mortgage30": {
       "source": "fred",
@@ -322,7 +340,8 @@
       "freq": "MoM",
       "sample": "monthly",
       "mode": "Level",
-      "desc": "The average interest rate on a 30-year fixed-rate mortgage — the most common home loan in America. Directly tied to the 10-year Treasury yield and Federal Reserve policy, it is the most tangible way monetary policy affects everyday Americans. When this rate rises from 3% to 7%, the monthly payment on a $400,000 home jumps by roughly $1,100 — eliminating millions of potential buyers overnight. High mortgage rates create a locked-in effect: homeowners with 3% mortgages refuse to sell and give up that rate, freezing inventory while simultaneously killing demand."
+      "desc": "The average interest rate on a 30-year fixed-rate mortgage — the most common home loan in America. Directly tied to the 10-year Treasury yield and Federal Reserve policy, it is the most tangible way monetary policy affects everyday Americans. When this rate rises from 3% to 7%, the monthly payment on a $400,000 home jumps by roughly $1,100 — eliminating millions of potential buyers overnight. High mortgage rates create a locked-in effect: homeowners with 3% mortgages refuse to sell and give up that rate, freezing inventory while simultaneously killing demand.",
+      "short": "30Y Mortgage"
     },
     "CaseShiller": {
       "source": "fred",
@@ -332,7 +351,8 @@
       "decimals": 2,
       "freq": "MoM",
       "mode": "YoY",
-      "desc": "The S&P CoreLogic Case-Shiller National Home Price Index is the most widely-followed measure of US residential home prices, using a repeat-sales methodology to track the same properties over time. The index lags the market by roughly two months due to transaction processing time, but is considered the gold standard for price trend analysis. Home prices feed directly into CPI through the owners' equivalent rent component, which comprises about 24% of total CPI — meaning home price trends today become inflation data 12-18 months from now."
+      "desc": "The S&P CoreLogic Case-Shiller National Home Price Index is the most widely-followed measure of US residential home prices, using a repeat-sales methodology to track the same properties over time. The index lags the market by roughly two months due to transaction processing time, but is considered the gold standard for price trend analysis. Home prices feed directly into CPI through the owners' equivalent rent component, which comprises about 24% of total CPI — meaning home price trends today become inflation data 12-18 months from now.",
+      "short": "Home Prices"
     },
     "Permits": {
       "source": "fred",
@@ -373,7 +393,8 @@
       "freq": "MoM",
       "mode": "Level",
       "change": "diff",
-      "desc": "Months' supply of new homes for sale: how long the current inventory would last at the current sales pace. Around six months is usually considered balanced; well above that points to weak demand and pressure on builders to cut prices."
+      "desc": "Months' supply of new homes for sale: how long the current inventory would last at the current sales pace. Around six months is usually considered balanced; well above that points to weak demand and pressure on builders to cut prices.",
+      "short": "Months' Supply"
     },
     "SP500": {
       "source": "market",
@@ -395,7 +416,8 @@
       "freq": "MoM",
       "mode": "Level",
       "change": "diff",
-      "desc": "The VIX measures the 30-day volatility that S&P 500 options are pricing in, often called the market's fear gauge. Readings below about 15 indicate calm markets; above 30 indicates stress."
+      "desc": "The VIX measures the 30-day volatility that S&P 500 options are pricing in, often called the market's fear gauge. Readings below about 15 indicate calm markets; above 30 indicates stress.",
+      "short": "VIX"
     },
     "Dollar": {
       "source": "market",
@@ -410,7 +432,8 @@
         "DX=F",
         "UUP"
       ],
-      "desc": "The US Dollar Index measures the dollar against a basket of six major currencies, mostly the euro. A stronger dollar makes imports cheaper and US exports less competitive, and tends to tighten global financial conditions."
+      "desc": "The US Dollar Index measures the dollar against a basket of six major currencies, mostly the euro. A stronger dollar makes imports cheaper and US exports less competitive, and tends to tighten global financial conditions.",
+      "short": "Dollar Index"
     },
     "Oil": {
       "source": "market",
@@ -420,7 +443,8 @@
       "decimals": 2,
       "freq": "MoM",
       "mode": "Level",
-      "desc": "West Texas Intermediate crude oil futures, in dollars per barrel. Oil feeds directly into gasoline and transport costs, so large moves show up quickly in headline inflation."
+      "desc": "West Texas Intermediate crude oil futures, in dollars per barrel. Oil feeds directly into gasoline and transport costs, so large moves show up quickly in headline inflation.",
+      "short": "WTI Oil"
     },
     "Gold": {
       "source": "market",
@@ -441,7 +465,8 @@
       "decimals": 2,
       "freq": "MoM",
       "mode": "Level",
-      "desc": "The iShares US Home Construction ETF tracks homebuilder stocks. Builders' share prices tend to anticipate turns in housing activity months ahead of the official data."
+      "desc": "The iShares US Home Construction ETF tracks homebuilder stocks. Builders' share prices tend to anticipate turns in housing activity months ahead of the official data.",
+      "short": "Homebuilders ETF"
     }
   },
   "sectors": {
@@ -490,5 +515,194 @@
     "UNRATE",
     "PERMIT",
     "FEDFUNDS"
+  ],
+  "pages": [
+    {
+      "file": "index.html",
+      "title": "Overview",
+      "groups": [
+        {
+          "title": "Growth",
+          "series": [
+            "RealGDP",
+            "RetailSales"
+          ]
+        },
+        {
+          "title": "Jobs",
+          "series": [
+            "Unemployment",
+            "Payrolls",
+            "JoblessClaims",
+            "SahmRule"
+          ]
+        },
+        {
+          "title": "Inflation",
+          "series": [
+            "CorePCE",
+            "CPI"
+          ]
+        },
+        {
+          "title": "Policy & Rates",
+          "series": [
+            "FedFunds",
+            "Yield10Y",
+            "Spread"
+          ]
+        },
+        {
+          "title": "Financial Conditions",
+          "series": [
+            "CreditSpread",
+            "SP500"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "inflation.html",
+      "title": "Inflation",
+      "groups": [
+        {
+          "title": "Consumer Prices",
+          "series": [
+            "CorePCE",
+            "PCE",
+            "CoreCPI",
+            "CPI"
+          ]
+        },
+        {
+          "title": "Drivers",
+          "series": [
+            "ShelterCPI",
+            "PPI",
+            "Oil"
+          ]
+        },
+        {
+          "title": "Expectations",
+          "series": [
+            "Breakeven5",
+            "Breakeven10"
+          ]
+        },
+        {
+          "title": "Money",
+          "series": [
+            "M2"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "labor.html",
+      "title": "Labor",
+      "groups": [
+        {
+          "title": "Employment",
+          "series": [
+            "Payrolls",
+            "Unemployment",
+            "PrimeEPOP",
+            "U6"
+          ]
+        },
+        {
+          "title": "Early Warning",
+          "series": [
+            "SahmRule",
+            "JoblessClaims",
+            "ContClaims"
+          ]
+        },
+        {
+          "title": "Labor Demand",
+          "series": [
+            "JOLTS",
+            "QuitRate"
+          ]
+        },
+        {
+          "title": "Wages",
+          "series": [
+            "AHE"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "housing.html",
+      "title": "Housing",
+      "groups": [
+        {
+          "title": "Financing",
+          "series": [
+            "Mortgage30"
+          ]
+        },
+        {
+          "title": "Prices & Rents",
+          "series": [
+            "CaseShiller",
+            "ShelterCPI"
+          ]
+        },
+        {
+          "title": "Activity",
+          "series": [
+            "Permits",
+            "Starts",
+            "NewHomeSales",
+            "MonthsSupply"
+          ]
+        },
+        {
+          "title": "Builders",
+          "series": [
+            "Homebuilders"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "markets.html",
+      "title": "Markets",
+      "groups": [
+        {
+          "title": "Policy Rate & Treasury Curve",
+          "series": [
+            "FedFunds",
+            "Yield2Y",
+            "Yield10Y",
+            "Spread"
+          ]
+        },
+        {
+          "title": "Credit",
+          "series": [
+            "CreditSpread",
+            "CCDelinquency"
+          ]
+        },
+        {
+          "title": "Stocks",
+          "series": [
+            "SP500",
+            "VIX"
+          ]
+        },
+        {
+          "title": "Dollar & Commodities",
+          "series": [
+            "Dollar",
+            "Oil",
+            "Gold"
+          ]
+        }
+      ]
+    }
   ]
 }

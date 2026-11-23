@@ -4,6 +4,17 @@ This dashboard answers one question per page: *where is the economy now, and how
 
 ## 1. Layout: overview first, then detail
 
+**Every page opens with an "At a glance" panel.** It has one compact row per metric on the page, grouped like the modules below it. Each row shows:
+- a 2-year sparkline (Tufte's "word-sized graphic" [5])
+- the latest value
+- context: the change since the prior reading, or the recent average for MoM/QoQ views, since a change-of-a-change is hard to read
+- a status tag or the as-of date
+
+Clicking a row scrolls to that metric's module and highlights it; a floating button returns to the panel. This applies Shneiderman's mantra [1] at the page level: the panel is the overview, the modules are the details.
+
+**Search finds any metric on any page.** Press `/` or tap the header box. A match on the current page scrolls to its module; a match elsewhere opens that page at the module, preferring the metric's own section over the Overview.
+
+
 **Each module shows the full history beside the recent window.** The left chart covers everything FRED or Yahoo has (CPI since 1947, unemployment since 1948). The right chart zooms into the last 1–10 years, and the stretch it covers is highlighted on the left chart. This is Shneiderman's information-seeking mantra, *"overview first, zoom and filter, then details on demand"* [1]: the overview is the left chart, the zoom is the right chart with its range buttons, and the details are the hover tooltip, the 12-reading table, and *About this measure*. Munzner calls this pattern *overview + detail* [2]. It answers "historical trend vs. current trend" without a mode switch.
 
 **The default zoom shortens as the comparison shortens.** Level and YoY open at 5 years, MoM at 3 and QoQ at 2. A month-over-month series is noisy, so a long window hides its current direction. Five years (rather than ten) also keeps the 2020 spike from flattening the recent trend.
@@ -14,9 +25,9 @@ This dashboard answers one question per page: *where is the economy now, and how
 
 ## 2. Content: only the measures that matter
 
-The overview's **signal strip** reduces the economy's state to five rule-based readings, each with a citable threshold:
+Five metrics carry a **status tag**: a rule-based verdict with a citable threshold, shown on their row in the overview (hover for the rule):
 
-| Signal | Measure | Threshold | Source |
+| Tag on | Measure | Threshold | Source |
 |---|---|---|---|
 | Recession signal | Sahm rule (`SAHMREALTIME`) | ≥ 0.50 pp triggers | Sahm (2019) [9] |
 | Real growth | Real GDP, annualized QoQ (`GDPC1`) | < 0 contracting | BEA convention |
@@ -48,7 +59,7 @@ What stays is the data line, hairline horizontal gridlines, a single stronger ze
 
 **Color is used sparingly and only where it means something** [3, 8]:
 - **One series color** (blue) for all data. Identity is carried by titles, not hue, so there is nothing to decode.
-- **Status colors** (green/amber/red) appear only on the signal strip, and always with an icon and a word ("✓ Not triggered"). Meaning is never carried by color alone (WCAG 2.1, SC 1.4.1 [13]).
+- **Status colors** (green/amber/red) appear only on status tags, and always with an icon and a word ("✓ Not triggered"). Meaning is never carried by color alone (WCAG 2.1, SC 1.4.1 [13]).
 - **No beat/miss coloring in the calendar.** A CPI "miss" is good news, so red/green there would mislead.
 - **Bars use one color for positive and negative values.** The bar's position relative to the zero line already shows the sign.
 
@@ -88,7 +99,7 @@ The browser never calls FRED or Yahoo. A GitHub Actions workflow (`.github/workf
 
 - **`config/series.json`** lists every series: FRED or Yahoo id, units, default view (`mode`) and optional `target` line. Add a series here and the next build fetches it.
 - **Each page's `LAYOUT`** (at the end of the HTML file) sets which of those series the page shows, in what order and in which groups.
-- **`SIGNAL_LIBRARY` in `js/ui.js`** defines the overview's signals.
+- **`SIGNAL_LIBRARY` in `js/ui.js`** defines the status tags.
 - **`css/site.css`** holds all styling.
 
 ## Sources
