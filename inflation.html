@@ -26,6 +26,7 @@
     <p>How fast prices are rising, where the pressure comes from, and what markets expect next. The Fed targets 2% on core PCE.</p>
   </div>
   <div class="error-msg" id="errorMsg" role="status" hidden></div>
+
   <section class="glance" id="glance" aria-labelledby="glance-title">
     <div class="glance-head"><h2 class="group-title" id="glance-title">At a glance</h2><span class="glance-hint">Click any tile for its full charts</span></div>
     <div class="glance-grid" id="glanceBody"><p class="empty">Loading…</p></div>
@@ -50,7 +51,7 @@
 // target line, description). Data comes from data/macro.json, rebuilt hourly.
 const LAYOUT = [
   {
-    "title": "Consumer Prices",
+    "title": "Headline & Core",
     "series": [
       "CorePCE",
       "PCE",
@@ -59,10 +60,17 @@ const LAYOUT = [
     ]
   },
   {
-    "title": "Drivers",
+    "title": "Underlying Trend",
     "series": [
-      "ShelterCPI",
-      "PPI",
+      "Supercore",
+      "TrimmedPCE",
+      "ShelterCPI"
+    ]
+  },
+  {
+    "title": "Pipeline",
+    "series": [
+      "PPIFinal",
       "Oil"
     ]
   },
@@ -70,13 +78,8 @@ const LAYOUT = [
     "title": "Expectations",
     "series": [
       "Breakeven5",
-      "Breakeven10"
-    ]
-  },
-  {
-    "title": "Money",
-    "series": [
-      "M2"
+      "Fwd5y5y",
+      "MichExp"
     ]
   }
 ];

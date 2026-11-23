@@ -4,6 +4,8 @@ This dashboard answers one question per page: *where is the economy now, and how
 
 ## 1. Layout: overview first, then detail
 
+**The Overview opens with "Next up":** the five soonest releases and the next Fed decision. The Fed card always shows, even when the meeting is beyond the calendar's window, with the current target range and a countdown. The cards sit on the same 6-column grid as the tiles below and link to the full calendar at the bottom of the page.
+
 **Every page opens with an "At a glance" grid: one identical tile per metric.** Selecting a tile scrolls to that metric's module and briefly highlights it; a floating button returns to the grid. The format follows four principles:
 - **Small multiples.** Tufte describes small multiples as one design repeated within the viewer's eye span, each instance showing different data [15]. Every tile has the same structure:
   - top line: name and date
@@ -54,6 +56,31 @@ Curation choices:
 - **Decorative assets are dropped.** Bitcoin, and the duplicate homebuilder ETF, were removed.
 - **Eleven sector price charts become one ranked bar chart of returns.** Cleveland & McGill show position along a common scale is read more accurately than comparing separate charts [4].
 
+**Modules per page** (reviewed for the measures the Fed and most economists watch):
+- **Inflation:**
+  - headline and core PCE and CPI
+  - underlying trend: supercore PCE (services ex-housing), Dallas Fed trimmed-mean PCE, shelter CPI
+  - pipeline: PPI final demand (the headline PPI), oil
+  - expectations: 5-year breakeven, 5y5y forward (the Fed's long-run anchor gauge), Michigan 1-year
+  - M2 and the 10-year breakeven were dropped as redundant or weakly linked to inflation.
+- **Labor:**
+  - payrolls, unemployment, prime-age employment, U-6
+  - Sahm rule, initial and continuing claims
+  - JOLTS openings and quits
+  - wages: Employment Cost Index (the Fed's preferred wage measure), Atlanta Fed wage tracker, average hourly earnings
+- **Housing:**
+  - 30-year mortgage rate
+  - Case-Shiller and shelter CPI
+  - permits, starts, new home sales
+  - active listings, months' supply, median new-home price
+  - homebuilder stocks
+- **Markets:**
+  - Fed funds, 2-year and 10-year yields, the 10-year real (TIPS) yield, the 10Y–2Y curve
+  - Baa credit spread, Chicago Fed financial conditions
+  - S&P 500, VIX, dollar, oil, gold
+  - sector returns
+  - The 30-year yield and card delinquency were dropped.
+
 ## 3. Ink: remove what doesn't carry data
 
 Following Tufte's data-ink principle [5], the redesign removed:
@@ -95,7 +122,7 @@ What stays is the data line, hairline horizontal gridlines, a single stronger ze
 
 ## Economic calendar
 
-The calendar (on the Overview) is built by `python/calendar_data.py` during the hourly data job, from official sources only.
+The full calendar (at the bottom of the Overview) is built by `python/calendar_data.py` during the hourly data job, from official sources only.
 
 **Where each part comes from**
 - **Release schedule:** FRED's release calendar, including scheduled future dates. Each release ID and series was checked against FRED's own metadata.

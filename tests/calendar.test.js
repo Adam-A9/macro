@@ -132,3 +132,51 @@ describe('renderCalendarHtml', () => {
     assert.equal(gdp.querySelectorAll('.cal-num')[1].textContent, '');
   });
 });
+
+describe('renderNextUpHtml', () => {
+  const cal = {
+    events: [
+      ev({ date: '2026-11-17', label: 'Retail sales', status: 'released' }),
+      ev({ date: '2026-12-10', label: 'CPI', prior: 0.4, sign: true }),
+      ev({ date: '2026-11-24', time: '09:00', label: 'Case-Shiller home prices', impact: 'low', prior: 2.1, sign: true }),
+      ev({ date: '2026-11-25', label: 'Real GDP, second estimate' }),
+      ev({ date: '2026-11-25', time: '10:00', label: 'New home sales', impact: 'low', unit: 'K', decimals: 0, prior: 676 }),
+      ev({ date: '2026-12-01', time: '10:00', label: 'Job openings', impact: 'medium' }),
+      ev({ date: '2026-12-04', label: 'Nonfarm payrolls' }),
+      ev({ date: '2026-12-09', time: '14:00', label: 'Fed funds target range', series: 'DFEDTARU', prior_text: '3.75–4.00%' }),
+      ev({ date: '2026-11-23', time: '08:30', label: 'Durable goods orders' })
+    ],
+    next_fomc: { date: '2027-01-27', time: '14:00', label: 'Fed rate decision', current: '3.75–4.00%' }
+  };
+  const cards = () => {
+    const div = document.createElement('div');
+    div.innerHTML = renderNextUpHtml(cal, ET);
+    return [...div.querySelectorAll('.next-card')];
+  };
+
+  it('shows the five soonest unreleased releases, soonest first', () => {
+    const names = cards().slice(0, 5).map(c => c.querySelector('.next-name').textContent);
+    assert.deepEqual(names, ['Durable goods orders', 'Case-Shiller home prices', 'Real GDP, second estimate',
+      'New home sales', 'Job openings']);
+  });
+
+  it('always adds the next Fed decision with the current range, even beyond the window', () => {
+    const fed = cards()[5];
+    assert.isTrue(fed.classList.contains('next-fed'));
+    assert.include(fed.textContent, 'Fed rate decision');
+    assert.include(fed.textContent, 'Wed, Jan 27 · 2:00 pm');
+    assert.include(fed.textContent, 'in 65 days');
+    assert.include(fed.textContent, 'Current 3.75–4.00%');
+  });
+
+  it('marks a release that is out but not yet on FRED, and labels tomorrow', () => {
+    const c = cards();
+    assert.include(c[0].textContent, 'Awaiting data');
+    assert.include(c[1].querySelector('.next-when').textContent, 'Tomorrow · 9:00 am');
+    assert.include(c[1].textContent, 'Previous +2.1%');
+  });
+
+  it('links every card to the full calendar', () => {
+    cards().forEach(c => assert.equal(c.getAttribute('href'), '#calendar'));
+  });
+});

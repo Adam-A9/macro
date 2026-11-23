@@ -234,20 +234,6 @@
         "target": 2
       }
     },
-    "PPI": {
-      "source": "fred",
-      "id": "PPIACO",
-      "label": "Producer Prices (All Commodities)",
-      "unit": "",
-      "decimals": 2,
-      "freq": "MoM",
-      "mode": "YoY",
-      "desc": "The Producer Price Index measures the average change in prices that domestic producers receive for their goods and services — think factory gates, farms, and wholesalers. Because businesses eventually pass higher input costs on to consumers, PPI tends to lead CPI by several weeks or months, making it a valuable early warning system for inflation. A sustained rise in PPI while CPI is still calm often signals that consumer prices are about to accelerate. It's closely watched by investors trying to anticipate the next CPI print.",
-      "short": "PPI",
-      "good": {
-        "target": 2
-      }
-    },
     "Breakeven5": {
       "source": "fred",
       "id": "T5YIE",
@@ -266,35 +252,6 @@
       "good": {
         "target": 2
       }
-    },
-    "Breakeven10": {
-      "source": "fred",
-      "id": "T10YIE",
-      "label": "10-Year Breakeven Inflation",
-      "unit": "%",
-      "decimals": 2,
-      "freq": "MoM",
-      "sample": "monthly",
-      "mode": "Level",
-      "target": {
-        "Level": 2,
-        "label": "2% reference"
-      },
-      "desc": "The 10-year breakeven inflation rate represents the bond market's collective expectation for average annual inflation over the next decade. It is the longer-term companion to the 5-year breakeven and measures whether inflation expectations are properly anchored near the Fed's 2% target. When the 10Y breakeven drifts significantly above 2.5%, it signals that investors believe inflation will be a persistent structural problem, not a temporary spike — which tends to push long-term Treasury yields higher and pressure equity valuations.",
-      "short": "10Y Breakeven",
-      "good": {
-        "target": 2
-      }
-    },
-    "M2": {
-      "source": "fred",
-      "id": "M2SL",
-      "label": "M2 Money Supply",
-      "unit": "B$",
-      "decimals": 0,
-      "freq": "MoM",
-      "mode": "YoY",
-      "desc": "M2 is the Fed's broad measure of money supply — it counts physical cash, checking accounts, savings accounts, and money market funds. When the Fed cuts rates or conducts quantitative easing (buying bonds), money supply expands. The relationship between M2 and inflation is foundational: more money chasing the same quantity of goods pushes prices up. The massive M2 surge of 2020-2021, when the Fed injected trillions into the economy during COVID, directly preceded the inflation wave of 2022. A shrinking M2 is disinflationary and typically follows rate hikes."
     },
     "FedFunds": {
       "source": "fred",
@@ -317,18 +274,6 @@
       "mode": "Level",
       "desc": "The 2-year Treasury yield is the most policy-sensitive point on the yield curve, moving fastest in response to changing Fed rate expectations. When markets expect rate cuts, the 2Y falls sharply as traders buy short-duration bonds. When inflation surprises force the Fed to hike, the 2Y spikes. The spread between the 2Y and the current Fed Funds rate tells you whether markets think the Fed is ahead of or behind the curve. A 2Y significantly below Fed Funds means markets expect imminent cuts; a 2Y above Fed Funds means they expect more hikes — a real-time vote on Fed policy credibility.",
       "short": "2Y Treasury"
-    },
-    "Yield30Y": {
-      "source": "fred",
-      "id": "DGS30",
-      "label": "30-Year Treasury Yield",
-      "unit": "%",
-      "decimals": 2,
-      "freq": "MoM",
-      "sample": "monthly",
-      "mode": "Level",
-      "desc": "The 30-year Treasury yield represents very long-term growth and inflation expectations — a three-decade bet on the US economy. It is the benchmark rate for long-term mortgages and pension fund liabilities. A key relationship to watch is whether the 30Y rises while the Fed is cutting rates: if long yields go up as the Fed cuts short rates, it signals the bond market does not believe inflation is beaten and is demanding more compensation for holding long duration. This bear steepening — short rates falling while long rates rise — has historically been associated with stagflationary environments.",
-      "short": "30Y Treasury"
     },
     "Yield10Y": {
       "source": "fred",
@@ -370,18 +315,6 @@
       "mode": "Level",
       "desc": "The extra yield investors demand to hold Moody's Baa-rated corporate bonds (the lowest investment grade) instead of 10-year Treasuries. It widens when lenders worry about defaults and narrows when credit is easy. It peaked near 6 percentage points in the 2008 financial crisis.",
       "short": "Credit Spread (Baa)",
-      "good": "down"
-    },
-    "CCDelinquency": {
-      "source": "fred",
-      "id": "DRCCLACBS",
-      "label": "Credit Card Delinquency Rate",
-      "unit": "%",
-      "decimals": 2,
-      "freq": "QoQ",
-      "mode": "Level",
-      "desc": "The credit card delinquency rate measures the share of credit card balances that are 30 or more days past due. It is one of the most direct measures of household financial stress available — when consumers can no longer keep up with minimum payments, it signals that real purchasing power is eroding beneath the surface. This metric often rises before unemployment spikes, making it a leading indicator of consumer distress that the other cards on this dashboard won't capture until months later. A sustained move above 3% historically precedes broader credit tightening and economic slowdowns.",
-      "short": "Card Delinquency",
       "good": "down"
     },
     "Mortgage30": {
@@ -452,6 +385,162 @@
       "change": "diff",
       "desc": "Months' supply of new homes for sale: how long the current inventory would last at the current sales pace. Around six months is usually considered balanced; well above that points to weak demand and pressure on builders to cut prices.",
       "short": "Months' Supply",
+      "good": "down"
+    },
+    "Supercore": {
+      "source": "fred",
+      "id": "IA001260M",
+      "label": "Supercore PCE (Services ex-Housing)",
+      "unit": "",
+      "decimals": 2,
+      "freq": "MoM",
+      "mode": "YoY",
+      "target": {
+        "YoY": 2,
+        "label": "Fed 2% target"
+      },
+      "desc": "PCE prices for services excluding energy and housing, often called supercore inflation. It tracks the labor-intensive services where wage costs drive prices, which the Fed has singled out as the stickiest part of inflation.",
+      "short": "Supercore PCE",
+      "good": {
+        "target": 2
+      }
+    },
+    "TrimmedPCE": {
+      "source": "fred",
+      "id": "PCETRIM12M159SFRBDAL",
+      "label": "Trimmed-Mean PCE (Dallas Fed)",
+      "unit": "%",
+      "decimals": 2,
+      "freq": "MoM",
+      "mode": "Level",
+      "target": {
+        "Level": 2,
+        "label": "Fed 2% target"
+      },
+      "desc": "The Dallas Fed's trimmed-mean PCE inflation rate drops the most extreme price changes each month on both ends and averages the rest. It filters out one-off swings to show the underlying trend of inflation.",
+      "short": "Trimmed-Mean PCE",
+      "good": {
+        "target": 2
+      }
+    },
+    "PPIFinal": {
+      "source": "fred",
+      "id": "PPIFIS",
+      "label": "Producer Prices (Final Demand)",
+      "unit": "",
+      "decimals": 2,
+      "freq": "MoM",
+      "mode": "YoY",
+      "desc": "The Producer Price Index for final demand is the headline PPI: prices received by producers for goods, services and construction sold to final users. It often leads consumer price inflation.",
+      "short": "PPI Final Demand",
+      "good": {
+        "target": 2
+      }
+    },
+    "Fwd5y5y": {
+      "source": "fred",
+      "id": "T5YIFR",
+      "label": "5y5y Forward Inflation Expectations",
+      "unit": "%",
+      "decimals": 2,
+      "freq": "MoM",
+      "sample": "monthly",
+      "mode": "Level",
+      "target": {
+        "Level": 2,
+        "label": "2% reference"
+      },
+      "desc": "The 5-year, 5-year forward inflation expectation rate is the bond market's forecast of average inflation over the five years starting five years from now. The Fed watches it to judge whether long-run inflation expectations stay anchored near 2%.",
+      "short": "5y5y Forward",
+      "good": {
+        "target": 2
+      }
+    },
+    "MichExp": {
+      "source": "fred",
+      "id": "MICH",
+      "label": "Consumer Inflation Expectations (1-yr)",
+      "unit": "%",
+      "decimals": 1,
+      "freq": "MoM",
+      "mode": "Level",
+      "desc": "The University of Michigan survey's median expected inflation over the next 12 months, as reported by households. Consumers' expectations can feed into wage demands and spending, which is why the Fed tracks them.",
+      "short": "Consumer Expectations"
+    },
+    "ECI": {
+      "source": "fred",
+      "id": "ECIALLCIV",
+      "label": "Employment Cost Index",
+      "unit": "",
+      "decimals": 2,
+      "freq": "QoQ",
+      "mode": "YoY",
+      "desc": "The Employment Cost Index measures the cost of wages and benefits for a fixed mix of jobs, so it isn't skewed by shifts in who is employed. It's the Fed's preferred gauge of labor cost pressure.",
+      "short": "Employment Cost",
+      "good": "up"
+    },
+    "WageTracker": {
+      "source": "fred",
+      "id": "FRBATLWGT12MMUMHGO",
+      "label": "Wage Growth Tracker (Atlanta Fed)",
+      "unit": "%",
+      "decimals": 1,
+      "freq": "MoM",
+      "mode": "Level",
+      "desc": "The Atlanta Fed's wage growth tracker: the median year-over-year change in hourly wages for the same workers, as a 12-month average. Following the same people avoids the composition effects that distort average hourly earnings.",
+      "short": "Wage Tracker",
+      "good": "up"
+    },
+    "Listings": {
+      "source": "fred",
+      "id": "ACTLISCOUUS",
+      "label": "Active Home Listings",
+      "unit": "",
+      "decimals": 0,
+      "freq": "MoM",
+      "mode": "Level",
+      "desc": "The number of homes actively listed for sale nationwide (Realtor.com). Inventory is the key supply measure for housing: low listings keep prices high even when sales are slow.",
+      "short": "Active Listings"
+    },
+    "NewHomePrice": {
+      "source": "fred",
+      "id": "MSPUS",
+      "label": "Median New-Home Price",
+      "unit": "$",
+      "decimals": 0,
+      "freq": "QoQ",
+      "mode": "Level",
+      "desc": "The median sales price of new houses sold in the US, from the Census Bureau, published quarterly.",
+      "short": "New-Home Price"
+    },
+    "RealYield10Y": {
+      "source": "fred",
+      "id": "DFII10",
+      "label": "10-Year Real Yield (TIPS)",
+      "unit": "%",
+      "decimals": 2,
+      "freq": "MoM",
+      "sample": "monthly",
+      "mode": "Level",
+      "desc": "The 10-year Treasury inflation-protected (TIPS) yield: the real return investors require after inflation. Higher real yields tighten financial conditions and weigh on stocks and housing.",
+      "short": "10Y Real Yield"
+    },
+    "FinConditions": {
+      "source": "fred",
+      "id": "NFCI",
+      "label": "Financial Conditions (Chicago Fed)",
+      "unit": "",
+      "decimals": 2,
+      "freq": "MoM",
+      "sample": "monthly",
+      "mode": "Level",
+      "change": "diff",
+      "target": {
+        "Level": 0,
+        "label": "Average conditions"
+      },
+      "desc": "The Chicago Fed's National Financial Conditions Index combines 105 measures of risk, credit and leverage. Zero is average; negative values mean looser-than-average conditions, positive values tighter.",
+      "short": "Financial Conditions",
       "good": "down"
     },
     "SP500": {
@@ -593,7 +682,7 @@
       "title": "Inflation",
       "groups": [
         {
-          "title": "Consumer Prices",
+          "title": "Headline & Core",
           "series": [
             "CorePCE",
             "PCE",
@@ -602,10 +691,17 @@
           ]
         },
         {
-          "title": "Drivers",
+          "title": "Underlying Trend",
           "series": [
-            "ShelterCPI",
-            "PPI",
+            "Supercore",
+            "TrimmedPCE",
+            "ShelterCPI"
+          ]
+        },
+        {
+          "title": "Pipeline",
+          "series": [
+            "PPIFinal",
             "Oil"
           ]
         },
@@ -613,13 +709,8 @@
           "title": "Expectations",
           "series": [
             "Breakeven5",
-            "Breakeven10"
-          ]
-        },
-        {
-          "title": "Money",
-          "series": [
-            "M2"
+            "Fwd5y5y",
+            "MichExp"
           ]
         }
       ]
@@ -655,6 +746,8 @@
         {
           "title": "Wages",
           "series": [
+            "ECI",
+            "WageTracker",
             "AHE"
           ]
         }
@@ -682,8 +775,15 @@
           "series": [
             "Permits",
             "Starts",
-            "NewHomeSales",
-            "MonthsSupply"
+            "NewHomeSales"
+          ]
+        },
+        {
+          "title": "Supply & New-Home Prices",
+          "series": [
+            "Listings",
+            "MonthsSupply",
+            "NewHomePrice"
           ]
         },
         {
@@ -704,15 +804,15 @@
             "FedFunds",
             "Yield2Y",
             "Yield10Y",
-            "Yield30Y",
+            "RealYield10Y",
             "Spread"
           ]
         },
         {
-          "title": "Credit",
+          "title": "Credit & Financial Conditions",
           "series": [
             "CreditSpread",
-            "CCDelinquency"
+            "FinConditions"
           ]
         },
         {

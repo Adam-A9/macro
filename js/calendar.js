@@ -113,6 +113,7 @@ function renderCalendarHtml(events, tab, et, expanded) {
 }
 
 function renderCalendar() {
+  renderNextUp();
   const host = document.getElementById('calendarBody');
   const cal = (typeof MACRO_DATA !== 'undefined' && MACRO_DATA && MACRO_DATA.calendar) || null;
   if (!host) return;
@@ -138,4 +139,54 @@ function fetchCalendar() {
     }));
   }
   renderCalendar();
+}
+
+// ─── NEXT UP (top of the Overview) ───────────────────────
+// The soonest releases plus the next Fed decision, which always shows even
+// when it's beyond the calendar's window. Cards link to the full calendar.
+const NEXT_UP_COUNT = 5;
+
+function whenLabel(dateStr, timeStr, et) {
+  const diff = daysBetween(et.date, dateStr);
+  const day = diff === 0 ? 'Today' : diff === 1 ? 'Tomorrow' : formatCalDate(dateStr);
+  return day + ' · ' + formatCalTime(timeStr);
+}
+
+function renderNextUpHtml(cal, et) {
+  if (!cal || !Array.isArray(cal.events)) return '';
+  const soon = cal.events
+    .filter(ev => ev.series !== 'DFEDTARU' && calendarStatus(ev, et) !== 'released')
+    .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))
+    .slice(0, NEXT_UP_COUNT);
+  const cards = soon.map(ev => {
+    const status = calendarStatus(ev, et);
+    const prior = calendarValue(ev, 'prior');
+    const foot = status === 'pending' ? '<span class="cal-status">Awaiting data</span>'
+      : prior != null ? 'Previous <b>' + escapeHtml(prior) + '</b>' : 'Previous –';
+    return '<a class="next-card' + (ev.impact === 'high' ? ' next-high' : '') + '" href="#calendar">' +
+      '<span class="next-when">' + whenLabel(ev.date, ev.time, et) + '</span>' +
+      '<span class="next-name">' + escapeHtml(ev.label) + '</span>' +
+      '<span class="next-sub">' + escapeHtml([ev.period, ev.note].filter(Boolean).join(' · ')) + '</span>' +
+      '<span class="next-foot">' + foot + '</span>' +
+    '</a>';
+  });
+  const fed = cal.next_fomc;
+  if (fed) {
+    const days = daysBetween(et.date, fed.date);
+    cards.push('<a class="next-card next-fed" href="#calendar">' +
+      '<span class="next-when">' + whenLabel(fed.date, fed.time, et) + '</span>' +
+      '<span class="next-name">Fed rate decision</span>' +
+      '<span class="next-sub">' + (days > 1 ? 'in ' + days + ' days' : days === 1 ? 'tomorrow' : 'today') + '</span>' +
+      '<span class="next-foot">' + (fed.current ? 'Current <b>' + escapeHtml(fed.current) + '</b>' : '') + '</span>' +
+    '</a>');
+  }
+  return cards.join('');
+}
+
+function renderNextUp() {
+  const host = document.getElementById('nextUp');
+  const cal = (typeof MACRO_DATA !== 'undefined' && MACRO_DATA && MACRO_DATA.calendar) || null;
+  if (!host) return;
+  const html = renderNextUpHtml(cal, easternNow());
+  host.innerHTML = html || '<p class="empty">No upcoming releases found.</p>';
 }

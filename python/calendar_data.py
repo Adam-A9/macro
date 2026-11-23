@@ -341,6 +341,18 @@ def fomc_rows(fred, decision_dates, start, end, now_et):
     return rows
 
 
+def next_fomc(fred, decision_dates, now_et):
+    """The next Fed decision (even beyond the calendar window) and the current
+    target range, for the Overview's "Next up" strip."""
+    upcoming = [d for d in decision_dates
+                if datetime.strptime(d + " 14:00", "%Y-%m-%d %H:%M") > now_et]
+    if not upcoming:
+        return None
+    upper, lower = fred.latest("DFEDTARU", n=400), fred.latest("DFEDTARL", n=400)
+    current = "%.2f–%.2f%%" % (lower[0][1], upper[0][1]) if upper and lower else None
+    return {"date": upcoming[0], "time": "14:00", "label": "Fed rate decision", "current": current}
+
+
 def build_calendar(get, today, now_et, fetch_text=None):
     """get(path, **params) -> FRED JSON; fetch_text(url) -> str (Fed page)."""
     fred = Fred(get)
@@ -383,9 +395,14 @@ def build_calendar(get, today, now_et, fetch_text=None):
         rows += fomc_rows(fred, decisions, start, end, now_et)
     except Exception as e:
         problems.append("FOMC rows: %s" % e)
+    try:
+        upcoming_fed = next_fomc(fred, decisions, now_et)
+    except Exception as e:
+        upcoming_fed = None
+        problems.append("Next FOMC: %s" % e)
 
     rows.sort(key=lambda r: (r["date"], r["time"], {"high": 0, "medium": 1, "low": 2}[r["impact"]]))
     return {
-        "events": rows, "start": start, "end": end,
+        "events": rows, "start": start, "end": end, "next_fomc": upcoming_fed,
         "fomc_source": fomc_source, "problems": problems,
     }

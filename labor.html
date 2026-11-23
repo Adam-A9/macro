@@ -26,6 +26,7 @@
     <p>Jobs, slack and wages, plus the early-warning indicators that tend to turn first.</p>
   </div>
   <div class="error-msg" id="errorMsg" role="status" hidden></div>
+
   <section class="glance" id="glance" aria-labelledby="glance-title">
     <div class="glance-head"><h2 class="group-title" id="glance-title">At a glance</h2><span class="glance-hint">Click any tile for its full charts</span></div>
     <div class="glance-grid" id="glanceBody"><p class="empty">Loading…</p></div>
@@ -76,6 +77,8 @@ const LAYOUT = [
   {
     "title": "Wages",
     "series": [
+      "ECI",
+      "WageTracker",
       "AHE"
     ]
   }
