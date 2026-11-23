@@ -70,7 +70,16 @@ function makeLineChart(canvasId, labels, data, color, fill = true) {
 }
 
 // ─── NBER RECESSION PERIODS ─────────────────────────────
+// NBER business-cycle peaks and troughs (monthly), 1948 onward.
 const NBER_RECESSIONS = [
+  ['1948-11-01','1949-10-01'],
+  ['1953-07-01','1954-05-01'],
+  ['1957-08-01','1958-04-01'],
+  ['1960-04-01','1961-02-01'],
+  ['1969-12-01','1970-11-01'],
+  ['1973-11-01','1975-03-01'],
+  ['1980-01-01','1980-07-01'],
+  ['1981-07-01','1982-11-01'],
   ['1990-07-01','1991-03-01'],
   ['2001-03-01','2001-11-01'],
   ['2007-12-01','2009-06-01'],
@@ -98,80 +107,101 @@ const recessionPlugin = {
   }
 };
 
-// Recession shading that works with any date labels (matches by range,
-// not by exact label), used by the module charts.
-const recessionRangePlugin = {
-  id: 'recessionRange',
-  beforeDraw(chart) {
+// Index range [i0, i1] of labels falling inside [start, end], or null.
+function labelRange(labels, start, end) {
+  const i0 = labels.findIndex(l => l >= start);
+  let i1 = -1;
+  for (let i = labels.length - 1; i >= 0; i--) { if (labels[i] <= end) { i1 = i; break; } }
+  return (i0 < 0 || i1 < i0) ? null : [i0, i1];
+}
+
+// Shades NBER recessions and, optionally, a highlighted window
+// (options.plugins.moduleBands.highlight = [startDate, endDate]).
+const moduleBandsPlugin = {
+  id: 'moduleBands',
+  beforeDatasetsDraw(chart, args, opts) {
     const labels = chart.data.labels || [];
-    if (!labels.length) return;
+    if (labels.length < 2) return;
     const { ctx, chartArea: { left, right, top, bottom }, scales: { x } } = chart;
-    ctx.save();
-    ctx.fillStyle = 'rgba(216,234,245,0.07)';
-    NBER_RECESSIONS.forEach(([start, end]) => {
-      const i0 = labels.findIndex(l => l >= start);
-      let i1 = -1;
-      for (let i = labels.length - 1; i >= 0; i--) { if (labels[i] <= end) { i1 = i; break; } }
-      if (i0 < 0 || i1 < i0) return;
-      // Extend half a period each side so short recessions stay visible.
-      const half = labels.length > 1 ? (x.getPixelForValue(1) - x.getPixelForValue(0)) / 2 : 0;
-      const x0 = Math.max(x.getPixelForValue(i0) - half, left);
-      const x1 = Math.min(x.getPixelForValue(i1) + half, right);
+    // Half a period each side so short recessions stay visible.
+    const half = (x.getPixelForValue(1) - x.getPixelForValue(0)) / 2;
+    const fill = (range, style) => {
+      if (!range) return;
+      const x0 = Math.max(x.getPixelForValue(range[0]) - half, left);
+      const x1 = Math.min(x.getPixelForValue(range[1]) + half, right);
+      ctx.fillStyle = style;
       ctx.fillRect(x0, top, Math.max(x1 - x0, 2), bottom - top);
-    });
+    };
+    ctx.save();
+    if (opts && opts.highlight) fill(labelRange(labels, opts.highlight[0], opts.highlight[1]), 'rgba(59,130,246,0.10)');
+    NBER_RECESSIONS.forEach(([s, e]) => fill(labelRange(labels, s, e), 'rgba(216,234,245,0.08)'));
     ctx.restore();
   }
 };
 
+// Picks a "nice" year spacing so the x-axis shows roughly 6-10 labels.
+function yearTickStep(labels, maxLabels) {
+  if (!labels.length) return 1;
+  const span = parseInt(labels[labels.length - 1].slice(0, 4), 10) - parseInt(labels[0].slice(0, 4), 10) + 1;
+  const steps = [1, 2, 5, 10, 20, 25];
+  return steps.find(st => span / st <= maxLabels) || 50;
+}
+
 // ─── MODULE CHART (one per dashboard row) ────────────────
-// obs: [{date, value}], display: { unit, decimals, showSign }, avg: number|null
-function makeModuleChart(canvasId, obs, display, avg) {
+// obs: [{date, value}], display: { unit, decimals, showSign, mode }
+// opts: { bars: bool, highlight: [start, end], quarterly: bool, maxLabels: number }
+function makeModuleChart(canvasId, obs, display, opts = {}) {
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
   if (charts[canvasId]) charts[canvasId].destroy();
 
   const color  = '#3b82f6';
   const labels = obs.map(d => d.date);
+  const values = obs.map(d => d.value);
+  const isChange = display.mode !== 'Level';
   const fmt = v => {
     const sign = display.showSign && v > 0 ? '+' : '';
     return sign + Number(v).toLocaleString(undefined, { maximumFractionDigits: display.decimals }) + display.unit;
   };
 
-  const datasets = [{
-    data: obs.map(d => d.value),
+  const narrow = window.innerWidth < 700;
+  const maxLabels = (opts.maxLabels || 10) / (narrow ? 2 : 1);
+  const step = yearTickStep(labels, maxLabels);
+  const shortSpan = labels.length && (Date.parse(labels[labels.length - 1]) - Date.parse(labels[0])) < 2.5 * 365 * 86400000;
+
+  const dataset = opts.bars ? {
+    type: 'bar',
+    data: values,
+    backgroundColor: values.map(v => v >= 0 ? color : 'rgba(216,234,245,0.45)'),
+    borderWidth: 0,
+    barPercentage: 0.8,
+    categoryPercentage: 0.9
+  } : {
+    type: 'line',
+    data: values,
     borderColor: color,
-    borderWidth: 1.6,
+    borderWidth: 1.5,
     backgroundColor: 'transparent',
     fill: false,
     pointRadius: 0,
     pointHoverRadius: 4,
     pointHoverBackgroundColor: color,
     pointHoverBorderColor: '#080c10',
-    tension: 0.2
-  }];
-  if (avg != null) {
-    datasets.push({
-      data: obs.map(() => avg),
-      borderColor: 'rgba(216,234,245,0.45)',
-      borderWidth: 1,
-      borderDash: [4, 4],
-      pointRadius: 0,
-      pointHoverRadius: 0,
-      fill: false
-    });
-  }
+    tension: 0.15
+  };
 
   charts[canvasId] = new Chart(canvas.getContext('2d'), {
-    type: 'line',
-    plugins: [recessionRangePlugin],
-    data: { labels, datasets },
+    type: opts.bars ? 'bar' : 'line',
+    plugins: [moduleBandsPlugin],
+    data: { labels, datasets: [dataset] },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      animation: { duration: 500 },
+      animation: { duration: 400 },
       interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: { display: false },
+        moduleBands: { highlight: opts.highlight || null },
         tooltip: {
           backgroundColor: '#0d1117',
           borderColor: 'rgba(216,234,245,0.3)',
@@ -180,37 +210,43 @@ function makeModuleChart(canvasId, obs, display, avg) {
           bodyColor: '#e8edf2',
           padding: 10,
           displayColors: false,
-          filter: item => item.datasetIndex === 0,
           titleFont: { family: "'Space Mono', monospace", size: 10 },
           bodyFont:  { family: "'DM Mono', monospace", size: 14, weight: '700' },
           callbacks: {
-            title: items => formatObsDate(items[0].label, 'long'),
+            title: items => formatObsDate(items[0].label, 'long', opts.quarterly),
             label: item => ' ' + fmt(item.parsed.y)
           }
         }
       },
       scales: {
         x: {
-          grid: { color: 'rgba(30,45,61,0.6)' },
+          grid: { color: 'rgba(30,45,61,0.5)', offset: false },
           ticks: {
             autoSkip: false,
             maxRotation: 0,
-            // One tick per year (first observation of each year).
             callback(value, index) {
               const label = labels[index];
               if (!label) return null;
-              if (index > 0 && labels[index - 1].slice(0, 4) === label.slice(0, 4)) return null;
-              // Skip a partial first year so its label doesn't crowd the next one.
-              if (index === 0 && label.slice(5, 7) > '03') return null;
+              if (shortSpan) {
+                // Short windows: label quarters (Jan/Apr/Jul/Oct) instead of years.
+                const m = parseInt(label.slice(5, 7), 10);
+                const prev = index > 0 ? labels[index - 1].slice(0, 7) : null;
+                if (prev === label.slice(0, 7) || (m - 1) % 3 !== 0 || label.slice(8, 10) !== '01') return null;
+                if (narrow && (m - 1) % 6 !== 0) return null;
+                return formatObsDate(label.slice(0, 8) + '01', 'short', opts.quarterly);
+              }
               const year = label.slice(0, 4);
-              if (window.innerWidth < 700 && parseInt(year, 10) % 2) return null;
-              return year;
+              if (index > 0 && labels[index - 1].slice(0, 4) === year) return null;
+              if (index === 0 && label.slice(5, 7) > '03') return null;
+              return parseInt(year, 10) % step === 0 ? year : null;
             }
           }
         },
         y: {
           position: 'right',
-          grid: { color: 'rgba(30,45,61,0.6)' },
+          grid: {
+            color: ctx => (isChange && ctx.tick && ctx.tick.value === 0) ? 'rgba(216,234,245,0.35)' : 'rgba(30,45,61,0.5)'
+          },
           ticks: { maxTicksLimit: 6, callback: v => fmt(v) }
         }
       }

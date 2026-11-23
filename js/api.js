@@ -122,36 +122,6 @@ function buildModeSeries(obs, cfg, mode) {
   return { mode: 'Level', obs: obs.slice(), unit: cfg.unit, decimals: cfg.decimals, showSign: false };
 }
 
-function averageOf(values) {
-  return values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
-}
-
-// Historical context for the latest point of a display series.
-function historyStats(obs) {
-  if (!obs.length) return null;
-  const latest = obs[obs.length - 1];
-  const yearsBefore = n => (parseInt(latest.date.slice(0, 4), 10) - n) + latest.date.slice(4);
-  const since = n => obs.filter(d => d.date > yearsBefore(n)).map(d => d.value);
-
-  const tenYear = since(10);
-  const below   = tenYear.filter(v => v < latest.value).length;
-  const equal   = tenYear.filter(v => v === latest.value).length;
-  const prior   = findPriorObservation(obs, latest.date, 1);
-  return {
-    latest:     latest.value,
-    yearAgo:    prior ? prior.value : null,
-    avg5:       averageOf(since(5)),
-    avg10:      averageOf(tenYear),
-    low10:      tenYear.length ? Math.min.apply(null, tenYear) : null,
-    high10:     tenYear.length ? Math.max.apply(null, tenYear) : null,
-    // Share of the last 10 years' readings at or below today's (midpoint for ties).
-    percentile: tenYear.length ? Math.round(((below + equal / 2) / tenYear.length) * 100) : null,
-    yearsCovered: obs.length > 1
-      ? (Date.parse(latest.date) - Date.parse(obs[0].date)) / (365.25 * 86400000)
-      : 0
-  };
-}
-
 // Replace the (incomplete) current-month point of a monthly series with the
 // most recent raw reading, so headline values stay current.
 function mergeLatestObservation(monthly, latest) {
@@ -181,15 +151,13 @@ async function fetchFREDHistory(seriesId) {
   return fetchFRED(seriesId, 100000);
 }
 
-// History for a dashboard module: ~12 years, enough for a 10-year chart of
-// YoY changes. Daily/weekly series (sample: 'monthly') are rolled up to
-// month-end by FRED, then topped up with the latest raw reading.
-async function fetchFREDSeries(cfg, years = 12) {
-  const start = (new Date().getFullYear() - years) + '-01-01';
+// Full history for a dashboard module. Daily/weekly series (sample: 'monthly')
+// are rolled up to month-end by FRED, then topped up with the latest reading.
+async function fetchFREDSeries(cfg) {
   const base = 'https://api.stlouisfed.org/fred/series/observations' +
     '?series_id=' + cfg.id +
     '&api_key=' + FRED_API_KEY +
-    '&file_type=json&sort_order=desc&observation_start=' + start;
+    '&file_type=json&sort_order=desc';
 
   if (cfg.sample !== 'monthly') {
     return parseFREDJson(await fetchWithProxy(base));

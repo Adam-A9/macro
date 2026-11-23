@@ -45,7 +45,23 @@ function getMode(name) {
   return moduleModes[name];
 }
 
+// Zoom window (years) shown in the "current trend" chart. Shorter comparisons
+// get shorter windows by default; the range buttons override it.
+const ZOOM_RANGES = [1, 2, 3, 5, 10];
+const DEFAULT_ZOOM = { Level: 5, YoY: 5, MoM: 3, QoQ: 2 };
+const moduleZoom = {};
+
+function getZoom(name) {
+  return moduleZoom[name] || DEFAULT_ZOOM[getMode(name)] || 10;
+}
+
+function setZoom(name, years) {
+  moduleZoom[name] = years;
+  renderModule(name);
+}
+
 function setMode(name, mode) {
+  delete moduleZoom[name];
   moduleModes[name] = mode;
   try { localStorage.setItem(modeStorageKey(name), mode); } catch (_) {}
   document.querySelectorAll('#card-' + name + ' .mode-btn').forEach(btn => {
@@ -56,30 +72,35 @@ function setMode(name, mode) {
 
 function moduleMarkup(name) {
   const cfg = FRED_SERIES[name];
-  const buttons = seriesModes(cfg).map(m =>
+  const modeButtons = seriesModes(cfg).map(m =>
     '<button type="button" class="mode-btn" data-mode="' + m + '">' + m + '</button>').join('');
+  const zoomButtons = ZOOM_RANGES.map(y =>
+    '<button type="button" class="mode-btn zoom-btn" data-years="' + y + '">' + y + 'Y</button>').join('');
   return '' +
     '<div class="kpi-card module" id="card-' + name + '">' +
       '<div class="kpi-tooltip" id="tip-' + name + '"></div>' +
       '<div class="module-top">' +
-        '<div class="kpi-label">' + cfg.label +
-          ' <span class="module-series-id">' + cfg.id + '</span><span class="kpi-info">?</span></div>' +
-        '<div class="mode-toggle" role="group" aria-label="View">' + buttons + '</div>' +
-      '</div>' +
-      '<div class="module-body">' +
-        '<div class="module-summary">' +
-          '<div class="kpi-value loading-text" id="val-' + name + '">Loading…</div>' +
-          '<div class="kpi-date" id="date-' + name + '">–</div>' +
-          '<div class="revision-tag flat" id="revision-' + name + '" style="display:none;"></div>' +
-          '<dl class="module-stats" id="stats-' + name + '"></dl>' +
-        '</div>' +
-        '<div class="module-chart">' +
-          '<div class="module-chart-canvas" title="Open full history"><canvas id="chart-' + name + '"></canvas></div>' +
-          '<div class="module-chart-key">' +
-            '<span><i class="key-line"></i>10-yr average</span>' +
-            '<span><i class="key-band"></i>Recession</span>' +
-            '<a href="#" class="module-history-link" data-series="' + name + '">Full history ↗</a>' +
+        '<div class="module-title">' +
+          '<div class="kpi-label">' + cfg.label +
+            ' <span class="module-series-id">' + cfg.id + '</span><span class="kpi-info">?</span></div>' +
+          '<div class="module-headline">' +
+            '<span class="kpi-value loading-text" id="val-' + name + '">Loading…</span>' +
+            '<span class="kpi-date" id="date-' + name + '">–</span>' +
+            '<span class="revision-tag flat" id="revision-' + name + '" style="display:none;"></span>' +
           '</div>' +
+        '</div>' +
+        '<div class="mode-toggle" role="group" aria-label="View">' + modeButtons + '</div>' +
+      '</div>' +
+      '<div class="module-charts">' +
+        '<div class="module-pane">' +
+          '<div class="pane-head"><span class="pane-title" id="hist-title-' + name + '">Full history</span>' +
+            '<a href="#" class="module-history-link">Expand ↗</a></div>' +
+          '<div class="module-chart-canvas history"><canvas id="hist-' + name + '"></canvas></div>' +
+        '</div>' +
+        '<div class="module-pane">' +
+          '<div class="pane-head"><span class="pane-title" id="zoom-title-' + name + '">Recent</span>' +
+            '<div class="mode-toggle small" role="group" aria-label="Recent window">' + zoomButtons + '</div></div>' +
+          '<div class="module-chart-canvas"><canvas id="chart-' + name + '"></canvas></div>' +
         '</div>' +
       '</div>' +
       '<div class="mini-table-wrap" id="mini-table-' + name + '"></div>' +
@@ -98,11 +119,13 @@ function renderModules() {
     const card = document.getElementById('card-' + name);
     if (!card) return;
     const mode = getMode(name);
-    card.querySelectorAll('.mode-btn').forEach(btn => {
+    card.querySelectorAll('.mode-btn[data-mode]').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.mode === mode);
       btn.addEventListener('click', () => setMode(name, btn.dataset.mode));
     });
-    card.querySelector('.module-chart-canvas').addEventListener('click', () => openFREDChart(name));
+    card.querySelectorAll('.zoom-btn').forEach(btn => {
+      btn.addEventListener('click', () => setZoom(name, parseInt(btn.dataset.years, 10)));
+    });
     card.querySelector('.module-history-link').addEventListener('click', e => {
       e.preventDefault();
       openFREDChart(name);
@@ -167,25 +190,22 @@ function renderModule(name) {
   document.getElementById('date-' + name).textContent =
     'As of ' + formatObsDate(latest.date, 'long', quarterly) + modeText;
 
-  // Historical context
-  const stats = historyStats(obs);
-  const statsEl = document.getElementById('stats-' + name);
-  if (statsEl && stats) {
-    const short = stats.yearsCovered < 9.5;
-    const rows = [
-      ['1 yr ago', fmt(stats.yearAgo)],
-      ['5-yr avg', fmt(stats.avg5)],
-      [short ? 'Period avg' : '10-yr avg', fmt(stats.avg10)],
-      [short ? 'Period range' : '10-yr range', fmt(stats.low10) + ' to ' + fmt(stats.high10)],
-      [short ? 'Percentile' : '10-yr percentile', stats.percentile == null ? '–' : ordinal(stats.percentile)]
-    ];
-    statsEl.innerHTML = rows.map(r => '<dt>' + r[0] + '</dt><dd>' + r[1] + '</dd>').join('');
-  }
-
-  // 10-year chart
-  const cutoff = (parseInt(latest.date.slice(0, 4), 10) - 10) + latest.date.slice(4);
-  const chartObs = obs.filter(d => d.date > cutoff);
-  makeModuleChart('chart-' + name, chartObs, display, stats ? stats.avg10 : null);
+  // Full history (left) and recent window (right)
+  const years = getZoom(name);
+  const cutoff = (parseInt(latest.date.slice(0, 4), 10) - years) + latest.date.slice(4);
+  const recent = obs.filter(d => d.date > cutoff);
+  const bars = display.mode !== 'Level' && display.mode !== 'YoY';
+  document.getElementById('hist-title-' + name).textContent =
+    'Full history · since ' + obs[0].date.slice(0, 4);
+  document.getElementById('zoom-title-' + name).textContent =
+    'Last ' + years + (years === 1 ? ' year' : ' years');
+  document.querySelectorAll('#card-' + name + ' .zoom-btn').forEach(btn => {
+    btn.classList.toggle('active', parseInt(btn.dataset.years, 10) === years);
+  });
+  makeModuleChart('hist-' + name, obs, display, {
+    quarterly, highlight: recent.length ? [recent[0].date, latest.date] : null, maxLabels: 8
+  });
+  makeModuleChart('chart-' + name, recent, display, { quarterly, bars, maxLabels: 10 });
 
   // Recent readings table (last 12)
   const tableObs = obs.slice(-12);
@@ -197,11 +217,6 @@ function renderModule(name) {
   wrap.innerHTML =
     '<table class="mini-table"><thead><tr><th class="row-head"></th>' + headers + '</tr></thead>' +
     '<tbody><tr><td class="row-head">' + display.mode + '</td>' + cells + '</tr></tbody></table>';
-}
-
-function ordinal(n) {
-  const s = ['th', 'st', 'nd', 'rd'], v = n % 100;
-  return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }
 
 // ─── STANDARD FETCH ALL ──────────────────────────────────

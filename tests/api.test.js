@@ -169,32 +169,6 @@ describe('module view modes', () => {
   });
 });
 
-describe('historyStats', () => {
-  // 11 years of monthly values 0..131
-  const obs = [];
-  for (let i = 0; i < 132; i++) {
-    const y = 2015 + Math.floor(i / 12), m = (i % 12) + 1;
-    obs.push({ date: y + '-' + String(m).padStart(2, '0') + '-01', value: i });
-  }
-  const s = historyStats(obs);
-
-  it('reports the value one year earlier', () => {
-    assert.equal(s.latest, 131);
-    assert.equal(s.yearAgo, 119);
-  });
-
-  it('averages the trailing 5 and 10 years', () => {
-    assert.closeTo(s.avg5, (72 + 131) / 2, 1e-9);   // last 60 points: 72..131
-    assert.closeTo(s.avg10, (12 + 131) / 2, 1e-9);  // last 120 points: 12..131
-  });
-
-  it('reports the 10-year range and percentile', () => {
-    assert.equal(s.low10, 12);
-    assert.equal(s.high10, 131);
-    assert.equal(s.percentile, 100);
-  });
-});
-
 describe('mergeLatestObservation', () => {
   it('replaces the current month with the latest raw reading', () => {
     const monthly = [{ date: '2026-09-01', value: 4.1 }, { date: '2026-10-01', value: 4.2 }];
