@@ -1,5 +1,6 @@
 """Builds data/macro.json: every series the site shows, sector returns and the
-calendar's FRED data, fetched server-side so the browser needs no API key.
+economic calendar (python/calendar_data.py), fetched server-side so the
+browser needs no API key.
 
 Run by .github/workflows/deploy.yml every hour and on every push to main.
 
@@ -18,6 +19,9 @@ import time
 from datetime import date, datetime, timedelta, timezone
 
 import requests
+from zoneinfo import ZoneInfo
+
+import calendar_data
 
 log = logging.getLogger("build_data")
 
@@ -25,9 +29,9 @@ FRED_URL = "https://api.stlouisfed.org/fred"
 YAHOO_URL = "https://query1.finance.yahoo.com/v8/finance/chart/"
 FRED_PAUSE = 0.55          # FRED allows 120 requests/minute
 YAHOO_PAUSE = 0.4
-CALENDAR_DAYS_BACK = 14
-CALENDAR_DAYS_AHEAD = 30
-CALENDAR_HISTORY_DAYS = 730
+# Plain, identifiable client name for official sites (the Fed's page refuses
+# anonymous scripts). Yahoo keeps the session default.
+SITE_USER_AGENT = "macro-dashboard/1.0 (+https://github.com/Adam-A9/macro)"
 
 session = requests.Session()
 session.headers["User-Agent"] = "Mozilla/5.0 (macro dashboard data build)"
@@ -177,23 +181,30 @@ def fetch_market_series(cfg):
     raise last_error or ValueError("no data")
 
 
-def fetch_calendar(key, series_ids):
-    today = date.today()
-    start = (today - timedelta(days=CALENDAR_DAYS_BACK)).isoformat()
-    end = (today + timedelta(days=CALENDAR_DAYS_AHEAD)).isoformat()
-    data = get_json(f"{FRED_URL}/releases/dates", {
-        "api_key": key, "file_type": "json", "realtime_start": start, "realtime_end": end,
-        "include_release_dates_with_no_data": "false", "limit": 1000,
-    })
-    time.sleep(FRED_PAUSE)
-    observations = {}
-    obs_start = (today - timedelta(days=CALENDAR_HISTORY_DAYS)).isoformat()
-    for sid in series_ids:
-        try:
-            observations[sid] = fred_observations(sid, key, observation_start=obs_start)
-        except Exception as e:
-            log.warning("  calendar %s failed: %s", sid, e)
-    return {"release_dates": data.get("release_dates", []), "observations": observations}
+def fred_get(key):
+    """FRED JSON getter for calendar_data (paced, retried, key never logged)."""
+    def get(path, **params):
+        q = dict(params, api_key=key, file_type="json")
+        data = get_json(f"{FRED_URL}/{path}", q)
+        time.sleep(FRED_PAUSE)
+        return data
+    return get
+
+
+def fetch_text(url):
+    r = session.get(url, headers={"User-Agent": SITE_USER_AGENT}, timeout=30)
+    r.raise_for_status()
+    return r.text
+
+
+def fetch_calendar(key):
+    now_et = datetime.now(ZoneInfo("America/New_York")).replace(tzinfo=None)
+    cal = calendar_data.build_calendar(fred_get(key), now_et.date(), now_et, fetch_text)
+    log.info("  calendar: %d rows (%s to %s), Fed dates from %s",
+             len(cal["events"]), cal["start"], cal["end"], cal["fomc_source"])
+    for p in cal["problems"]:
+        log.warning("  calendar problem: %s", p)
+    return cal
 
 
 # ─── BUILD ───────────────────────────────────────────────────
@@ -247,7 +258,11 @@ def build(catalog, key, previous):
     out["sectors"] = {"labels": catalog.get("sectors", {}), "returns": returns}
 
     try:
-        out["calendar"] = fetch_calendar(key, catalog.get("calendar_series", []))
+        cal = fetch_calendar(key)
+        if not cal["events"] and previous.get("calendar", {}).get("events"):
+            log.error("  calendar came back empty - keeping previous")
+            cal = previous["calendar"]
+        out["calendar"] = cal
     except Exception as e:
         log.error("  calendar FAILED (%s) - keeping previous", e)
         out["calendar"] = previous.get("calendar", {})

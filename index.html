@@ -32,15 +32,20 @@
   </section>
   <div class="modules" id="modules"><p class="empty">Loading data…</p></div>
 
-  <section class="section">
-    <h2 class="group-title">Economic Calendar</h2>
+  <section class="section" id="calendar" aria-labelledby="calendar-title">
+    <h2 class="group-title" id="calendar-title">Economic Calendar</h2>
     <div class="calendar">
       <div class="calendar-header">
-        <span class="calendar-range" id="cal-range">Loading…</span>
+        <p class="calendar-intro">US data releases and Fed decisions. Times are Eastern;
+          values are as first published. <b>Bold</b> marks market-moving releases.</p>
+        <div class="segmented" id="calendarTabs" role="group" aria-label="Calendar view">
+          <button type="button" data-tab="upcoming" aria-pressed="true">Upcoming</button>
+          <button type="button" data-tab="past" aria-pressed="false">Past week</button>
+        </div>
       </div>
-      <div class="calendar-grid" id="calendarGrid">
-        <div class="cal-empty">Loading calendar…</div>
-      </div>
+      <div class="calendar-body" id="calendarBody" role="table" aria-label="Economic calendar"><p class="empty">Loading calendar…</p></div>
+      <p class="calendar-foot">Sources: FRED release calendar and first-release values (Federal Reserve Bank of St. Louis);
+        FOMC meeting schedule from federalreserve.gov. Consensus forecasts aren't shown: no free source allows automated use.</p>
     </div>
   </section>
 </main>
