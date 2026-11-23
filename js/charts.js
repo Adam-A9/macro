@@ -1,6 +1,6 @@
 // ─── THEME TOKENS ────────────────────────────────────────
 // Chart colors are read from the CSS custom properties in css/site.css so
-// light and dark themes stay in one place.
+// the palette stays in one place.
 function token(name) {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }

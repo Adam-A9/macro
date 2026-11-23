@@ -455,42 +455,12 @@ function openSeriesChart(name) {
   window.open('chart.html?' + query.toString(), '_blank', 'noopener');
 }
 
-// ─── THEME ───────────────────────────────────────────────
-// Follows the OS by default; the header button pins light or dark.
-function currentTheme() {
-  const pinned = document.documentElement.dataset.theme;
-  if (pinned) return pinned;
-  return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-}
-
-function onThemeChange() {
-  applyChartDefaults();
-  renderAllModules();
-  const btn = document.getElementById('themeBtn');
-  if (btn) btn.textContent = currentTheme() === 'dark' ? 'Light mode' : 'Dark mode';
-}
-
-function toggleTheme() {
-  const next = currentTheme() === 'dark' ? 'light' : 'dark';
-  document.documentElement.dataset.theme = next;
-  storageSet('macro.theme', next);
-  onThemeChange();
-}
-
 // ─── PAGE INIT ───────────────────────────────────────────
 function initPage() {
   if (!document.getElementById('modules')) return;   // e.g. the test runner
   renderModules();
   renderSignals();
   initSectors();
-  const themeBtn = document.getElementById('themeBtn');
-  if (themeBtn) themeBtn.addEventListener('click', toggleTheme);
-  if (window.matchMedia) {
-    window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
-      if (!document.documentElement.dataset.theme) onThemeChange();
-    });
-  }
-  onThemeChange();
   document.getElementById('refreshBtn').addEventListener('click', fetchAll);
   fetchAll();
   if (typeof fetchCalendar === 'function') fetchCalendar();

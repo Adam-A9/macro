@@ -6,10 +6,6 @@
 <title>Labor Market · Macro</title>
 <meta name="description" content="Jobs, slack and wages, plus the early-warning indicators that tend to turn first.">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231a1a19'/%3E%3Cpolyline points='5,21 11,15 16,18 27,8' fill='none' stroke='%233987e5' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
-<script>
-  // Apply a pinned theme before first paint (no flash).
-  try { var t = localStorage.getItem('macro.theme'); if (t) document.documentElement.dataset.theme = t; } catch (_) {}
-</script>
 <link rel="stylesheet" href="css/site.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
@@ -21,7 +17,6 @@
   <div class="header-meta">
     <span id="last-updated"></span>
     <button type="button" class="btn" id="refreshBtn">Refresh</button>
-    <button type="button" class="btn" id="themeBtn">Light mode</button>
   </div>
 </header>
 

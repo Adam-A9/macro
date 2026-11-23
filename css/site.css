@@ -1,7 +1,7 @@
 /* ─── MACRO DESIGN SYSTEM ────────────────────────────────
    One stylesheet for every page. Principles and sources: DESIGN.md.
    Colors are tokens; charts read the same tokens (js/charts.js).
-   Dark and light are each selected and validated, not inverted. */
+   Dark theme only. */
 
 :root {
   color-scheme: dark;
@@ -39,56 +39,6 @@
 
   --radius: 8px;
   --gutter: 24px;
-}
-
-@media (prefers-color-scheme: light) {
-  :root:where(:not([data-theme="dark"])) {
-    color-scheme: light;
-    --page:           #f4f4f1;
-    --surface:        #fcfcfb;
-    --surface-raised: #ffffff;
-    --surface-sunk:   #f0efec;
-    --ink:   #0b0b0b;
-    --ink-2: #52514e;
-    --ink-3: #6b6a65;
-    --border:        rgba(11,11,11,0.10);
-    --border-strong: rgba(11,11,11,0.18);
-    --grid:          #e9e8e2;
-    --axis:          #c3c2b7;
-    --series:    #2a78d6;
-    --highlight: rgba(42,120,214,0.10);
-    --recession: rgba(11,11,11,0.06);
-    --good:     #0ca30c;
-    --warning:  #fab219;
-    --critical: #d03b3b;
-    --good-ink:     #006300;
-    --warning-ink:  #8a5a00;
-    --critical-ink: #b42828;
-  }
-}
-
-:root[data-theme="light"] {
-  color-scheme: light;
-  --page:           #f4f4f1;
-  --surface:        #fcfcfb;
-  --surface-raised: #ffffff;
-  --surface-sunk:   #f0efec;
-  --ink:   #0b0b0b;
-  --ink-2: #52514e;
-  --ink-3: #6b6a65;
-  --border:        rgba(11,11,11,0.10);
-  --border-strong: rgba(11,11,11,0.18);
-  --grid:          #e9e8e2;
-  --axis:          #c3c2b7;
-  --series:    #2a78d6;
-  --highlight: rgba(42,120,214,0.10);
-  --recession: rgba(11,11,11,0.06);
-  --good:     #0ca30c;
-  --warning:  #fab219;
-  --critical: #d03b3b;
-  --good-ink:     #006300;
-  --warning-ink:  #8a5a00;
-  --critical-ink: #b42828;
 }
 
 /* ─── BASE ─────────────────────────────────────────────── */

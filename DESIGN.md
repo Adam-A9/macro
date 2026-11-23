@@ -52,9 +52,9 @@ What stays is the data line, hairline horizontal gridlines, a single stronger ze
 - **No beat/miss coloring in the calendar.** A CPI "miss" is good news, so red/green there would mislead.
 - **Bars use one color for positive and negative values.** The bar's position relative to the zero line already shows the sign.
 
-**The palette was checked with a contrast and color-vision validator, not by eye.** The series blues (`#2a78d6` light, `#3987e5` dark) pass the lightness band, chroma floor and ≥ 3:1 contrast on their surfaces. Paired with the next palette slot they also pass color-vision-deficiency separation (ΔE ≥ 8, OKLab) under protanopia, deuteranopia and tritanopia. This follows the approach of Brewer's ColorBrewer [8] and Okabe & Ito [14]. Body text meets WCAG AA contrast (4.5:1) in both themes.
+**The palette was checked with a contrast and color-vision validator, not by eye.** The series blue (`#3987e5`) passes the lightness band, chroma floor and ≥ 3:1 contrast on the dark surface. Paired with the next palette slot it also passes color-vision-deficiency separation (ΔE ≥ 8, OKLab) under protanopia, deuteranopia and tritanopia. This follows the approach of Brewer's ColorBrewer [8] and Okabe & Ito [14]. All text meets WCAG AA contrast (4.5:1).
 
-**Light and dark themes are each designed separately, not inverted.** The site follows the operating system's setting, and the header button pins either theme. Charts read the same CSS tokens as the page, so they switch together.
+**Dark theme only.** Charts read the same CSS tokens as the page, so changing a color in `css/site.css` updates every chart.
 
 ## 5. Typography and numbers
 
