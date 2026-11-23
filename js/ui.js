@@ -9,6 +9,7 @@ let SERIES = {};
 
 const moduleModes = {};
 const moduleZoom = {};
+const moduleFocus = {};   // date clicked on the full-history chart, per module
 
 // Zoom window (years) for the "recent" chart. Shorter comparisons get
 // shorter default windows; the range buttons override it.
@@ -53,6 +54,35 @@ function setMode(name, mode) {
   delete moduleZoom[name];
   moduleModes[name] = mode;
   storageSet(modeStorageKey(name), mode);
+  renderModule(name);
+}
+
+// The right chart's window: the last `years` by default, or `years` centered
+// on a date picked on the full-history chart, shifted to stay inside the data.
+function zoomWindow(obs, years, focus) {
+  if (!obs.length) return { obs: [], focused: false };
+  const DAY = 86400000;
+  const first = Date.parse(obs[0].date), last = Date.parse(obs[obs.length - 1].date);
+  const span = years * 365.25 * DAY;
+  let start, end;
+  if (!focus) {
+    const cutoff = (parseInt(obs[obs.length - 1].date.slice(0, 4), 10) - years) + obs[obs.length - 1].date.slice(4);
+    return { obs: obs.filter(d => d.date > cutoff), focused: false };
+  }
+  const center = Date.parse(focus);
+  start = center - span / 2;
+  end = center + span / 2;
+  if (end > last) { start -= end - last; end = last; }
+  if (start < first) { end = Math.min(last, end + (first - start)); start = first; }
+  const s = new Date(start).toISOString().slice(0, 10), e = new Date(end).toISOString().slice(0, 10);
+  // End-exclusive so every window has the same length; a window that runs to
+  // the end of the data keeps the latest point.
+  const toEnd = end >= last;
+  return { obs: obs.filter(d => d.date >= s && (d.date < e || (toEnd && d.date === e))), focused: true };
+}
+
+function setFocus(name, date) {
+  if (date) moduleFocus[name] = date; else delete moduleFocus[name];
   renderModule(name);
 }
 
@@ -105,6 +135,7 @@ function moduleMarkup(name) {
         '<figure class="pane">' +
           '<figcaption class="pane-head">' +
             '<span class="pane-title" id="zoom-title-' + name + '">Recent</span>' +
+            '<button type="button" class="link-btn zoom-reset" data-reset hidden>Back to latest</button>' +
             segmented('zoom-toggle small', ZOOM_RANGES.map(y => ({ value: y, label: y + 'Y' })), 'data-years') +
           '</figcaption>' +
           '<div class="pane-canvas"><canvas id="chart-' + name + '" role="img" aria-label="' + escapeHtml(cfg.label) + ', recent"></canvas></div>' +
@@ -137,6 +168,7 @@ function renderModules() {
     card.querySelectorAll('[data-years]').forEach(btn =>
       btn.addEventListener('click', () => setZoom(name, parseInt(btn.dataset.years, 10))));
     card.querySelector('[data-expand]').addEventListener('click', () => openSeriesChart(name));
+    card.querySelector('[data-reset]').addEventListener('click', () => setFocus(name, null));
     syncButtons(name);
   });
 }
@@ -180,19 +212,22 @@ function renderModule(name) {
 
   // Full history (left) and recent window (right)
   const years = getZoom(name);
-  const cutoff = (parseInt(latest.date.slice(0, 4), 10) - years) + latest.date.slice(4);
-  const recent = obs.filter(d => d.date > cutoff);
+  const win = zoomWindow(obs, years, moduleFocus[name]);
+  const recent = win.obs;
   const bars = display.mode === 'MoM' || display.mode === 'QoQ';
   const reference = cfg.target && cfg.target[display.mode] != null
     ? { value: cfg.target[display.mode], label: cfg.target.label || 'Target' } : null;
   document.getElementById('hist-title-' + name).textContent = 'Since ' + obs[0].date.slice(0, 4);
-  document.getElementById('zoom-title-' + name).textContent =
-    'Last ' + years + (years === 1 ? ' year' : ' years');
+  document.getElementById('zoom-title-' + name).textContent = win.focused && recent.length
+    ? formatObsDate(recent[0].date, 'long', quarterly) + ' – ' + formatObsDate(recent[recent.length - 1].date, 'long', quarterly)
+    : 'Last ' + years + (years === 1 ? ' year' : ' years');
+  document.querySelector('#card-' + name + ' [data-reset]').hidden = !win.focused;
 
   const log = !!cfg.log && display.mode === 'Level';
   makeModuleChart('hist-' + name, obs, display, {
     quarterly, reference, log, maxLabels: 8,
-    highlight: recent.length ? [recent[0].date, latest.date] : null
+    highlight: recent.length ? [recent[0].date, recent[recent.length - 1].date] : null,
+    onPick: date => setFocus(name, date)      // click: show this period at right
   });
   makeModuleChart('chart-' + name, recent, display, { quarterly, bars, reference, maxLabels: 10 });
 
@@ -200,7 +235,7 @@ function renderModule(name) {
   const refKey = reference ? '<span><i class="key-ref"></i>' + escapeHtml(reference.label) + '</span>' : '';
   document.getElementById('hist-key-' + name).innerHTML =
     '<span><i class="key-recession"></i>Recession</span>' +
-    '<span><i class="key-window"></i>Shown at right</span>' + refKey;
+    '<span><i class="key-window"></i>Shown at right · click to move</span>' + refKey;
   document.getElementById('zoom-key-' + name).innerHTML = refKey;
 
   // Last 12 readings

@@ -138,3 +138,35 @@ describe('stoplight', () => {
     assert.equal(stoplight(series(base), {}).level, 'none');
   });
 });
+
+describe('zoomWindow', () => {
+  // Monthly observations, Jan 1990 – Dec 2025
+  const obs = [];
+  for (let y = 1990; y <= 2025; y++) for (let m = 1; m <= 12; m++) {
+    obs.push({ date: y + '-' + String(m).padStart(2, '0') + '-01', value: y + m / 12 });
+  }
+
+  it('defaults to the latest N years', () => {
+    const w = zoomWindow(obs, 5, null);
+    assert.isFalse(w.focused);
+    assert.equal(w.obs[0].date, '2021-01-01');
+    assert.equal(w.obs[w.obs.length - 1].date, '2025-12-01');
+  });
+
+  it('centers the same window length on a clicked date', () => {
+    const w = zoomWindow(obs, 5, '2008-06-01');
+    assert.isTrue(w.focused);
+    assert.equal(w.obs[0].date.slice(0, 7), '2005-12');
+    assert.equal(w.obs[w.obs.length - 1].date.slice(0, 7), '2010-11');
+    assert.equal(w.obs.length, zoomWindow(obs, 5, null).obs.length);   // same length as the default view
+  });
+
+  it('shifts the window to stay inside the data at either end', () => {
+    const late = zoomWindow(obs, 10, '2024-01-01');
+    assert.equal(late.obs[late.obs.length - 1].date, '2025-12-01');
+    assert.equal(late.obs[0].date.slice(0, 4), '2015');
+    const early = zoomWindow(obs, 10, '1991-01-01');
+    assert.equal(early.obs[0].date, '1990-01-01');
+    assert.equal(early.obs[early.obs.length - 1].date.slice(0, 4), '1999');
+  });
+});
