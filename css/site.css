@@ -232,6 +232,8 @@ a { color: inherit; }
 .next-row:last-child { border-bottom: none; }
 .next-row:not(.next-head):hover .next-name { text-decoration: underline; }
 .next-head { padding: 8px 0 4px; color: var(--ink-3); font-size: 11px; }
+/* Next up has no Actual column. */
+#nextUp .next-row { grid-template-columns: 150px minmax(0, 1fr) 96px; }
 .next-when { color: var(--ink-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .next-what { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .next-name { color: var(--ink); }
@@ -478,6 +480,8 @@ a { color: inherit; }
   .next-what { grid-area: what; white-space: normal; }
   .next-prev { grid-area: prev; } .next-actual { grid-area: actual; } .next-arrow { grid-area: arrow; }
   .next-when { grid-area: when; font-size: 12px; }
+  #nextUp .next-row { grid-template-columns: minmax(0, 1fr) 96px; grid-template-areas: "what prev" "when when"; }
+  #nextUp .next-head { grid-template-areas: ". prev"; }
   .next-sub { display: none; }
   .glance-grid { gap: 8px; }
   .tile { padding: 12px; }

@@ -176,7 +176,8 @@ describe('renderNextUpHtml', () => {
 
   it('shows period, previous value, awaiting data, and links to the calendar', () => {
     const r = rows();
-    assert.equal(r[0].querySelector('.next-actual').textContent, 'Awaiting');
+    assert.isNull(r[0].querySelector('.next-actual'));               // no Actual column in Next up
+    assert.include(r[0].querySelector('.next-sub').textContent, 'awaiting data');
     assert.include(r[1].querySelector('.next-when').textContent, 'Tomorrow · 9:00 am');
     assert.equal(r[1].querySelector('.next-sub').textContent, 'Sep 2026 · y/y');
     assert.include(r[1].querySelector('.next-prev').textContent, '+2.1%');

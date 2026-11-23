@@ -167,14 +167,16 @@ function nextUpRow(o) {
     '<span class="next-what"><span class="next-name">' + escapeHtml(o.name) + '</span>' +
       (o.sub ? '<span class="next-sub">' + escapeHtml(o.sub) + '</span>' : '') + '</span>' +
     '<span class="next-num next-prev">' + (o.prev || '') + '</span>' +
-    '<span class="next-num next-actual">' + (o.actual || '') + '</span>' +
-    '<span class="next-arrow">' + (o.arrow || '') + '</span>' +
+    (o.upcoming ? '' :
+      '<span class="next-num next-actual">' + (o.actual || '') + '</span>' +
+      '<span class="next-arrow">' + (o.arrow || '') + '</span>') +
   '</a>';
 }
 
-function nextHeadRow() {
+function nextHeadRow(upcoming) {
   return '<div class="next-row next-head" aria-hidden="true"><span></span><span></span>' +
-    '<span class="next-num">Previous</span><span class="next-num">Actual</span><span></span></div>';
+    '<span class="next-num">Previous</span>' +
+    (upcoming ? '' : '<span class="next-num">Actual</span><span></span>') + '</div>';
 }
 
 // Direction of actual vs previous, colored like the tile arrows.
@@ -197,10 +199,9 @@ function renderNextUpHtml(cal, et) {
       return {
         key: ev.date + ev.time, strong: ev.impact === 'high',
         when: whenLabel(ev.date, ev.time, et), name: ev.label,
-        sub: [ev.period, ev.note].filter(Boolean).join(' · '),
-        prev: prior != null ? escapeHtml(prior) : '–',
-        actual: calendarStatus(ev, et) === 'pending'
-          ? '<span class="cal-status" title="Released; FRED usually posts it within hours">Awaiting</span>' : ''
+        sub: [ev.period, ev.note, calendarStatus(ev, et) === 'pending' ? 'awaiting data' : '']
+          .filter(Boolean).join(' · '),
+        prev: prior != null ? escapeHtml(prior) : '–'
       };
     });
   const fed = cal.next_fomc;
@@ -214,7 +215,8 @@ function renderNextUpHtml(cal, et) {
     });
   }
   items.sort((a, b) => a.key.localeCompare(b.key));
-  return items.length ? nextHeadRow() + items.map(nextUpRow).join('') : '';
+  items.forEach(it => { it.upcoming = true; });
+  return items.length ? nextHeadRow(true) + items.map(nextUpRow).join('') : '';
 }
 
 // The most recent releases (newest first): previous, actual, and an arrow
