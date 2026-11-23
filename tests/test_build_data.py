@@ -64,7 +64,7 @@ class StaleFallback(unittest.TestCase):
                                      "updated_at": "2026-02-02T00:00:00+00:00"}}}
         orig_fred, orig_cal = bd.fetch_fred_series, bd.fetch_calendar
         bd.fetch_fred_series = lambda cfg, key: (_ for _ in ()).throw(RuntimeError("down"))
-        bd.fetch_calendar = lambda key, ids: {"release_dates": [], "observations": {}}
+        bd.fetch_calendar = lambda key: {"events": [], "problems": []}
         try:
             data, fresh = bd.build(catalog, "k", previous)
         finally:
