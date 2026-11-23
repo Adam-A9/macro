@@ -30,7 +30,7 @@ log = logging.getLogger('scraper')
 # ─── CONFIG ──────────────────────────────────────────────────
 SUPABASE_URL = "https://ygcirhhnojzmprbomzxs.supabase.co"
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
-FRED_API_KEY = os.environ.get("FRED_API_KEY", "8eb474280a02991313279b06c726bba4")
+FRED_API_KEY = os.environ.get("FRED_API_KEY")  # GitHub secret; never hard-code
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "

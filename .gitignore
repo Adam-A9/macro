@@ -208,3 +208,7 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Built by python/build_data.py (published by the deploy workflow, not committed)
+data/
+_site/

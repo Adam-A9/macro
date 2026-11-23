@@ -27,7 +27,7 @@
   </div>
   <div class="error-msg" id="errorMsg" role="status" hidden></div>
   <section class="signals" id="signals" aria-label="Key signals"></section>
-<div class="modules" id="modules"></div>
+<div class="modules" id="modules"><p class="empty">Loading data…</p></div>
 
   <section class="section">
     <h2 class="group-title">Economic Calendar</h2>
@@ -43,7 +43,7 @@
 </main>
 
 <footer class="site-footer">
-  <span>Data: Federal Reserve Bank of St. Louis (FRED), Yahoo Finance. Shaded bands mark NBER recessions.</span>
+  <span>Data: Federal Reserve Bank of St. Louis (FRED), Yahoo Finance, refreshed hourly. Shaded bands mark NBER recessions.</span>
   <span>Design notes: <a href="https://github.com/Adam-A9/macro/blob/main/DESIGN.md">DESIGN.md</a></span>
 </footer>
 
@@ -54,7 +54,9 @@
 <script src="js/calendar.js"></script>
 <script>
 // ─── PAGE CONFIG ─────────────────────────────────────────
-// Edit LAYOUT to reorder or regroup modules; SERIES holds each series' settings.
+// LAYOUT sets which modules this page shows, in order and in groups.
+// Each name refers to an entry in config/series.json (units, default view,
+// target line, description). Data comes from data/macro.json, rebuilt hourly.
 const LAYOUT = [
   {
     "title": "Growth",
@@ -94,164 +96,9 @@ const LAYOUT = [
     ]
   }
 ];
-
-const SERIES = {
-  "RealGDP": {
-    "source": "fred",
-    "id": "GDPC1",
-    "label": "Real GDP",
-    "unit": "B$",
-    "decimals": 0,
-    "freq": "QoQ",
-    "mode": "YoY",
-    "desc": "Real gross domestic product is the inflation-adjusted value of all goods and services the US produces, in chained 2017 dollars. It is the broadest measure of the economy's size and growth. Two consecutive negative quarters is a popular rule of thumb for recession, though the NBER's official dating looks at a wider set of indicators. Trend growth for the US is roughly 2% per year."
-  },
-  "RetailSales": {
-    "source": "fred",
-    "id": "RSAFS",
-    "label": "Retail Sales",
-    "unit": "M$",
-    "decimals": 0,
-    "freq": "MoM",
-    "mode": "YoY",
-    "desc": "Retail sales measures the total dollar value of merchandise sold directly to consumers each month, from car dealerships to grocery stores to online retailers. Because consumer spending accounts for roughly 70% of US GDP, this number is one of the most direct real-time reads on economic momentum available. A strong retail sales print means households are employed, confident, and spending. Weakness here — especially if sustained — signals that consumers are pulling back, often a precursor to slower GDP growth. The Fed watches this closely when assessing whether the economy needs more stimulus or cooling."
-  },
-  "Unemployment": {
-    "source": "fred",
-    "id": "UNRATE",
-    "label": "Unemployment Rate",
-    "unit": "%",
-    "decimals": 1,
-    "freq": "MoM",
-    "mode": "Level",
-    "desc": "The unemployment rate measures the share of people in the labor force who are actively looking for a job but cannot find one. Released every first Friday of the month by the Bureau of Labor Statistics — it is one of the most market-moving data points on the calendar. A reading below 4% is considered a strong, healthy labor market. Above 5-6% signals stress. The Fed is mandated to keep unemployment low alongside controlling inflation, so this number directly shapes rate decisions. Sustained rises here are often a recession warning."
-  },
-  "Payrolls": {
-    "source": "fred",
-    "id": "PAYEMS",
-    "label": "Nonfarm Payrolls",
-    "unit": "K",
-    "decimals": 0,
-    "freq": "MoM",
-    "change": "diff",
-    "mode": "MoM",
-    "desc": "Nonfarm payrolls measures the monthly change in total employed persons across all industries except farming — the headline jobs number released the first Friday of every month. It is arguably the most market-moving regular data release in the world. Expectations are set by ADP payrolls and jobless claims, and surprises routinely move equity markets, bond yields, and the dollar significantly within seconds of the 8:30 AM release. Above 200,000 is strong. Consecutive months below 100,000 raise recession concerns. The number is typically revised substantially in the following two months, meaning the initial print can be misleading."
-  },
-  "JoblessClaims": {
-    "source": "fred",
-    "id": "ICSA",
-    "label": "Initial Jobless Claims",
-    "unit": "",
-    "decimals": 0,
-    "freq": "MoM",
-    "sample": "monthly",
-    "mode": "Level",
-    "desc": "Initial jobless claims counts the number of people filing for unemployment insurance for the first time in a given week, released every Thursday morning. Because it is weekly, it is the most timely labor market data available — stress in the job market shows up here weeks before the monthly unemployment rate captures it. A healthy economy typically sees claims below 250,000 per week. A sustained move above 300,000-350,000 is a warning sign. Sharp spikes — like those seen in March 2020 when claims hit 6 million in a single week — are among the first hard data signals of economic collapse."
-  },
-  "CorePCE": {
-    "source": "fred",
-    "id": "PCEPILFE",
-    "label": "Core PCE Prices",
-    "unit": "",
-    "decimals": 2,
-    "freq": "MoM",
-    "mode": "YoY",
-    "target": {
-      "YoY": 2,
-      "label": "Fed 2% target"
-    },
-    "desc": "Core PCE excluding food and energy is the single most important inflation number for Federal Reserve rate decisions — their 2% target refers specifically to this series. When Fed Chair Powell says inflation is moving toward target, this is the number being referenced. It is the cleanest read on underlying demand-driven inflation. Wall Street analysts forecast this number more closely than any other inflation metric because it directly determines when the Fed will cut or raise rates. Even a 0.1% surprise can move markets significantly."
-  },
-  "CPI": {
-    "source": "fred",
-    "id": "CPIAUCSL",
-    "label": "Consumer Price Index (CPI)",
-    "unit": "",
-    "decimals": 2,
-    "freq": "MoM",
-    "mode": "YoY",
-    "target": {
-      "YoY": 2,
-      "label": "2% reference"
-    },
-    "desc": "The Consumer Price Index tracks how much a fixed basket of everyday goods and services — food, rent, gasoline, healthcare, clothing — costs over time. It is the Fed's primary gauge of whether inflation is under control. Their official target is 2% annual growth. When CPI runs significantly above target, the Fed raises interest rates aggressively to slow borrowing and cool demand. The 2022-2023 rate hike cycle, the fastest in 40 years, was a direct response to CPI hitting 9.1%. When CPI falls toward target, rate cuts become possible."
-  },
-  "FedFunds": {
-    "source": "fred",
-    "id": "FEDFUNDS",
-    "label": "Fed Funds Rate",
-    "unit": "%",
-    "decimals": 2,
-    "freq": "MoM",
-    "mode": "Level",
-    "desc": "The federal funds rate is the interest rate at which banks lend their excess reserves to each other overnight, set by the Federal Reserve's FOMC at meetings held eight times per year. It is the most powerful single lever in all of macroeconomics — every loan, mortgage, bond yield, stock valuation, and currency exchange rate in the world is ultimately influenced by where the Fed sets this rate. Raising it makes borrowing expensive, slowing inflation but risking recession. Cutting it loosens credit, stimulating growth but risking inflation. Markets obsess over every Fed meeting because even a 0.25% move ripples through the entire global financial system."
-  },
-  "Yield10Y": {
-    "source": "fred",
-    "id": "DGS10",
-    "label": "10-Year Treasury Yield",
-    "unit": "%",
-    "decimals": 2,
-    "freq": "MoM",
-    "sample": "monthly",
-    "mode": "Level",
-    "desc": "The 10-year Treasury yield is the annualized return on a US government bond maturing in 10 years — the single most important interest rate in global finance. Because Treasuries are considered risk-free, this rate serves as the foundation for virtually all other borrowing costs in the economy. Mortgages, corporate bonds, auto loans, and student debt all price off the 10-year. It also encodes the bond market's collective forecast for future growth and inflation. When yields rise sharply, financial conditions tighten everywhere: stocks get repriced lower as future earnings are discounted more heavily."
-  },
-  "Spread": {
-    "source": "fred",
-    "id": "T10Y2Y",
-    "label": "Yield Curve (10Y – 2Y)",
-    "unit": "%",
-    "decimals": 2,
-    "freq": "MoM",
-    "sample": "monthly",
-    "mode": "Level",
-    "target": {
-      "Level": 0,
-      "label": "Inverted below"
-    },
-    "desc": "The yield curve spread subtracts the 2-year Treasury yield from the 10-year yield. In a normal economy this is positive — investors demand more compensation for locking up money for a decade. When it turns negative (inverted), short-term rates exceed long-term rates, typically because the Fed raised rates while the market expects future cuts and weak growth. An inverted yield curve has preceded every US recession since the 1960s, typically with a 6-18 month lead time. It inverted sharply in 2022-2023 following aggressive Fed hikes and is one of the most closely watched macroeconomic signals in existence."
-  },
-  "CreditSpread": {
-    "source": "fred",
-    "id": "BAA10Y",
-    "label": "Corporate Credit Spread (Baa – 10Y)",
-    "unit": "%",
-    "decimals": 2,
-    "freq": "MoM",
-    "sample": "monthly",
-    "mode": "Level",
-    "desc": "The extra yield investors demand to hold Moody's Baa-rated corporate bonds (the lowest investment grade) instead of 10-year Treasuries. It widens when lenders worry about defaults and narrows when credit is easy. It peaked near 6 percentage points in the 2008 financial crisis."
-  },
-  "SP500": {
-    "source": "market",
-    "id": "^GSPC",
-    "label": "S&P 500",
-    "unit": "",
-    "decimals": 0,
-    "freq": "MoM",
-    "mode": "Level",
-    "log": true,
-    "desc": "The S&P 500 index tracks 500 of the largest US companies and is the standard benchmark for the US stock market. The full-history chart uses a logarithmic scale so equal percentage moves look equal across decades."
-  },
-  "SahmRule": {
-    "source": "fred",
-    "id": "SAHMREALTIME",
-    "label": "Sahm Rule Recession Indicator",
-    "unit": " pp",
-    "decimals": 2,
-    "freq": "MoM",
-    "mode": "Level",
-    "change": "diff",
-    "target": {
-      "Level": 0.5,
-      "label": "Trigger 0.50"
-    },
-    "desc": "The Sahm rule, developed by economist Claudia Sahm, compares the three-month average of the unemployment rate with its lowest three-month average over the prior 12 months. When the gap reaches 0.50 percentage points, the economy has historically already been in the early months of a recession. This is the real-time version, built from data as first published.",
-    "hidden": true
-  }
-};
+const HIDDEN = ["SahmRule"];
 const SIGNALS = ["recession", "growth", "inflation", "curve", "credit"];
+const SHOW_SECTORS = false;
 </script>
 </body>
 </html>

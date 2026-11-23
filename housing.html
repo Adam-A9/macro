@@ -26,12 +26,12 @@
     <p>Financing costs, prices and construction activity. Housing is among the most rate-sensitive parts of the economy.</p>
   </div>
   <div class="error-msg" id="errorMsg" role="status" hidden></div>
-  <div class="modules" id="modules"></div>
+  <div class="modules" id="modules"><p class="empty">Loading data…</p></div>
 
 </main>
 
 <footer class="site-footer">
-  <span>Data: Federal Reserve Bank of St. Louis (FRED), Yahoo Finance. Shaded bands mark NBER recessions.</span>
+  <span>Data: Federal Reserve Bank of St. Louis (FRED), Yahoo Finance, refreshed hourly. Shaded bands mark NBER recessions.</span>
   <span>Design notes: <a href="https://github.com/Adam-A9/macro/blob/main/DESIGN.md">DESIGN.md</a></span>
 </footer>
 
@@ -41,7 +41,9 @@
 <script src="js/ui.js"></script>
 <script>
 // ─── PAGE CONFIG ─────────────────────────────────────────
-// Edit LAYOUT to reorder or regroup modules; SERIES holds each series' settings.
+// LAYOUT sets which modules this page shows, in order and in groups.
+// Each name refers to an entry in config/series.json (units, default view,
+// target line, description). Data comes from data/macro.json, rebuilt hourly.
 const LAYOUT = [
   {
     "title": "Financing",
@@ -72,91 +74,9 @@ const LAYOUT = [
     ]
   }
 ];
-
-const SERIES = {
-  "Mortgage30": {
-    "source": "fred",
-    "id": "MORTGAGE30US",
-    "label": "30-Year Mortgage Rate",
-    "unit": "%",
-    "decimals": 2,
-    "freq": "MoM",
-    "sample": "monthly",
-    "mode": "Level",
-    "desc": "The average interest rate on a 30-year fixed-rate mortgage — the most common home loan in America. Directly tied to the 10-year Treasury yield and Federal Reserve policy, it is the most tangible way monetary policy affects everyday Americans. When this rate rises from 3% to 7%, the monthly payment on a $400,000 home jumps by roughly $1,100 — eliminating millions of potential buyers overnight. High mortgage rates create a locked-in effect: homeowners with 3% mortgages refuse to sell and give up that rate, freezing inventory while simultaneously killing demand."
-  },
-  "CaseShiller": {
-    "source": "fred",
-    "id": "CSUSHPINSA",
-    "label": "Home Prices (Case-Shiller National)",
-    "unit": "",
-    "decimals": 2,
-    "freq": "MoM",
-    "mode": "YoY",
-    "desc": "The S&P CoreLogic Case-Shiller National Home Price Index is the most widely-followed measure of US residential home prices, using a repeat-sales methodology to track the same properties over time. The index lags the market by roughly two months due to transaction processing time, but is considered the gold standard for price trend analysis. Home prices feed directly into CPI through the owners' equivalent rent component, which comprises about 24% of total CPI — meaning home price trends today become inflation data 12-18 months from now."
-  },
-  "ShelterCPI": {
-    "source": "fred",
-    "id": "CUSR0000SAH1",
-    "label": "CPI: Shelter",
-    "unit": "",
-    "decimals": 2,
-    "freq": "MoM",
-    "mode": "YoY",
-    "desc": "The shelter component of CPI measures rents and owners' equivalent rent. It is about a third of the CPI basket and moves slowly, lagging market rents by roughly a year, so it explains much of why inflation stays elevated or falls gradually."
-  },
-  "Permits": {
-    "source": "fred",
-    "id": "PERMIT",
-    "label": "Building Permits",
-    "unit": "K",
-    "decimals": 0,
-    "freq": "MoM",
-    "mode": "Level",
-    "desc": "Building permits measure the number of permits issued for new residential construction. Because a permit must be obtained before construction begins, permits lead housing starts by 1-3 months — making it the earliest-available leading indicator of where housing activity is headed. A sustained drop in permits tells you that starts will fall in coming months even before the slowdown shows up in the starts data. It is one of the ten components of the Conference Board's Leading Economic Index, reflecting its established track record as a forward signal."
-  },
-  "Starts": {
-    "source": "fred",
-    "id": "HOUST",
-    "label": "Housing Starts",
-    "unit": "K",
-    "decimals": 0,
-    "freq": "MoM",
-    "mode": "Level",
-    "desc": "Housing starts counts the number of new residential homes on which construction began in a given month, reported at a seasonally-adjusted annual rate. Housing is one of the most interest-rate-sensitive sectors of the entire economy — when mortgage rates spike, starts fall fast as builders pull back. Because constructing a home requires lumber, appliances, concrete, electrical work, plumbing, and dozens of skilled tradespeople, a slowdown in starts sends immediate ripples through the broader economy. When starts fall sharply and persistently, a broader slowdown typically follows within 6-12 months."
-  },
-  "NewHomeSales": {
-    "source": "fred",
-    "id": "HSN1F",
-    "label": "New Home Sales",
-    "unit": "K",
-    "decimals": 0,
-    "freq": "MoM",
-    "mode": "Level",
-    "desc": "New single-family home sales, at a seasonally adjusted annual rate, in thousands. It is recorded when a contract is signed, so it reacts quickly to changes in mortgage rates and is one of the earliest reads on housing demand."
-  },
-  "MonthsSupply": {
-    "source": "fred",
-    "id": "MSACSR",
-    "label": "Months' Supply of New Homes",
-    "unit": " mo",
-    "decimals": 1,
-    "freq": "MoM",
-    "mode": "Level",
-    "change": "diff",
-    "desc": "Months' supply of new homes for sale: how long the current inventory would last at the current sales pace. Around six months is usually considered balanced; well above that points to weak demand and pressure on builders to cut prices."
-  },
-  "Homebuilders": {
-    "source": "market",
-    "id": "ITB",
-    "label": "Homebuilders (ITB)",
-    "unit": "$",
-    "decimals": 2,
-    "freq": "MoM",
-    "mode": "Level",
-    "desc": "The iShares US Home Construction ETF tracks homebuilder stocks. Builders' share prices tend to anticipate turns in housing activity months ahead of the official data."
-  }
-};
+const HIDDEN = [];
+const SIGNALS = [];
+const SHOW_SECTORS = false;
 </script>
 </body>
 </html>

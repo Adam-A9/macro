@@ -71,13 +71,25 @@ What stays is the data line, hairline horizontal gridlines, a single stronger ze
 - The layout reflows to one column on phones, and tables scroll to the latest reading.
 - Motion is disabled under `prefers-reduced-motion`.
 
+## Data pipeline
+
+The browser never calls FRED or Yahoo. A GitHub Actions workflow (`.github/workflows/deploy.yml`) runs `python/build_data.py`:
+- **When:** hourly at :17, on every push to `main`, and on demand from the Actions tab.
+- **What it does:**
+  - fetches every series in `config/series.json`, the sector returns and the calendar's FRED data
+  - writes them to one file, `data/macro.json`, which it publishes with the site to GitHub Pages
+- **Why:**
+  - pages load in about a second instead of 30–60
+  - the FRED key stays in a GitHub secret
+  - there's no proxy to maintain
+- **If a source fails,** that series keeps its last published values (flagged "stale" on the page) rather than disappearing. A run that gets no usable data at all doesn't publish.
+
 ## How to change what's shown
 
-Each page ends with two editable lists:
-- **`LAYOUT`** sets the order and grouping of modules.
-- **`SERIES`** sets each series' FRED or Yahoo id, units, default view (`mode`), and optional `target` line.
-
-The overview's signals are defined in `SIGNAL_LIBRARY` in `js/ui.js`. All styling is in `css/site.css`.
+- **`config/series.json`** lists every series: FRED or Yahoo id, units, default view (`mode`) and optional `target` line. Add a series here and the next build fetches it.
+- **Each page's `LAYOUT`** (at the end of the HTML file) sets which of those series the page shows, in what order and in which groups.
+- **`SIGNAL_LIBRARY` in `js/ui.js`** defines the overview's signals.
+- **`css/site.css`** holds all styling.
 
 ## Sources
 

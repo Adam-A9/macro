@@ -1,0 +1,76 @@
+name: Build data & deploy site
+
+# Fetches every series server-side (python/build_data.py), bundles it with the
+# site as data/macro.json, and publishes to GitHub Pages.
+#   - hourly at :17 (GitHub delays jobs scheduled exactly on the hour)
+#   - on every push to main, so code and config changes go live right away
+#   - manually from the Actions tab
+on:
+  schedule:
+    - cron: '17 * * * *'
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run data-job tests
+        run: python -m unittest discover tests
+
+      - name: Configure Pages
+        id: pages
+        uses: actions/configure-pages@v5
+
+      - name: Assemble site
+        run: |
+          mkdir -p _site/data
+          cp *.html _site/
+          cp -r css js config _site/
+
+      - name: Build data
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        # --previous: if a source fails, that series keeps its last published values
+        run: >
+          python python/build_data.py
+          --out _site/data/macro.json
+          --previous "${{ steps.pages.outputs.base_url }}/data/macro.json"
+
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,7 +1,7 @@
 // ─── GLOBAL CONFIG ───────────────────────────────────────
-const FRED_API_KEY = '8eb474280a02991313279b06c726bba4';
-const PROXY_URL    = 'https://quiet-moon-b6d5.adamaun9.workers.dev/?url=';
-const REFRESH_INTERVAL = 15 * 60 * 1000; // 15 minutes
+// Series data is prebuilt into data/macro.json by python/build_data.py;
+// the browser holds no API keys.
+const REFRESH_INTERVAL = 10 * 60 * 1000; // re-check the data file every 10 minutes
 
 // Supabase (public anon key — safe for browser, RLS protects writes)
 const SUPABASE_URL  = 'https://ygcirhhnojzmprbomzxs.supabase.co';
