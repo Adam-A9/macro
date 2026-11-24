@@ -105,7 +105,7 @@ describe('renderCalendarHtml', () => {
     const div = html('upcoming');
     const gdp = [...div.querySelectorAll('.cal-row')].find(r => r.textContent.includes('Real GDP'));
     assert.isTrue(gdp.classList.contains('cal-high'));
-    assert.equal(gdp.querySelector('.cal-sub').textContent, 'q/q');
+    assert.equal(gdp.querySelector('.cal-sub').textContent, 'Quarterly');
   });
 
   it('shows an empty state per tab', () => {
@@ -179,7 +179,7 @@ describe('renderNextUpHtml', () => {
     assert.isNull(r[0].querySelector('.next-actual'));               // no Actual column in Next up
     assert.include(r[0].querySelector('.next-sub').textContent, 'awaiting data');
     assert.include(r[1].querySelector('.next-when').textContent, 'Tomorrow · 9:00 am');
-    assert.equal(r[1].querySelector('.next-sub').textContent, 'm/m');
+    assert.equal(r[1].querySelector('.next-sub').textContent, 'Monthly');
     assert.include(r[1].querySelector('.next-prev').textContent, '+2.1%');
     r.forEach(x => assert.equal(x.getAttribute('href'), '#calendar'));
   });
@@ -252,9 +252,9 @@ describe('renderRecentHtml', () => {
 
 describe('releaseFrequency', () => {
   it('is the gap between previous and actual: weekly, monthly or quarterly', () => {
-    assert.equal(releaseFrequency({ period: 'Week ending Nov 14' }), 'w/w');
-    assert.equal(releaseFrequency({ period: 'Oct 2026' }), 'm/m');
-    assert.equal(releaseFrequency({ period: 'Q3 2026' }), 'q/q');
+    assert.equal(releaseFrequency({ period: 'Week ending Nov 14' }), 'Weekly');
+    assert.equal(releaseFrequency({ period: 'Oct 2026' }), 'Monthly');
+    assert.equal(releaseFrequency({ period: 'Q3 2026' }), 'Quarterly');
     assert.equal(releaseFrequency({ period: 'Rate decision' }), '');
   });
 

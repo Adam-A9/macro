@@ -69,14 +69,14 @@ function calendarTone(ev) {
 const TONE_WORDS = { good: 'better than the previous reading', bad: 'worse than the previous reading',
                      neutral: 'unchanged, or no clear good/bad direction' };
 
-// How often the release comes out, which is also the gap between its
-// previous and actual readings: w/w, m/m or q/q.
+// How often the release comes out (also the gap between its previous and
+// actual readings): Weekly, Monthly or Quarterly.
 function releaseFrequency(ev) {
   const p = ev.period || '';
-  if (/^Week/.test(p)) return 'w/w';
-  if (/^Q\d/.test(p)) return 'q/q';
+  if (/^Week/.test(p)) return 'Weekly';
+  if (/^Q\d/.test(p)) return 'Quarterly';
   if (/^Rate decision/.test(p)) return '';
-  return 'm/m';
+  return 'Monthly';
 }
 
 function calendarRowHtml(ev, et) {
