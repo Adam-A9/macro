@@ -101,11 +101,11 @@ describe('renderCalendarHtml', () => {
     assert.notInclude(div.textContent.toLowerCase(), 'estimate:');
   });
 
-  it('marks high-impact releases and shows period, note and agency', () => {
+  it('marks high-impact releases and shows the release frequency underneath', () => {
     const div = html('upcoming');
     const gdp = [...div.querySelectorAll('.cal-row')].find(r => r.textContent.includes('Real GDP'));
     assert.isTrue(gdp.classList.contains('cal-high'));
-    assert.include(gdp.querySelector('.cal-sub').textContent, 'Q3 2026 · q/q annualized · BEA');
+    assert.equal(gdp.querySelector('.cal-sub').textContent, 'Quarterly');
   });
 
   it('shows an empty state per tab', () => {
@@ -154,14 +154,14 @@ describe('renderNextUpHtml', () => {
     return [...div.querySelectorAll('.next-row:not(.next-head)')];
   };
 
-  it('lists the five soonest unreleased releases as one-line rows, soonest first', () => {
-    const names = rows().slice(0, 5).map(r => r.querySelector('.next-name').textContent);
+  it('shows four rows: the three soonest releases plus the next Fed decision', () => {
+    const names = rows().map(r => r.querySelector('.next-name').textContent);
     assert.deepEqual(names, ['Durable goods orders', 'Case-Shiller home prices', 'Real GDP, second estimate',
-      'New home sales', 'Job openings']);
+      'Fed rate decision']);
   });
 
   it('always includes the next Fed decision with the current range', () => {
-    const fed = rows()[5];
+    const fed = rows()[3];
     assert.equal(fed.querySelector('.next-name').textContent, 'Fed rate decision');
     assert.include(fed.querySelector('.next-when').textContent, 'Wed, Jan 27 · 2:00 pm');
     assert.include(fed.textContent, 'in 65 days');
@@ -179,7 +179,7 @@ describe('renderNextUpHtml', () => {
     assert.isNull(r[0].querySelector('.next-actual'));               // no Actual column in Next up
     assert.include(r[0].querySelector('.next-sub').textContent, 'awaiting data');
     assert.include(r[1].querySelector('.next-when').textContent, 'Tomorrow · 9:00 am');
-    assert.equal(r[1].querySelector('.next-sub').textContent, 'Sep 2026 · y/y');
+    assert.equal(r[1].querySelector('.next-sub').textContent, 'Monthly');
     assert.include(r[1].querySelector('.next-prev').textContent, '+2.1%');
     r.forEach(x => assert.equal(x.getAttribute('href'), '#calendar'));
   });
@@ -247,5 +247,22 @@ describe('renderRecentHtml', () => {
     assert.equal(heads.length, 1);
     assert.include(heads[0].textContent, 'Previous');
     assert.include(heads[0].textContent, 'Actual');
+  });
+});
+
+describe('releaseFrequency', () => {
+  it('is the gap between previous and actual: weekly, monthly or quarterly', () => {
+    assert.equal(releaseFrequency({ period: 'Week ending Nov 14' }), 'Weekly');
+    assert.equal(releaseFrequency({ period: 'Oct 2026' }), 'Monthly');
+    assert.equal(releaseFrequency({ period: 'Q3 2026' }), 'Quarterly');
+    assert.equal(releaseFrequency({ period: 'Rate decision' }), '');
+  });
+
+  it('past-week strip shows at most four rows', () => {
+    const many = { events: [] };
+    for (let d = 10; d <= 19; d++) many.events.push(ev({ date: '2026-11-' + d, status: 'released', label: 'R' + d, prior: 1, actual: 2 }));
+    const div = document.createElement('div');
+    div.innerHTML = renderRecentHtml(many, ET);
+    assert.equal(div.querySelectorAll('.next-row:not(.next-head)').length, 4);
   });
 });
