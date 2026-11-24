@@ -183,8 +183,10 @@ function nextUpRow(o) {
   '</a>';
 }
 
+// Column header row; the first cell carries the box's title ("Past week" / "Next up").
 function nextHeadRow(upcoming) {
-  return '<div class="next-row next-head" aria-hidden="true"><span></span><span></span>' +
+  return '<div class="next-row next-head"><span class="next-title" role="heading" aria-level="3">' +
+    (upcoming ? 'Next up' : 'Past week') + '</span><span></span>' +
     '<span class="next-num">Previous</span>' +
     (upcoming ? '' : '<span class="next-num">Actual</span><span></span>') + '</div>';
 }

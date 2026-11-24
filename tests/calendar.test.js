@@ -247,6 +247,14 @@ describe('renderRecentHtml', () => {
     assert.equal(heads.length, 1);
     assert.include(heads[0].textContent, 'Previous');
     assert.include(heads[0].textContent, 'Actual');
+    assert.equal(heads[0].querySelector('.next-title').textContent, 'Past week');
+  });
+
+  it('titles the Next up box inside its header row', () => {
+    const div = document.createElement('div');
+    div.innerHTML = renderNextUpHtml(cal, ET);
+    const head = div.querySelector('.next-head .next-title');
+    assert.equal(head && head.textContent, 'Next up');
   });
 });
 
