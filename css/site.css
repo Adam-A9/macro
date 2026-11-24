@@ -238,8 +238,8 @@ a { color: inherit; }
 #nextUp .next-row { grid-template-columns: 150px minmax(0, 1fr) 96px; }
 .next-when { color: var(--ink-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .next-what { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.next-name { color: var(--ink); }
-.next-strong .next-name { font-weight: 650; }
+.next-name { color: var(--ink-2); }
+.next-strong .next-name { color: var(--ink); font-weight: 650; }
 .next-sub { color: var(--ink-3); margin-left: 10px; }
 .next-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .next-prev { color: var(--ink-3); }
@@ -444,8 +444,8 @@ a { color: inherit; }
 }
 .cal-time { color: var(--ink-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .cal-event { display: flex; flex-direction: column; min-width: 0; }
-.cal-name { color: var(--ink); }
-.cal-high .cal-name { font-weight: 650; }
+.cal-name { color: var(--ink-2); }
+.cal-high .cal-name { color: var(--ink); font-weight: 650; }
 .cal-sub { color: var(--ink-3); font-size: 12px; }
 .cal-num { display: flex; flex-direction: column; align-items: flex-end; font-variant-numeric: tabular-nums; }
 .cal-num-label { display: none; color: var(--ink-3); font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
