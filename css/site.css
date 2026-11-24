@@ -232,6 +232,8 @@ a { color: inherit; }
 .next-row:last-child { border-bottom: none; }
 .next-row:not(.next-head):hover .next-name { text-decoration: underline; }
 .next-head { padding: 8px 0 4px; color: var(--ink-3); font-size: 11px; }
+.next-head .next-title { font-size: 12px; font-weight: 600; color: var(--ink-2);
+                         text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
 /* Next up has no Actual column. */
 #nextUp .next-row { grid-template-columns: 150px minmax(0, 1fr) 96px; }
 .next-when { color: var(--ink-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -474,14 +476,15 @@ a { color: inherit; }
   /* Phones: name and numbers on the first line, time underneath. */
   .next-row { grid-template-columns: minmax(0, 1fr) 70px 56px 12px;
               grid-template-areas: "what prev actual arrow" "when when when when"; gap: 2px 8px; padding: 9px 0; }
-  .next-head { grid-template-areas: ". prev actual arrow"; }
-  .next-head span:nth-child(1), .next-head span:nth-child(2) { display: none; }
+  .next-head { grid-template-areas: "what prev actual arrow"; }
+  .next-head span:nth-child(1) { grid-area: what; }
+  .next-head span:nth-child(2) { display: none; }
   .next-head span:nth-child(3) { grid-area: prev; } .next-head span:nth-child(4) { grid-area: actual; }
   .next-what { grid-area: what; white-space: normal; }
   .next-prev { grid-area: prev; } .next-actual { grid-area: actual; } .next-arrow { grid-area: arrow; }
   .next-when { grid-area: when; font-size: 12px; }
   #nextUp .next-row { grid-template-columns: minmax(0, 1fr) 96px; grid-template-areas: "what prev" "when when"; }
-  #nextUp .next-head { grid-template-areas: ". prev"; }
+  #nextUp .next-head { grid-template-areas: "what prev"; }
   .next-sub { display: none; }
   .glance-grid { gap: 8px; }
   .tile { padding: 12px; }
