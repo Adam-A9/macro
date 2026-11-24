@@ -159,13 +159,33 @@ function whenLabel(dateStr, timeStr, et) {
   return day + ' · ' + formatCalTime(timeStr);
 }
 
+// Shared row: when · release · previous · actual · arrow, in fixed,
+// right-aligned columns so the numbers line up.
 function nextUpRow(o) {
   return '<a class="next-row' + (o.strong ? ' next-strong' : '') + '" href="#calendar">' +
     '<span class="next-when">' + o.when + '</span>' +
     '<span class="next-what"><span class="next-name">' + escapeHtml(o.name) + '</span>' +
       (o.sub ? '<span class="next-sub">' + escapeHtml(o.sub) + '</span>' : '') + '</span>' +
-    '<span class="next-value">' + o.value + '</span>' +
+    '<span class="next-num next-prev">' + (o.prev || '') + '</span>' +
+    (o.upcoming ? '' :
+      '<span class="next-num next-actual">' + (o.actual || '') + '</span>' +
+      '<span class="next-arrow">' + (o.arrow || '') + '</span>') +
   '</a>';
+}
+
+function nextHeadRow(upcoming) {
+  return '<div class="next-row next-head" aria-hidden="true"><span></span><span></span>' +
+    '<span class="next-num">Previous</span>' +
+    (upcoming ? '' : '<span class="next-num">Actual</span><span></span>') + '</div>';
+}
+
+// Direction of actual vs previous, colored like the tile arrows.
+function calendarArrow(ev) {
+  if (ev.actual == null || ev.prior == null) return '';
+  const d = ev.actual - ev.prior;
+  const tone = calendarTone(ev);
+  return '<span class="arrow-' + tone + '" title="' + TONE_WORDS[tone] + '">' +
+    (Math.abs(d) < 1e-9 ? '→' : d > 0 ? '▲' : '▼') + '</span>';
 }
 
 function renderNextUpHtml(cal, et) {
@@ -179,9 +199,9 @@ function renderNextUpHtml(cal, et) {
       return {
         key: ev.date + ev.time, strong: ev.impact === 'high',
         when: whenLabel(ev.date, ev.time, et), name: ev.label,
-        sub: [ev.period, ev.note].filter(Boolean).join(' · '),
-        value: calendarStatus(ev, et) === 'pending' ? '<span class="cal-status">Awaiting data</span>'
-          : '<span class="next-label">Prev</span> ' + (prior != null ? escapeHtml(prior) : '–')
+        sub: [ev.period, ev.note, calendarStatus(ev, et) === 'pending' ? 'awaiting data' : '']
+          .filter(Boolean).join(' · '),
+        prev: prior != null ? escapeHtml(prior) : '–'
       };
     });
   const fed = cal.next_fomc;
@@ -191,32 +211,30 @@ function renderNextUpHtml(cal, et) {
       key: fed.date + fed.time, strong: true,
       when: whenLabel(fed.date, fed.time, et), name: 'Fed rate decision',
       sub: days > 1 ? 'in ' + days + ' days' : days === 1 ? 'tomorrow' : 'today',
-      value: fed.current ? '<span class="next-label">Now</span> ' + escapeHtml(fed.current) : ''
+      prev: fed.current ? escapeHtml(fed.current) : '–'
     });
   }
   items.sort((a, b) => a.key.localeCompare(b.key));
-  return items.map(nextUpRow).join('');
+  items.forEach(it => { it.upcoming = true; });
+  return items.length ? nextHeadRow(true) + items.map(nextUpRow).join('') : '';
 }
 
-// The most recent releases (newest first), with the actual colored by
-// whether it was good or bad, and the previous reading beside it.
+// The most recent releases (newest first): previous, actual, and an arrow
+// colored by whether the move was good or bad.
 function renderRecentHtml(cal, et) {
   if (!cal || !Array.isArray(cal.events)) return '';
-  return cal.events
+  const rows = cal.events
     .filter(ev => calendarStatus(ev, et) === 'released')
     .sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time))
     .slice(0, NEXT_UP_COUNT + 1)
-    .map(ev => {
-      const actual = calendarValue(ev, 'actual');
-      const prior = calendarValue(ev, 'prior');
-      const tone = calendarTone(ev);
-      return nextUpRow({
-        strong: ev.impact === 'high', when: whenLabel(ev.date, ev.time, et), name: ev.label,
-        sub: [ev.period, ev.note].filter(Boolean).join(' · '),
-        value: '<b class="tone-' + tone + '" title="' + TONE_WORDS[tone] + '">' + escapeHtml(actual || '–') + '</b>' +
-               ' <span class="next-label">prev ' + escapeHtml(prior || '–') + '</span>'
-      });
-    }).join('');
+    .map(ev => nextUpRow({
+      strong: ev.impact === 'high', when: whenLabel(ev.date, ev.time, et), name: ev.label,
+      sub: [ev.period, ev.note].filter(Boolean).join(' · '),
+      prev: escapeHtml(calendarValue(ev, 'prior') || '–'),
+      actual: escapeHtml(calendarValue(ev, 'actual') || '–'),
+      arrow: calendarArrow(ev)
+    }));
+  return rows.length ? nextHeadRow() + rows.join('') : '';
 }
 
 function renderNextUp() {
