@@ -30,7 +30,7 @@ async function loadFullHistoryChart() {
       formatObsDate(first.date, 'long', quarterly) + ' – ' + formatObsDate(latest.date, 'long', quarterly);
     document.getElementById('series-value').textContent = formatDisplayValue(latest.value, display);
     makeModuleChart('history-chart', display.obs, display, {
-      quarterly, reference, log: !!cfg.log && view === 'Level', maxLabels: 14
+      quarterly, reference, log: !!cfg.log && view === 'Level', maxLabels: 14, noGrid: true
     });
     state.hidden = true;
   } catch (error) {

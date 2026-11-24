@@ -69,6 +69,16 @@ function calendarTone(ev) {
 const TONE_WORDS = { good: 'better than the previous reading', bad: 'worse than the previous reading',
                      neutral: 'unchanged, or no clear good/bad direction' };
 
+// How often the release comes out, which is also the gap between its
+// previous and actual readings: w/w, m/m or q/q.
+function releaseFrequency(ev) {
+  const p = ev.period || '';
+  if (/^Week/.test(p)) return 'w/w';
+  if (/^Q\d/.test(p)) return 'q/q';
+  if (/^Rate decision/.test(p)) return '';
+  return 'm/m';
+}
+
 function calendarRowHtml(ev, et) {
   const status = calendarStatus(ev, et);
   const prior = calendarValue(ev, 'prior');
@@ -79,7 +89,7 @@ function calendarRowHtml(ev, et) {
     : status === 'pending'
       ? '<span class="cal-status" title="Released; FRED usually posts it within hours">Awaiting data</span>'
       : status === 'upcoming' ? '' : '<span class="cal-dash">–</span>';
-  const sub = [ev.period, ev.note, ev.agency].filter(Boolean).map(escapeHtml).join(' · ');
+  const sub = escapeHtml(releaseFrequency(ev) || 'Rate decision');
   return '<div class="cal-row' + (ev.impact === 'high' ? ' cal-high' : '') + '" role="row">' +
     '<span class="cal-time" role="cell">' + formatCalTime(ev.time) + '</span>' +
     '<span class="cal-event" role="cell"><span class="cal-name">' + escapeHtml(ev.label) + '</span>' +
@@ -149,9 +159,9 @@ function fetchCalendar() {
 }
 
 // ─── NEXT UP (top of the Overview) ───────────────────────
-// One line per release: the five soonest, plus the next Fed decision, which
+// One line per release: the soonest three, plus the next Fed decision, which
 // always appears (even beyond the calendar's window), in date order.
-const NEXT_UP_COUNT = 5;
+const NEXT_UP_ROWS = 4;           // rows per side in the top strip
 
 function whenLabel(dateStr, timeStr, et) {
   const diff = daysBetween(et.date, dateStr);
@@ -193,13 +203,13 @@ function renderNextUpHtml(cal, et) {
   const items = cal.events
     .filter(ev => ev.series !== 'DFEDTARU' && calendarStatus(ev, et) !== 'released')
     .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))
-    .slice(0, NEXT_UP_COUNT)
+    .slice(0, cal.next_fomc ? NEXT_UP_ROWS - 1 : NEXT_UP_ROWS)   // leave a row for the Fed
     .map(ev => {
       const prior = calendarValue(ev, 'prior');
       return {
         key: ev.date + ev.time, strong: ev.impact === 'high',
         when: whenLabel(ev.date, ev.time, et), name: ev.label,
-        sub: [ev.period, ev.note, calendarStatus(ev, et) === 'pending' ? 'awaiting data' : '']
+        sub: [releaseFrequency(ev), calendarStatus(ev, et) === 'pending' ? 'awaiting data' : '']
           .filter(Boolean).join(' · '),
         prev: prior != null ? escapeHtml(prior) : '–'
       };
@@ -226,10 +236,10 @@ function renderRecentHtml(cal, et) {
   const rows = cal.events
     .filter(ev => calendarStatus(ev, et) === 'released')
     .sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time))
-    .slice(0, NEXT_UP_COUNT + 1)
+    .slice(0, NEXT_UP_ROWS)
     .map(ev => nextUpRow({
       strong: ev.impact === 'high', when: whenLabel(ev.date, ev.time, et), name: ev.label,
-      sub: [ev.period, ev.note].filter(Boolean).join(' · '),
+      sub: releaseFrequency(ev),
       prev: escapeHtml(calendarValue(ev, 'prior') || '–'),
       actual: escapeHtml(calendarValue(ev, 'actual') || '–'),
       arrow: calendarArrow(ev)

@@ -225,7 +225,7 @@ function renderModule(name) {
 
   const log = !!cfg.log && display.mode === 'Level';
   makeModuleChart('hist-' + name, obs, display, {
-    quarterly, reference, log, maxLabels: 8,
+    quarterly, reference, log, maxLabels: 8, noGrid: true,
     highlight: recent.length ? [recent[0].date, recent[recent.length - 1].date] : null,
     onPick: date => setFocus(name, date)      // click: show this period at right
   });
@@ -318,7 +318,7 @@ function tileHtml(name) {
     '<span class="tile-value is-loading">…</span>' +
     '<span class="tile-spark"></span>' +
     '<span class="tile-range"><span class="tile-from"></span><span class="tile-to"></span></span>' +
-    '<span class="tile-foot"><span class="tile-prev"></span><span class="tile-arrow"></span></span>' +
+    '<span class="tile-foot"><span class="tile-prev"></span> <span class="tile-arrow"></span></span>' +
   '</a>';
 }
 

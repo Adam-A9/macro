@@ -191,7 +191,7 @@ a { color: inherit; }
   font-size: 10px;
   font-variant-numeric: tabular-nums;
 }
-.tile-foot { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; min-height: 18px; font-size: 12px; }
+.tile-foot { display: flex; justify-content: flex-start; align-items: baseline; gap: 6px; min-height: 18px; font-size: 12px; }
 .tile-prev { color: var(--ink-3); font-variant-numeric: tabular-nums; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .tile-prev b { color: var(--ink-2); font-weight: 500; }
 

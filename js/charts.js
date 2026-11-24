@@ -197,7 +197,9 @@ function makeModuleChart(canvasId, obs, display, opts = {}) {
           suggestedMax: opts.reference ? opts.reference.value : undefined,
           border: { display: false },
           grid: {
-            color: ctx => (isChange && ctx.tick && ctx.tick.value === 0) ? axis : grid
+            // Full-history charts drop the gridlines (too busy over decades);
+            // the zero line stays in change views.
+            color: ctx => (isChange && ctx.tick && ctx.tick.value === 0) ? axis : (opts.noGrid ? 'transparent' : grid)
           },
           ticks: { maxTicksLimit: 5, callback: v => tickFmt(v) }
         }
