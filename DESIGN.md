@@ -25,7 +25,7 @@ This dashboard answers one question per page: *where is the economy now, and how
   - red when it's bad
   - gray when unchanged, or when the series has no agreed direction (Fed funds, Treasury yields, the dollar, gold, home prices)
 - **"Better" comes from each series' `good` setting** in `config/series.json` (`up`, `down` or `{target}`). Hover the arrow for the verdict in words; it's also in the tile's accessible label.
-- **The view label is in words:** "12-mo change", "1-mo change", "qtr change", or nothing for a plain level.
+- **The view label** reads YoY, MoM or QoQ (nothing for a plain level). The sparkline's start and end dates are shown as mm/yy.
 
 **Each module shows the full history beside the recent window.** The left chart covers everything FRED or Yahoo has (CPI since 1947, unemployment since 1948). The right chart zooms into the last 1–10 years, and the stretch it covers is highlighted on the left chart. This is Shneiderman's information-seeking mantra, *"overview first, zoom and filter, then details on demand"* [1]: the overview is the left chart, the zoom is the right chart with its range buttons, and the details are the hover tooltip, the 12-reading table, and *About this measure*. Munzner calls this pattern *overview + detail* [2]. It answers "historical trend vs. current trend" without a mode switch.
 

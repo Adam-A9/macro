@@ -106,3 +106,10 @@ describe('moveQuality', () => {
     assert.equal(m.prev.value, 3.72);
   });
 });
+
+describe('monthYear', () => {
+  it('formats dates as mm/yy for the tile sparkline range', () => {
+    assert.equal(monthYear('2024-10-01'), '10/24');
+    assert.equal(monthYear('2026-11-14'), '11/26');
+  });
+});

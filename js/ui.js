@@ -282,7 +282,12 @@ function sparkline(values) {
 // series: green = better, red = worse, gray = unchanged or no agreed
 // direction. "Better" comes from the series' `good` setting:
 // 'up', 'down' or {target} (closer to target is better).
-const VIEW_WORDS = { Level: '', YoY: '12-mo change', MoM: '1-mo change', QoQ: 'qtr change' };
+const VIEW_WORDS = { Level: '', YoY: 'YoY', MoM: 'MoM', QoQ: 'QoQ' };
+
+// Sparkline date range as mm/yy, e.g. "10/24".
+function monthYear(date) {
+  return date.slice(5, 7) + '/' + date.slice(2, 4);
+}
 
 function moveQuality(display, cfg) {
   const obs = display.obs;
@@ -379,8 +384,8 @@ function updateGlanceRow(name) {
   let spark = obs.filter(d => d.date >= from);
   if (spark.length < 2) spark = obs.slice(-2);
   tile.querySelector('.tile-spark').innerHTML = sparkline(spark.map(d => d.value));
-  tile.querySelector('.tile-from').textContent = formatObsDate(spark[0].date, 'short', quarterly);
-  tile.querySelector('.tile-to').textContent = formatObsDate(latest.date, 'short', quarterly);
+  tile.querySelector('.tile-from').textContent = monthYear(spark[0].date);
+  tile.querySelector('.tile-to').textContent = monthYear(latest.date);
 
   // Footer: the previous reading (same measure as the big number) and an
   // arrow colored by whether the move is good for this series.
