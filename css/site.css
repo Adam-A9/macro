@@ -238,8 +238,8 @@ a { color: inherit; }
 #nextUp .next-row { grid-template-columns: 150px minmax(0, 1fr) 96px; }
 .next-when { color: var(--ink-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .next-what { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.next-name { color: var(--ink); }
-.next-strong .next-name { font-weight: 650; }
+.next-name { color: var(--ink-2); }
+.next-strong .next-name { color: var(--ink); font-weight: 650; }
 .next-sub { color: var(--ink-3); margin-left: 10px; }
 .next-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .next-prev { color: var(--ink-3); }
@@ -424,9 +424,6 @@ a { color: inherit; }
 
 /* ─── ECONOMIC CALENDAR ────────────────────────────────── */
 .calendar { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; }
-.calendar-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 8px; }
-.calendar-intro { color: var(--ink-2); font-size: 13px; max-width: 70ch; }
-.calendar-intro b { color: var(--ink); }
 .cal-day { margin-top: 12px; }
 .split .cal-day:first-of-type { margin-top: 4px; }
 .cal-day-title {
@@ -447,8 +444,8 @@ a { color: inherit; }
 }
 .cal-time { color: var(--ink-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .cal-event { display: flex; flex-direction: column; min-width: 0; }
-.cal-name { color: var(--ink); }
-.cal-high .cal-name { font-weight: 650; }
+.cal-name { color: var(--ink-2); }
+.cal-high .cal-name { color: var(--ink); font-weight: 650; }
 .cal-sub { color: var(--ink-3); font-size: 12px; }
 .cal-num { display: flex; flex-direction: column; align-items: flex-end; font-variant-numeric: tabular-nums; }
 .cal-num-label { display: none; color: var(--ink-3); font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
@@ -504,7 +501,6 @@ a { color: inherit; }
   .sector-row { grid-template-columns: 120px minmax(0, 1fr) 56px; font-size: 12px; }
   .sector-sym { display: none; }
   .sectors, .calendar { padding: 16px; }
-  .calendar-header { flex-direction: column; }
   .cal-row { grid-template-columns: minmax(0, 1fr) 76px 76px; gap: 10px; }
   .cal-time { grid-column: 1 / -1; margin-bottom: -6px; font-size: 11px; }
   .cal-head { display: none; }
