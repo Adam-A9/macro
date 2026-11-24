@@ -569,30 +569,27 @@
       "good": "down"
     },
     "Dollar": {
-      "source": "market",
-      "id": "DX-Y.NYB",
-      "label": "US Dollar Index",
+      "source": "fred",
+      "id": "DTWEXBGS",
+      "label": "Broad Dollar Index",
       "unit": "",
       "decimals": 2,
       "freq": "MoM",
+      "sample": "monthly",
       "mode": "Level",
-      "alts": [
-        "DX-Y.NYB",
-        "DX=F",
-        "UUP"
-      ],
-      "desc": "The US Dollar Index: the dollar against six major currencies (the euro about 58%, plus the yen, pound, Canadian dollar, Swedish krona and Swiss franc). A stronger dollar makes imports cheaper and US exports pricier, and tightens global financial conditions because much of the world borrows in dollars. Caveat: it excludes China and Mexico, major trading partners.",
-      "short": "Dollar Index"
+      "desc": "The Federal Reserve's nominal broad dollar index: the dollar against the currencies of 26 major trading partners, weighted by trade, including China, Mexico, Canada and the euro area (January 2006 = 100), daily. A stronger dollar makes imports cheaper and US exports pricier, and tightens global financial conditions because much of the world borrows in dollars. Not adjusted for inflation; history starts in 2006.",
+      "short": "Broad Dollar"
     },
     "Oil": {
-      "source": "market",
-      "id": "CL=F",
+      "source": "fred",
+      "id": "DCOILWTICO",
       "label": "WTI Crude Oil",
       "unit": "$",
       "decimals": 2,
       "freq": "MoM",
+      "sample": "monthly",
       "mode": "Level",
-      "desc": "West Texas Intermediate crude oil futures, front month, in dollars per barrel, from market prices. Oil feeds directly into gasoline and transport costs, so big moves show up quickly in headline inflation. Price spikes preceded several past recessions. Prices are driven mainly by OPEC+ supply decisions and global demand, not the US economy alone.",
+      "desc": "West Texas Intermediate (WTI) crude oil spot price at Cushing, Oklahoma, in dollars per barrel, daily from the US Energy Information Administration; shown as month-end values. Oil feeds directly into gasoline and transport costs, so big moves show up quickly in headline inflation. Price spikes preceded several past recessions. Prices are driven mainly by OPEC+ supply decisions and global demand, not the US economy alone.",
       "short": "WTI Oil",
       "good": "down"
     },
